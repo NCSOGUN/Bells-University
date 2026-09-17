@@ -4,7 +4,7 @@ import { Chip, type ChipTone } from "@/components/ui/chip";
 
 const TONE: Record<CareStatus, ChipTone> = { green: "teal", yellow: "amber", red: "coral" };
 
-/** Named care state with its colour dot — never the dot alone. */
+/** Named care state with its colour dot, never the dot alone. */
 export function CareStatusChip({ status, className }: { status: CareStatus; className?: string }) {
   return (
     <Chip tone={TONE[status]} className={className}>

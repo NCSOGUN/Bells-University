@@ -18,7 +18,7 @@ export const REQUEST_CITIES = [
 
 export type RequestCity = (typeof REQUEST_CITIES)[number];
 
-/** Where nurses are available today — the same cities an Elder record can have. */
+/** Where nurses are available today, the same cities an Elder record can have. */
 export const SERVICE_CITIES: readonly Elder["city"][] = ["Lagos", "Ilorin"];
 
 export function isServiceCity(city: string): city is Elder["city"] {
@@ -54,7 +54,7 @@ export interface OnboardingDraft {
   planId?: string;
   account?: AccountDraft;
   relative?: RelativeDraft;
-  /** Id of an existing Nurse record — never a copy of one. */
+  /** Id of an existing Nurse record, never a copy of one. */
   matchedNurseId?: string;
   payment?: PaymentDraft;
 }

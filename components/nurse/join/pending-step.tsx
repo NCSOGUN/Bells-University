@@ -129,7 +129,7 @@ function Pending() {
       >
         <h2 id="demo-controls-heading" className="flex items-center gap-2 font-sans text-small font-semibold text-navy">
           <FlaskConical aria-hidden className="size-4" />
-          Demo controls — application status
+          Demo controls: application status
         </h2>
         <p className="mt-1 text-small">
           Not part of the nurse&apos;s app. In the real service, only the verification team can change this.

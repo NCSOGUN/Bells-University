@@ -31,7 +31,7 @@ export function PlanSummaryCard({ plan, nextBillingDate, paymentStatus, sponsor 
     <Card title="Plan and billing">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-display text-h2 font-semibold text-navy">
-          {plan.name} — {formatVisitsPerWeek(plan.visitsPerWeek)}
+          {plan.name} · {formatVisitsPerWeek(plan.visitsPerWeek)}
         </p>
         <Chip tone={status.tone}>{status.label}</Chip>
       </div>

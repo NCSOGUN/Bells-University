@@ -113,7 +113,7 @@ function Checklist({ state, visit, elder, workflow }: VisitContext) {
       {offline && (
         <p role="status" className="flex items-start gap-3 rounded-2xl border-2 border-amber bg-amber/10 p-4 font-semibold text-navy">
           <CloudOff aria-hidden className="mt-0.5 size-5 shrink-0" />
-          Offline Mode — Data cached safely. Automatic upload active on exit.
+          Offline Mode: Data cached safely. Automatic upload active on exit.
         </p>
       )}
 
@@ -224,7 +224,7 @@ function Checklist({ state, visit, elder, workflow }: VisitContext) {
           <span>
             <span className="flex items-center gap-2 text-small font-semibold text-navy">
               <FlaskConical aria-hidden className="size-4" />
-              Demo control — simulate losing signal
+              Demo control: simulate losing signal
             </span>
             <span className="block text-small">Keep typing while offline: nothing you enter is lost.</span>
           </span>

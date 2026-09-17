@@ -221,7 +221,7 @@ function CheckIn({ visitId, address }: { visitId: string; address: string }) {
           <span>
             <span className="flex items-center gap-2 text-small font-semibold text-navy">
               <FlaskConical aria-hidden className="size-4" />
-              Demo control — simulate no GPS signal
+              Demo control: simulate no GPS signal
             </span>
             <span className="block text-small">Shows what happens inside a building with no signal.</span>
           </span>

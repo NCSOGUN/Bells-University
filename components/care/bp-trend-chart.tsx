@@ -9,7 +9,7 @@ import { parseBloodPressure } from "@/lib/vitals";
 const HEIGHT = 280;
 const PAD_TOP = 64;
 const PAD_BOTTOM = 48;
-const X_START = 14; // % — clears the gridline labels
+const X_START = 14; // %, clears the gridline labels
 const X_END = 90; // %
 
 interface Point {

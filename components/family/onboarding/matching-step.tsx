@@ -53,7 +53,7 @@ function Matching() {
     return () => window.clearTimeout(id);
   }, [stage, done, nurse]);
 
-  // Record the match by id only — the nurse stays the seeded record.
+  // Record the match by id only, the nurse stays the seeded record.
   const matchedId = state.onboarding.matchedNurseId;
   useEffect(() => {
     if (done && nurse && matchedId !== nurse.id) {

@@ -19,7 +19,7 @@ interface CareHistoryProps {
   nurses: Nurse[];
 }
 
-/** Every visit in order, ending at the next one — the record the nurse carries forward. */
+/** Every visit in order, ending at the next one, the record the nurse carries forward. */
 export function CareHistory({ completed, next, nurses }: CareHistoryProps) {
   const nurseFor = (visit: Visit) => nurses.find((n) => n.id === visit.nurseId);
 

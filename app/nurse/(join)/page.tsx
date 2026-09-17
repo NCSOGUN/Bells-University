@@ -6,7 +6,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { TextLink } from "@/components/ui/text-link";
 import { EarningsExamples } from "@/components/nurse/earnings-examples";
 
-export const metadata: Metadata = { title: "Join as a nurse — CareCircle NG" };
+export const metadata: Metadata = { title: "Join as a nurse · CareCircle NG" };
 
 const cities = SERVICE_CITIES.join(" and ");
 
@@ -22,7 +22,7 @@ export default function NurseLandingPage() {
     <div className="space-y-12">
       <section className="max-w-2xl">
         <h1 className="text-display font-bold sm:text-[44px] sm:leading-[50px]">
-          Your nursing skill, respected — and paid for every visit
+          Your nursing skill, respected and paid for every visit
         </h1>
         <p className="mt-4 text-[17px] leading-7">
           CareCircle matches NMCN-licensed nurses with older people who need regular care at home in {cities}.

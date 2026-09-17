@@ -1,5 +1,5 @@
 // Ballpark figures for family paying from abroad (UX Addendum §2C). These are
-// fixed, indicative values, not live rates — the screen says so.
+// fixed, indicative values, not live rates, the screen says so.
 
 export type ForeignCurrency = "GBP" | "USD";
 

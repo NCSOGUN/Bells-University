@@ -5,7 +5,7 @@ import { fraunces, inter } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CareCircle NG — Demo",
+  title: "CareCircle NG demo",
   description:
     "Clickable demo of CareCircle: verified home nurses for elderly parents in Nigeria, with updates for family wherever they are.",
 };

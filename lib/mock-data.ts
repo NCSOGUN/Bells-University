@@ -1,4 +1,4 @@
-// Single source of truth for demo data. Nothing here talks to a backend —
+// Single source of truth for demo data. Nothing here talks to a backend , 
 // see DEMO-SPEC.md §5. Every screen reads from the state this file seeds.
 
 import type { NurseOnboardingDraft } from "./nurse-onboarding";
@@ -21,7 +21,7 @@ export interface Elder {
   assignedNurseId: string;
   careStatus: CareStatus;
   careStatusMessage: string; // descriptive microcopy, per UX Addendum
-  nextBillingDate: string; // ISO — Journey doc step 6: "payment status/history"
+  nextBillingDate: string; // ISO, Journey doc step 6: "payment status/history"
   paymentStatus: PaymentStatus;
 }
 
@@ -183,7 +183,7 @@ function daysFromNow(days: number, hour = 9, minute = 0): string {
 
 export const DEMO_TIME_ZONE = "Africa/Lagos";
 
-/** "Saturday" — the weekday of an ISO date, in Lagos. */
+/** "Saturday", the weekday of an ISO date, in Lagos. */
 function weekdayOf(iso: string): string {
   return new Intl.DateTimeFormat("en-GB", { timeZone: DEMO_TIME_ZONE, weekday: "long" }).format(
     new Date(iso),

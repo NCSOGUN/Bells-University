@@ -59,7 +59,7 @@ function SignupForm() {
       return;
     }
 
-    // An application draft only — never a Nurse record.
+    // An application draft only, never a Nurse record.
     update((prev) =>
       patchNurseOnboarding(prev, {
         applicant: { name: name.trim(), phone: normalisedPhone, licenceId: normaliseLicence(licenceId), city },

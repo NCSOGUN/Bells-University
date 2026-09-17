@@ -60,7 +60,7 @@ export function formatLongDate(iso: string): string {
   return longDateFmt.format(new Date(iso));
 }
 
-/** ["12", "Sept"] — split for narrow chart axes. */
+/** ["12", "Sept"], split for narrow chart axes. */
 export function formatDayMonthParts(iso: string): [string, string] {
   const parts = dayMonthFmt.formatToParts(new Date(iso));
   const day = parts.find((p) => p.type === "day")?.value ?? "";
@@ -68,7 +68,7 @@ export function formatDayMonthParts(iso: string): [string, string] {
   return [day, month];
 }
 
-/** "today", "yesterday", "on Friday", "on Fri 12 Sept" — reads after a verb. */
+/** "today", "yesterday", "on Friday", "on Fri 12 Sept", reads after a verb. */
 export function formatRelativeDay(iso: string): string {
   const diff = daysFromToday(iso);
   if (diff === 0) return "today";

@@ -75,11 +75,11 @@ export function VitalsTable({ completed, nurses }: VitalsTableProps) {
                       visit.flagged && f.key === "bloodPressure" ? "font-bold text-navy" : ""
                     }`}
                   >
-                    {f.format(visit.vitals) ?? "—"}
+                    {f.format(visit.vitals) ?? "Not recorded"}
                   </td>
                 ))}
                 <td className="whitespace-nowrap px-3 py-3">
-                  {nurse ? nurseShortName(nurse.name) : "—"}
+                  {nurse ? nurseShortName(nurse.name) : "Not recorded"}
                   {visit.checkOutAt && <span className="block">{formatTime(visit.checkOutAt)}</span>}
                 </td>
                 <td className="whitespace-nowrap px-3 py-3">

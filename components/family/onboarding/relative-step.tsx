@@ -80,7 +80,7 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
       return;
     }
 
-    // A draft for this visit only — it never becomes an Elder record.
+    // A draft for this visit only, it never becomes an Elder record.
     update((prev) =>
       patchOnboarding(prev, {
         relative: { name: name.trim(), age: ageNumber, city, careNeeds: careNeeds.trim() },
@@ -152,7 +152,7 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
 
       <Field
         label={`What does ${who} need help with?`}
-        hint="Medication, getting around, company, a health condition — whatever matters most."
+        hint="Medication, getting around, company, a health condition, or whatever matters most."
         error={errors.careNeeds}
       >
         {({ id, describedBy, invalid }) => (
@@ -182,7 +182,7 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
         </button>
         <p id="voice-note-status" role="status" className="mt-2 text-small">
           {voiceNoteAsked
-            ? "Voice notes aren't ready yet. For now, please type a few words above — short is fine."
+            ? "Voice notes aren't ready yet. For now, please type a few words above. Short is fine."
             : "Soon you'll be able to say it instead of typing it."}
         </p>
       </div>
@@ -239,7 +239,7 @@ function Waitlist({ relative, onChangeCity }: { relative: RelativeDraft; onChang
           Back to home
         </ButtonLink>
         <Button variant="secondary" onClick={onChangeCity} className="w-full">
-          They live somewhere else — change city
+          They live somewhere else: change city
         </Button>
       </div>
     </div>

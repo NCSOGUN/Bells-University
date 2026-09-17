@@ -224,7 +224,7 @@ function CodeForm({ account }: { account: AccountDraft }) {
 
       {expired ? (
         <div className="space-y-3">
-          <p role="status" className="text-navy">Your code has expired. Text messages can be slow — we can send it on WhatsApp instead.</p>
+          <p role="status" className="text-navy">Your code has expired. Text messages can be slow, so we can send it on WhatsApp instead.</p>
           <Button onClick={resendOnWhatsApp} loading={resending} loadingText="Sending on WhatsApp…" className="w-full">
             {!resending && <WhatsAppMark className="size-5" />}
             Send OTP via WhatsApp

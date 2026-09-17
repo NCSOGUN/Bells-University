@@ -21,7 +21,7 @@ import { PageSkeleton } from "@/components/ui/skeleton";
 import { AssignmentRequests, type AssignmentView } from "../assignment-requests";
 import { TodaysVisits } from "../todays-visits";
 
-// §4.3: accepting is optimistic — the client moves into today's work at once,
+// §4.3: accepting is optimistic, the client moves into today's work at once,
 // and the confirmation lands shortly after.
 const ACCEPT_CONFIRM_MS = 600;
 

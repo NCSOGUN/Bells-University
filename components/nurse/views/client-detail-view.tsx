@@ -28,7 +28,7 @@ export function ClientDetailView({ elderId }: { elderId: string }) {
   const { state, hydrated } = useDemo();
   if (!hydrated) return <PageSkeleton />;
 
-  // Same elder and visit records the family screens read — nothing nurse-specific.
+  // Same elder and visit records the family screens read, nothing nurse-specific.
   const elder = isNurseClient(state, DEMO_NURSE_ID, elderId) ? findElder(state, elderId) : undefined;
   if (!elder) {
     return (
