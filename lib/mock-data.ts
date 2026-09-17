@@ -179,11 +179,37 @@ function weekdayOf(iso: string): string {
   );
 }
 
-const ELDER_JOSEPH_ID = "elder-joseph";
+/** "today at 1:00 pm" or "on Saturday at 9:00 am", in Lagos. */
+function whenOf(iso: string): string {
+  const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: DEMO_TIME_ZONE });
+  const time = new Intl.DateTimeFormat("en-GB", {
+    timeZone: DEMO_TIME_ZONE,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(iso));
+  const isToday = dayKey.format(new Date(iso)) === dayKey.format(new Date());
+  return `${isToday ? "today" : `on ${weekdayOf(iso)}`} at ${time}`;
+}
 
-// Joseph's status copy names the weekday of his flagged visit, so it is built
-// from that visit's date rather than written out.
-const buildElders = (josephFlaggedVisitAt: string): Elder[] => [
+/** Status copy for a client nobody has visited yet. */
+function firstVisitMessage(visitAt: string): string {
+  return `First visit is scheduled ${whenOf(visitAt)}. No readings yet.`;
+}
+
+const ELDER_JOSEPH_ID = "elder-joseph";
+const ELDER_GRACE_ID = "elder-grace";
+const ELDER_IBRAHIM_ID = "elder-ibrahim";
+
+interface StatusDates {
+  josephFlaggedVisitAt: string;
+  graceFirstVisitAt: string;
+  ibrahimFirstVisitAt: string;
+}
+
+// Status copy that mentions a visit is built from that visit's date, so it
+// always matches the records it describes.
+const buildElders = ({ josephFlaggedVisitAt, graceFirstVisitAt, ibrahimFirstVisitAt }: StatusDates): Elder[] => [
   {
     id: ELDER_JOSEPH_ID,
     name: "Joseph Okafor",
@@ -220,7 +246,7 @@ const buildElders = (josephFlaggedVisitAt: string): Elder[] => [
     paymentStatus: "active",
   },
   {
-    id: "elder-grace",
+    id: ELDER_GRACE_ID,
     name: "Grace Nwosu",
     age: 81,
     city: "Ilorin",
@@ -232,12 +258,12 @@ const buildElders = (josephFlaggedVisitAt: string): Elder[] => [
     planId: "standard",
     assignedNurseId: NURSE_ADAEZE_ID,
     careStatus: "green",
-    careStatusMessage: "Blood sugar has stayed within range all week.",
+    careStatusMessage: firstVisitMessage(graceFirstVisitAt),
     nextBillingDate: daysFromNow(22),
     paymentStatus: "active",
   },
   {
-    id: "elder-ibrahim",
+    id: ELDER_IBRAHIM_ID,
     name: "Ibrahim Suleiman",
     age: 70,
     city: "Ilorin",
@@ -248,8 +274,8 @@ const buildElders = (josephFlaggedVisitAt: string): Elder[] => [
     medications: ["Lisinopril 20mg, once daily"],
     planId: "essential",
     assignedNurseId: NURSE_ADAEZE_ID,
-    careStatus: "yellow",
-    careStatusMessage: "Missed one dose of medication this week. Nurse Adaeze is following up.",
+    careStatus: "green",
+    careStatusMessage: firstVisitMessage(ibrahimFirstVisitAt),
     nextBillingDate: daysFromNow(4),
     paymentStatus: "active",
   },
@@ -411,7 +437,7 @@ const buildTodayVisits = (): Visit[] => [
   },
   {
     id: "visit-grace-today",
-    elderId: "elder-grace",
+    elderId: ELDER_GRACE_ID,
     nurseId: NURSE_ADAEZE_ID,
     scheduledAt: daysFromNow(0, 13, 0),
     status: "scheduled",
@@ -420,7 +446,7 @@ const buildTodayVisits = (): Visit[] => [
   },
   {
     id: "visit-ibrahim-today",
-    elderId: "elder-ibrahim",
+    elderId: ELDER_IBRAHIM_ID,
     nurseId: NURSE_ADAEZE_ID,
     scheduledAt: daysFromNow(0, 16, 30),
     status: "scheduled",
@@ -456,14 +482,23 @@ const buildAssignmentRequests = (): AssignmentRequest[] => [
 /** Fresh, independent copy of the seed, with dates relative to today. */
 export function createSeedState(): DemoState {
   const josephVisits = buildJosephVisits();
+  const todayVisits = buildTodayVisits();
   const flagged = josephVisits.find((v) => v.flagged);
-  if (!flagged) throw new Error("Seed invariant: Joseph's history must include a flagged visit");
+  const graceFirst = todayVisits.find((v) => v.elderId === ELDER_GRACE_ID);
+  const ibrahimFirst = todayVisits.find((v) => v.elderId === ELDER_IBRAHIM_ID);
+  if (!flagged || !graceFirst || !ibrahimFirst) {
+    throw new Error("Seed invariant: status copy must reference visits that exist");
+  }
 
   return structuredClone({
     familyAccount: FAMILY_ACCOUNT,
-    elders: buildElders(flagged.scheduledAt),
+    elders: buildElders({
+      josephFlaggedVisitAt: flagged.scheduledAt,
+      graceFirstVisitAt: graceFirst.scheduledAt,
+      ibrahimFirstVisitAt: ibrahimFirst.scheduledAt,
+    }),
     nurses: NURSES,
-    visits: [...josephVisits, ...buildTodayVisits()],
+    visits: [...josephVisits, ...todayVisits],
     plans: PLANS,
     assignmentRequests: buildAssignmentRequests(),
   });
