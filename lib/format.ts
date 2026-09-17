@@ -130,3 +130,9 @@ const FAMILY_TERMS: Record<string, string> = {
 export function familyTermFor(relationship: string, name: string): string {
   return FAMILY_TERMS[relationship] ?? firstName(name);
 }
+
+/** "Today, 8:00 am" or "Sat 12 Sept · 5 days ago" */
+export function formatVisitWhen(iso: string): string {
+  if (daysFromToday(iso) === 0) return `Today, ${formatTime(iso)}`;
+  return `${formatShortDate(iso)} · ${formatCountdown(iso)}`;
+}

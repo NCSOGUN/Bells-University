@@ -32,6 +32,27 @@
   --text-small--line-height: 20px;
   --text-label: 12px;
   --text-label--line-height: 16px;
+
+  /* §4.3 motion: a success tick scales in once; a changed value flashes once. */
+  --animate-tick-in: tick-in 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-highlight: highlight 300ms ease-out;
+
+  @keyframes tick-in {
+    from {
+      transform: scale(0.4);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes highlight {
+    from {
+      background-color: var(--color-teal-tint);
+    }
+  }
 }
 
 @layer base {

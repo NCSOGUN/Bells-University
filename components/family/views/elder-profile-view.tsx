@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { TextLink } from "@/components/ui/text-link";
 import { RecordNotFound } from "@/components/ui/record-not-found";
 import { PageSkeleton } from "@/components/ui/skeleton";
-import { BpTrendChart } from "../bp-trend-chart";
+import { BpTrendChart } from "@/components/care/bp-trend-chart";
 import { CareStatusNote } from "../care-status";
 import { NurseCard } from "../nurse-card";
 import { VitalsTable } from "../vitals-table";

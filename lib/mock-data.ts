@@ -134,6 +134,13 @@ export const PLANS: Plan[] = [
 
 const NURSE_ADAEZE_ID = "nurse-adaeze";
 
+/** The nurse the demo's nurse screens are signed in as. */
+export const DEMO_NURSE_ID = NURSE_ADAEZE_ID;
+
+// Per-visit pay behind the deck's earning maths (spec §7, N1):
+// 4 clients × 4 visits a month = ₦80,000.
+export const NURSE_PAY_PER_VISIT_NGN = 80_000 / (4 * 4);
+
 const NURSES: Nurse[] = [
   {
     id: NURSE_ADAEZE_ID,

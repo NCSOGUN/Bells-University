@@ -19,3 +19,10 @@ export const CARE_STATUS_COPY: Record<
     headline: (who) => `${who} needs attention today`,
   },
 };
+
+// Nurse-facing names for the same states (§4.4: named states, not colours).
+export const NURSE_CARE_STATUS_LABEL: Record<CareStatus, string> = {
+  green: "Stable",
+  yellow: "Monitoring",
+  red: "Needs attention today",
+};
