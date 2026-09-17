@@ -145,8 +145,10 @@ function Message({ message, elder, nurse, familyTerm, completed }: MessageProps)
     return (
       <Bubble from="carecircle" at={message.at}>
         <CareStatusChip status={elder.careStatus} />
-        <p className="mt-2 font-semibold text-navy">
-          {familyTerm}&apos;s visit is done. {elder.careStatusMessage}
+        <p className="mt-2 font-semibold text-navy">{familyTerm}&apos;s visit is done.</p>
+        <p className="mt-1">
+          <span className="font-semibold text-navy">Where things stand: </span>
+          {elder.careStatusMessage}
         </p>
         {visit.vitals && (
           <p className="mt-2">
