@@ -34,9 +34,6 @@ export function AssignmentRequests({ assignments, recent, onAccept, onDecline }:
       description={pending.length > 0 ? `${pending.length} waiting for your answer` : undefined}
     >
       <div className="space-y-4">
-        {pending.length === 0 && (
-          <p>No new requests right now. When a family near you needs a nurse, it will appear here.</p>
-        )}
         {pending.map((a) => (
           <PendingRequest key={a.request.id} assignment={a} onAccept={onAccept} onDecline={onDecline} />
         ))}
@@ -48,6 +45,11 @@ export function AssignmentRequests({ assignments, recent, onAccept, onDecline }:
             confirming={recent?.id === a.request.id && !recent.confirmed}
           />
         ))}
+        {pending.length === 0 && (
+          <p className={answered.length > 0 ? "text-small" : undefined}>
+            No new requests right now. When a family near you needs a nurse, it will appear here.
+          </p>
+        )}
       </div>
     </Card>
   );
@@ -71,7 +73,9 @@ function PendingRequest({
         <Chip tone="amber" className="bg-surface">
           Awaiting your answer
         </Chip>
-        <p className="text-small">Requested {formatRelativeDay(request.requestedAt)} at {formatTime(request.requestedAt)}</p>
+        <p className="text-small">
+          Requested {formatRelativeDay(request.requestedAt)} at {formatTime(request.requestedAt)}
+        </p>
       </div>
 
       <h3 id={headingId} className="mt-3 text-h2 font-semibold">
@@ -220,17 +224,17 @@ function DeclineForm({
         </p>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <button
           type="submit"
-          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-navy px-5 font-semibold text-white transition-colors duration-150 hover:bg-navy-mid sm:flex-none"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-navy px-5 font-semibold text-white transition-colors duration-150 hover:bg-navy-mid"
         >
           Decline and return to queue
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-line px-5 font-semibold text-navy transition-colors duration-150 hover:border-navy sm:flex-none"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-line px-5 font-semibold text-navy transition-colors duration-150 hover:border-navy"
         >
           Keep request
         </button>
