@@ -4,7 +4,7 @@ const STORAGE_KEY = "carecircle-demo";
 
 // Bump when the shape of DemoState or the seed changes, so visitors holding an
 // older snapshot from a previous deploy get reseeded instead of broken screens.
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 interface StoredDemo {
   version: number;

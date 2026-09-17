@@ -1,6 +1,8 @@
 // Single source of truth for demo data. Nothing here talks to a backend —
 // see DEMO-SPEC.md §5. Every screen reads from the state this file seeds.
 
+import type { OnboardingDraft } from "./onboarding";
+
 export type CareStatus = "green" | "yellow" | "red";
 
 export interface Elder {
@@ -106,6 +108,8 @@ export interface DemoState {
   visits: Visit[];
   plans: Plan[];
   assignmentRequests: AssignmentRequest[];
+  /** What a visitor typed into the F1–F7 flow. Never turned into records above. */
+  onboarding: OnboardingDraft;
 }
 
 export const PLANS: Plan[] = [
@@ -501,5 +505,6 @@ export function createSeedState(): DemoState {
     visits: [...josephVisits, ...todayVisits],
     plans: PLANS,
     assignmentRequests: buildAssignmentRequests(),
+    onboarding: {},
   });
 }
