@@ -26,3 +26,10 @@ export const NURSE_CARE_STATUS_LABEL: Record<CareStatus, string> = {
   yellow: "Monitoring",
   red: "Needs attention today",
 };
+
+// Short labels for a status shown inside a message, e.g. a WhatsApp update.
+export const MESSAGE_STATUS_LABEL: Record<CareStatus, string> = {
+  green: "On track",
+  yellow: "Keeping an eye",
+  red: "Needs attention",
+};

@@ -1,15 +1,17 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ClipboardCheck, HeartHandshake, MapPin, ShieldCheck, UserRoundSearch } from "lucide-react";
-import { familyTermFor, formatNaira, nurseShortName } from "@/lib/format";
+import { formatNaira, nurseShortName } from "@/lib/format";
 import { PLANS, createSeedState } from "@/lib/mock-data";
 import { SERVICE_CITIES } from "@/lib/onboarding";
 import { routes } from "@/lib/routes";
-import { completedVisits, findElder, findNurse, visitsForElder } from "@/lib/selectors";
-import { ADHERENCE_LABEL } from "@/lib/vitals";
+import { findElder, findNurse } from "@/lib/selectors";
+import { CareStatusChip } from "@/components/care/care-status-chip";
 import { ButtonLink } from "@/components/ui/button";
 import { TextLink } from "@/components/ui/text-link";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { WhatsAppMark } from "@/components/ui/whatsapp-mark";
+import heroPhoto from "@/public/images/hero-nurse-visit.jpg";
 
 const cities = SERVICE_CITIES.join(" and ");
 const lowestPrice = Math.min(...PLANS.map((p) => p.priceNGN));
@@ -32,25 +34,36 @@ const STEPS = [
   },
 ];
 
-/** A sample update built from the demo's seeded records, without dates. */
-function sampleUpdate() {
+/** The example update is marketing copy, so only the nurse comes from the seed. */
+function exampleNurseName(): string | undefined {
   const state = createSeedState();
   const elder = findElder(state, state.familyAccount.elderIds[0]);
-  const latest = elder && completedVisits(visitsForElder(state, elder.id)).at(-1);
-  const nurse = latest && findNurse(state, latest.nurseId);
-  if (!elder || !latest?.vitals || !nurse) return null;
-  return {
-    nurse: nurseShortName(nurse.name),
-    who: familyTermFor(elder.relationship, elder.name),
-    bp: latest.vitals.bloodPressure,
-    medication: latest.medicationAdherence && ADHERENCE_LABEL[latest.medicationAdherence].toLowerCase(),
-    note: latest.wellbeingNote,
-  };
+  const nurse = elder && findNurse(state, elder.assignedNurseId);
+  return nurse && nurseShortName(nurse.name);
+}
+
+function ExampleUpdate({ className = "" }: { className?: string }) {
+  const nurse = exampleNurseName() ?? "Your nurse";
+  return (
+    <div
+      className={`rounded-2xl border border-line bg-surface p-4 shadow-lg shadow-navy/10 ${className}`}
+    >
+      <p className="flex items-center gap-2 text-label font-semibold text-navy">
+        <WhatsAppMark className="size-4" />
+        Example update on WhatsApp
+      </p>
+      <div className="mt-2 rounded-xl rounded-tl-sm bg-teal-tint p-3 text-small text-navy">
+        <CareStatusChip status="green" />
+        <p className="mt-2">
+          {nurse} has finished today&apos;s visit with Mum. Her blood pressure and pulse are in her usual
+          range, and she&apos;s taken her medication.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default function LandingPage() {
-  const sample = sampleUpdate();
-
   return (
     <div className="min-h-dvh">
       <header className="border-b border-line bg-surface">
@@ -68,18 +81,30 @@ export default function LandingPage() {
       </header>
 
       <main className="pb-24">
-        <section className="mx-auto grid max-w-5xl items-center gap-10 px-4 pt-10 pb-12 sm:px-6 sm:pt-16 lg:grid-cols-[1.2fr_1fr]">
-          <div>
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-teal-tint px-3 py-1 text-label font-semibold text-navy">
-              <MapPin aria-hidden className="size-3.5" />
-              Home nursing in {cities}
-            </p>
-            <h1 className="mt-4 text-display font-bold sm:text-[44px] sm:leading-[50px]">
+        <section className="mx-auto grid max-w-5xl items-center gap-8 px-4 pt-6 pb-12 sm:px-6 sm:pt-12 lg:grid-cols-2 lg:gap-14">
+          {/* Photo first on phones: the human moment is what a visitor should see first. */}
+          <div className="relative lg:order-2">
+            <div className="relative aspect-[8/7] overflow-hidden rounded-3xl bg-teal-tint sm:aspect-[3/2] lg:aspect-[7/8]">
+              <Image
+                src={heroPhoto}
+                alt="A smiling nurse in blue scrubs rests her hand on the shoulder of an older woman, who laughs with her."
+                fill
+                priority
+                placeholder="blur"
+                sizes="(min-width: 1024px) 480px, (min-width: 640px) 90vw, 100vw"
+                className="object-cover object-[25%_30%] lg:object-[20%_40%]"
+              />
+            </div>
+            <ExampleUpdate className="relative mx-3 -mt-20 sm:mx-auto sm:max-w-sm lg:absolute lg:bottom-8 lg:-left-12 lg:mx-0 lg:mt-0 lg:w-72" />
+          </div>
+
+          <div className="lg:order-1">
+            <h1 className="text-display font-bold sm:text-[44px] sm:leading-[50px]">
               A trusted nurse for your parents, and news after every visit
             </h1>
             <p className="mt-4 max-w-prose text-[17px] leading-7">
-              CareCircle sends a verified nurse to check on your mum or dad at home, and tells you how
-              they are — even if you live far away.
+              CareCircle sends a verified nurse to check on your mum or dad at home in {cities}, and tells
+              you how they are, even if you live far away.
             </p>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -97,26 +122,6 @@ export default function LandingPage() {
               Every nurse&apos;s licence is checked with the NMCN before their first visit.
             </p>
           </div>
-
-          {sample && (
-            <figure className="rounded-3xl border border-line bg-surface p-5 sm:p-6">
-              <figcaption className="flex items-center gap-2 text-small font-semibold text-navy">
-                <WhatsAppMark className="size-5" />
-                Example update on WhatsApp
-              </figcaption>
-              <blockquote className="mt-4 rounded-2xl rounded-tl-sm bg-teal-tint p-4 text-navy">
-                <p>
-                  {sample.nurse} has finished today&apos;s visit with {sample.who}.
-                </p>
-                <p className="mt-2">
-                  Blood pressure <strong className="tabular-nums">{sample.bp} mmHg</strong>
-                  {sample.medication && `, medication ${sample.medication}`}.
-                </p>
-                {sample.note && <p className="mt-2">&ldquo;{sample.note}&rdquo;</p>}
-              </blockquote>
-              <p className="mt-3 text-small">Sent after every visit, with the nurse&apos;s name and the time.</p>
-            </figure>
-          )}
         </section>
 
         <section aria-labelledby="how-heading" className="border-y border-line bg-surface">
