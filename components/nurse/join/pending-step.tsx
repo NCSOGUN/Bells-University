@@ -76,7 +76,7 @@ function Pending() {
                 <p className="mt-2 text-navy">
                   A member of our verification team confirms your NMCN licence
                   {applicant && <> <strong className="whitespace-nowrap">{applicant.licenceId}</strong></>}, your ID and
-                  your address. We&apos;ll text you when it&apos;s done.
+                  your address. We&apos;ll message you on WhatsApp when it&apos;s done.
                 </p>
               </>
             )}

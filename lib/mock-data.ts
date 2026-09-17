@@ -420,7 +420,9 @@ const buildJosephVisits = (): Visit[] => [
     id: "visit-joseph-next",
     elderId: ELDER_JOSEPH_ID,
     nurseId: NURSE_ADAEZE_ID,
-    scheduledAt: daysFromNow(2),
+    // Today, after Bola's completed visit: Joseph is the nurse's next call, so
+    // the flagged reading from visit 5 is what she walks in knowing about.
+    scheduledAt: daysFromNow(0, 9, 30),
     status: "scheduled",
     gpsConfirmed: false,
     flagged: false,
