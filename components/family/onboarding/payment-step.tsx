@@ -128,16 +128,20 @@ function Checkout() {
             aria-labelledby="abroad-label"
             onClick={() => setAbroad((v) => !v)}
             disabled={paying}
-            className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors duration-150 ${
-              abroad ? "border-teal bg-teal" : "border-line bg-bg"
-            }`}
+            className="inline-flex min-h-11 shrink-0 items-center"
           >
             <span
               aria-hidden
-              className={`inline-block size-6 rounded-full bg-surface shadow transition-transform duration-150 ${
-                abroad ? "translate-x-6" : "translate-x-0.5"
+              className={`inline-flex h-8 w-14 items-center rounded-full border-2 transition-colors duration-150 ${
+                abroad ? "border-teal bg-teal" : "border-line bg-bg"
               }`}
-            />
+            >
+              <span
+                className={`inline-block size-6 rounded-full bg-surface shadow transition-transform duration-150 ${
+                  abroad ? "translate-x-6" : "translate-x-0.5"
+                }`}
+              />
+            </span>
           </button>
         </div>
 
