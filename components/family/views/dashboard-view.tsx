@@ -99,6 +99,7 @@ export function DashboardView() {
             familyTerm={familyTerm}
           />
           <VisitHistoryList completed={completed} nurses={state.nurses} familyTerm={familyTerm} />
+          <TextLink href={routes.familyWhatsApp}>See the update as the family received it</TextLink>
         </div>
         <div className="space-y-6">
           {nurse && <NurseCard nurse={nurse} title={`${familyTerm}'s nurse`} />}

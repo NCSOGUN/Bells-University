@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ResetDemoButton } from "@/components/demo/reset-demo-button";
+import { DemoNavigator } from "@/components/demo/demo-navigator";
 import { DemoProvider } from "@/lib/demo-context";
 import { fraunces, inter } from "./fonts";
 import "./globals.css";
@@ -16,7 +16,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-dvh">
         <DemoProvider>
           {children}
-          <ResetDemoButton />
+          <DemoNavigator />
         </DemoProvider>
       </body>
     </html>

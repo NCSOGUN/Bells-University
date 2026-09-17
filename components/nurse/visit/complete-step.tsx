@@ -11,6 +11,7 @@ import { CareStatusChip } from "@/components/care/care-status-chip";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SuccessTick } from "@/components/ui/success-tick";
+import { TextLink } from "@/components/ui/text-link";
 import { WhatsAppMark } from "@/components/ui/whatsapp-mark";
 import { VitalsInline } from "../vitals-inline";
 import { VisitFrame, type VisitContext } from "./visit-frame";
@@ -158,6 +159,11 @@ function Summary({ visit, elder, nurse, workflow }: VisitContext) {
             </p>
             {visit.nurseNotes && <p className="mt-2">&ldquo;{visit.nurseNotes}&rdquo;</p>}
           </blockquote>
+          <p className="mt-4 text-small">
+            Nurses can&apos;t read a family&apos;s messages. For this demo only, you can look at the thread from
+            the family&apos;s side.
+          </p>
+          <TextLink href={routes.familyWhatsApp}>Preview what the family sees</TextLink>
         </section>
       )}
 
