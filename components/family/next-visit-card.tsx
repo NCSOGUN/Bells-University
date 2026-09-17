@@ -1,8 +1,10 @@
 import { CalendarClock, MapPin } from "lucide-react";
 import type { Elder, Nurse, Visit } from "@/lib/mock-data";
 import { formatCountdown, formatLongDate, formatTime } from "@/lib/format";
+import { routes } from "@/lib/routes";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
+import { TextLink } from "@/components/ui/text-link";
 
 interface NextVisitCardProps {
   visit: Visit | undefined;
@@ -43,9 +45,10 @@ export function NextVisitCard({ visit, nurse, elder, familyTerm }: NextVisitCard
           {familyTerm} at {elder.address}
         </p>
       </div>
-      <Chip tone="teal" className="mt-4">
-        Visit booked
-      </Chip>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <Chip tone="teal">Visit booked</Chip>
+        <TextLink href={routes.familyVisit(visit.id)}>See visit details</TextLink>
+      </div>
     </Card>
   );
 }

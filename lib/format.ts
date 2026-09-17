@@ -91,6 +91,11 @@ export function minutesBetween(startIso: string, endIso: string): number {
   return Math.round((new Date(endIso).getTime() - new Date(startIso).getTime()) / 60_000);
 }
 
+/** "1 visit/week", "2 visits/week" */
+export function formatVisitsPerWeek(count: number): string {
+  return `${count} ${count === 1 ? "visit" : "visits"}/week`;
+}
+
 /** "₦55,000" */
 export function formatNaira(amount: number): string {
   return nairaFmt.format(amount);

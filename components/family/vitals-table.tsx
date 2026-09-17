@@ -1,5 +1,8 @@
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import type { Nurse, Visit, Vitals } from "@/lib/mock-data";
 import { formatShortDate, formatTime, nurseShortName } from "@/lib/format";
+import { routes } from "@/lib/routes";
 import { presentVitalFields } from "@/lib/vitals";
 import { VisitOutcomeChip } from "./visit-outcome";
 
@@ -27,7 +30,7 @@ export function VitalsTable({ completed, nurses }: VitalsTableProps) {
       <table className="w-full min-w-[640px] border-collapse text-left text-small">
         <thead>
           <tr className="border-b border-line text-navy">
-            <th scope="col" className="px-5 py-3 font-semibold sm:pl-0">
+            <th scope="col" className="py-3 pr-3 pl-6 font-semibold sm:pl-4">
               Visit
             </th>
             {fields.map((f) => (
@@ -53,11 +56,17 @@ export function VitalsTable({ completed, nurses }: VitalsTableProps) {
               >
                 <th
                   scope="row"
-                  className={`whitespace-nowrap px-5 py-3 font-semibold text-navy sm:pl-3 ${
+                  className={`whitespace-nowrap px-2 py-1 font-semibold sm:pl-0 ${
                     visit.flagged ? "border-l-4 border-coral" : "border-l-4 border-transparent"
                   }`}
                 >
-                  {completed.indexOf(visit) + 1} · {formatShortDate(visit.scheduledAt)}
+                  <Link
+                    href={routes.familyVisit(visit.id)}
+                    className="inline-flex min-h-11 items-center gap-1 rounded-lg px-3 text-navy underline decoration-teal decoration-2 underline-offset-4 hover:decoration-navy"
+                  >
+                    {completed.indexOf(visit) + 1} · {formatShortDate(visit.scheduledAt)}
+                    <ChevronRight aria-hidden className="size-4" />
+                  </Link>
                 </th>
                 {fields.map((f) => (
                   <td

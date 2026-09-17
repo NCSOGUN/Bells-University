@@ -23,11 +23,13 @@ import {
   visitNumber,
   visitsForElder,
 } from "@/lib/selectors";
+import { routes } from "@/lib/routes";
 import { ADHERENCE_LABEL } from "@/lib/vitals";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { RecordNotFound } from "@/components/ui/record-not-found";
 import { PageSkeleton } from "@/components/ui/skeleton";
+import { TextLink } from "@/components/ui/text-link";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { VisitOutcomeChip } from "../visit-outcome";
 import { VitalsGrid } from "../vitals-grid";
@@ -44,6 +46,7 @@ export function VisitDetailView({ visitId }: { visitId: string }) {
       <RecordNotFound
         title="We couldn't find this visit"
         message="The link may be out of date, or this visit isn't part of your care circle."
+        fallback={{ href: routes.familyDashboard, label: "Go to your dashboard" }}
       />
     );
   }
@@ -56,6 +59,9 @@ export function VisitDetailView({ visitId }: { visitId: string }) {
 
   return (
     <article className="space-y-6">
+      <TextLink href={routes.familyDashboard} direction="back" className="-mt-2">
+        Back to dashboard
+      </TextLink>
       <header>
         <p className="text-small">
           {familyTerm}&apos;s visit record · {elder.name}

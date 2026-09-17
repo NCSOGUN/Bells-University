@@ -17,7 +17,11 @@ export interface Elder {
   assignedNurseId: string;
   careStatus: CareStatus;
   careStatusMessage: string; // descriptive microcopy, per UX Addendum
+  nextBillingDate: string; // ISO — Journey doc step 6: "payment status/history"
+  paymentStatus: PaymentStatus;
 }
+
+export type PaymentStatus = "active" | "past_due";
 
 export interface Nurse {
   id: string;
@@ -64,7 +68,7 @@ export interface Plan {
   id: string;
   name: string;
   priceNGN: number;
-  visitsPerWeek: string;
+  visitsPerWeek: number; // display text is always derived from this, never typed
   features: string[];
 }
 
@@ -109,39 +113,22 @@ export const PLANS: Plan[] = [
     id: "essential",
     name: "Essential",
     priceNGN: 30000,
-    visitsPerWeek: "2 visits / week",
-    features: [
-      "2 nurse visits per week",
-      "Vitals check & medication reminder",
-      "WhatsApp update after each visit",
-      "Access to family dashboard",
-    ],
+    visitsPerWeek: 1,
+    features: ["Basic health checks", "Medication reminders"],
   },
   {
     id: "standard",
     name: "Standard",
     priceNGN: 55000,
-    visitsPerWeek: "4 visits / week",
-    features: [
-      "4 nurse visits per week",
-      "Full vitals & symptom tracking",
-      "Priority nurse matching",
-      "WhatsApp + dashboard updates",
-      "Monthly care summary call",
-    ],
+    visitsPerWeek: 2,
+    features: ["Full vitals & medication management", "24/7 emergency contact"],
   },
   {
     id: "live-in",
     name: "Live-In",
     priceNGN: 150000,
-    visitsPerWeek: "Daily, live-in care",
-    features: [
-      "Live-in nurse, 7 days a week",
-      "Continuous vitals monitoring",
-      "Immediate escalation on flagged readings",
-      "Dedicated care coordinator",
-      "Daily WhatsApp + dashboard updates",
-    ],
+    visitsPerWeek: 7,
+    features: ["Daily/live-in nurse", "Real-time dashboard", "Virtual doctor consults"],
   },
 ];
 
@@ -178,9 +165,18 @@ function daysFromNow(days: number, hour = 9, minute = 0): string {
 
 export const DEMO_TIME_ZONE = "Africa/Lagos";
 
+/** "Saturday" — the weekday of an ISO date, in Lagos. */
+function weekdayOf(iso: string): string {
+  return new Intl.DateTimeFormat("en-GB", { timeZone: DEMO_TIME_ZONE, weekday: "long" }).format(
+    new Date(iso),
+  );
+}
+
 const ELDER_JOSEPH_ID = "elder-joseph";
 
-const ELDERS: Elder[] = [
+// Joseph's status copy names the weekday of his flagged visit, so it is built
+// from that visit's date rather than written out.
+const buildElders = (josephFlaggedVisitAt: string): Elder[] => [
   {
     id: ELDER_JOSEPH_ID,
     name: "Joseph Okafor",
@@ -192,11 +188,12 @@ const ELDERS: Elder[] = [
       "Needs help remembering his blood pressure medication and someone to check on him since he lives alone.",
     conditions: ["Hypertension"],
     medications: ["Amlodipine 10mg, once daily"],
-    planId: "standard",
+    planId: "essential",
     assignedNurseId: NURSE_ADAEZE_ID,
     careStatus: "yellow",
-    careStatusMessage:
-      "Blood pressure was higher than usual on Monday. Nurse Adaeze is checking again this visit.",
+    careStatusMessage: `Blood pressure was higher than usual on ${weekdayOf(josephFlaggedVisitAt)}. Nurse Adaeze is checking again this visit.`,
+    nextBillingDate: daysFromNow(18),
+    paymentStatus: "active",
   },
   {
     id: "elder-bola",
@@ -212,6 +209,8 @@ const ELDERS: Elder[] = [
     assignedNurseId: NURSE_ADAEZE_ID,
     careStatus: "green",
     careStatusMessage: "Recovering well. Everything looked normal at the last visit.",
+    nextBillingDate: daysFromNow(9),
+    paymentStatus: "active",
   },
   {
     id: "elder-grace",
@@ -227,6 +226,8 @@ const ELDERS: Elder[] = [
     assignedNurseId: NURSE_ADAEZE_ID,
     careStatus: "green",
     careStatusMessage: "Blood sugar has stayed within range all week.",
+    nextBillingDate: daysFromNow(22),
+    paymentStatus: "active",
   },
   {
     id: "elder-ibrahim",
@@ -242,6 +243,8 @@ const ELDERS: Elder[] = [
     assignedNurseId: NURSE_ADAEZE_ID,
     careStatus: "yellow",
     careStatusMessage: "Missed one dose of medication this week. Nurse Adaeze is following up.",
+    nextBillingDate: daysFromNow(4),
+    paymentStatus: "active",
   },
   {
     id: "elder-funmi",
@@ -257,6 +260,8 @@ const ELDERS: Elder[] = [
     assignedNurseId: "",
     careStatus: "green",
     careStatusMessage: "Awaiting first visit.",
+    nextBillingDate: daysFromNow(30),
+    paymentStatus: "active",
   },
 ];
 
@@ -422,7 +427,7 @@ const FAMILY_ACCOUNT: FamilyAccount = {
   name: "Grace Okafor",
   phone: "+2348031234567",
   relationship: "Daughter",
-  planId: "standard",
+  planId: "essential",
   elderIds: [ELDER_JOSEPH_ID],
   sponsor: {
     name: "Emeka Okafor",
@@ -443,11 +448,15 @@ const buildAssignmentRequests = (): AssignmentRequest[] => [
 
 /** Fresh, independent copy of the seed, with dates relative to today. */
 export function createSeedState(): DemoState {
+  const josephVisits = buildJosephVisits();
+  const flagged = josephVisits.find((v) => v.flagged);
+  if (!flagged) throw new Error("Seed invariant: Joseph's history must include a flagged visit");
+
   return structuredClone({
     familyAccount: FAMILY_ACCOUNT,
-    elders: ELDERS,
+    elders: buildElders(flagged.scheduledAt),
     nurses: NURSES,
-    visits: [...buildJosephVisits(), ...buildTodayVisits()],
+    visits: [...josephVisits, ...buildTodayVisits()],
     plans: PLANS,
     assignmentRequests: buildAssignmentRequests(),
   });

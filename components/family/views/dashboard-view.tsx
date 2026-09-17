@@ -12,7 +12,9 @@ import {
   nextScheduledVisit,
   visitsForElder,
 } from "@/lib/selectors";
+import { routes } from "@/lib/routes";
 import { PrimaryButtonLink } from "@/components/ui/button-link";
+import { TextLink } from "@/components/ui/text-link";
 import { RecordNotFound } from "@/components/ui/record-not-found";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { CareStatusPanel } from "../care-status";
@@ -60,6 +62,9 @@ export function DashboardView() {
             Hello, {firstName(account.name)} · {familyTerm}&apos;s care
           </p>
           <h1 className="text-h2 font-semibold">{elder.name}</h1>
+          <TextLink href={routes.familyElder(elder.id)} className="text-small">
+            View {familyTerm}&apos;s profile and readings
+          </TextLink>
         </div>
         <FamilyAvatars account={account} />
       </div>
@@ -98,7 +103,12 @@ export function DashboardView() {
         <div className="space-y-6">
           {nurse && <NurseCard nurse={nurse} title={`${familyTerm}'s nurse`} />}
           <FamilyCircleCard account={account} familyTerm={familyTerm} />
-          <PlanSummaryCard plan={findPlan(state, elder.planId)} sponsor={account.sponsor} />
+          <PlanSummaryCard
+            plan={findPlan(state, elder.planId)}
+            nextBillingDate={elder.nextBillingDate}
+            paymentStatus={elder.paymentStatus}
+            sponsor={account.sponsor}
+          />
         </div>
       </div>
     </div>

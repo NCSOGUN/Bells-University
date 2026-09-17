@@ -4,7 +4,9 @@ import { MapPin } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
 import { familyTermFor } from "@/lib/format";
 import { completedVisits, findElder, findNurse, isFamilyElder, visitsForElder } from "@/lib/selectors";
+import { routes } from "@/lib/routes";
 import { Card } from "@/components/ui/card";
+import { TextLink } from "@/components/ui/text-link";
 import { RecordNotFound } from "@/components/ui/record-not-found";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { BpTrendChart } from "../bp-trend-chart";
@@ -22,6 +24,7 @@ export function ElderProfileView({ elderId }: { elderId: string }) {
       <RecordNotFound
         title="We couldn't find this profile"
         message="The link may be out of date, or this person isn't part of your care circle."
+        fallback={{ href: routes.familyDashboard, label: "Go to your dashboard" }}
       />
     );
   }
@@ -32,6 +35,9 @@ export function ElderProfileView({ elderId }: { elderId: string }) {
 
   return (
     <div className="space-y-6">
+      <TextLink href={routes.familyDashboard} direction="back" className="-mt-2">
+        Back to dashboard
+      </TextLink>
       <header>
         <p className="text-small">{familyTerm}&apos;s profile</p>
         <h1 className="mt-1 text-display font-bold">{elder.name}</h1>
@@ -82,7 +88,10 @@ export function ElderProfileView({ elderId }: { elderId: string }) {
         <BpTrendChart completed={completed} />
       </Card>
 
-      <Card title="Every reading" description="Recorded by the nurse at each visit">
+      <Card
+        title="Every reading"
+        description="Recorded by the nurse at each visit. Choose a visit to see the full record."
+      >
         <VitalsTable completed={completed} nurses={state.nurses} />
       </Card>
     </div>
