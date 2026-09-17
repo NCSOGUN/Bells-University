@@ -4,6 +4,7 @@ import { formatTime, formatVisitsPerWeek } from "@/lib/format";
 import type { Elder, Plan } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
 import type { TodayVisit, TodayVisitState } from "@/lib/selectors";
+import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip, type ChipTone } from "@/components/ui/chip";
 import { TextLink } from "@/components/ui/text-link";
@@ -62,12 +63,17 @@ export function TodaysVisits({ visits, elders, plans, newClients, highlightId }:
               </h3>
 
               {state === "complete" ? (
-                <p className="mt-1 text-small">
-                  {visit.checkInAt && `Checked in ${formatTime(visit.checkInAt)}`}
-                  {visit.checkOutAt && `, out ${formatTime(visit.checkOutAt)}`}
-                  {visit.gpsConfirmed && " · GPS confirmed"}
-                  {visit.vitals && ` · BP ${visit.vitals.bloodPressure} mmHg`}
-                </p>
+                <>
+                  <p className="mt-1 text-small">
+                    {visit.checkInAt && `Checked in ${formatTime(visit.checkInAt)}`}
+                    {visit.checkOutAt && `, out ${formatTime(visit.checkOutAt)}`}
+                    {visit.gpsConfirmed ? " · GPS confirmed" : " · no GPS fix"}
+                    {visit.vitals && ` · BP ${visit.vitals.bloodPressure} mmHg`}
+                  </p>
+                  <TextLink href={routes.nurseVisitComplete(visit.id)} className="text-small">
+                    Visit summary
+                  </TextLink>
+                </>
               ) : (
                 <div className="mt-2 space-y-2">
                   <p className="flex items-start gap-1.5 text-small">
@@ -85,7 +91,14 @@ export function TodaysVisits({ visits, elders, plans, newClients, highlightId }:
                     </div>
                   )}
                   {upNext && (
-                    <TextLink href={routes.nurseClient(elder.id)}>Review client record before you go</TextLink>
+                    <div className="flex flex-col gap-1 pt-1 sm:flex-row sm:items-center sm:gap-4">
+                      {state === "in_progress" ? (
+                        <ButtonLink href={routes.nurseVisitChecklist(visit.id)}>Continue visit</ButtonLink>
+                      ) : (
+                        <ButtonLink href={routes.nurseVisitStart(visit.id)}>Start visit</ButtonLink>
+                      )}
+                      <TextLink href={routes.nurseClient(elder.id)}>Review client record</TextLink>
+                    </div>
                   )}
                 </div>
               )}

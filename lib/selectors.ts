@@ -1,6 +1,6 @@
 import { daysFromToday } from "./format";
 import {
-  NURSE_PAY_PER_VISIT_NGN,
+  EARNINGS_PER_VISIT_NGN,
   type AssignmentRequest,
   type DemoState,
   type Elder,
@@ -122,5 +122,5 @@ export function assignmentsForNurse(state: DemoState, nurseId: string): Assignme
 /** Pay for every visit the nurse has completed, at the per-visit rate. */
 export function nurseEarnings(state: DemoState, nurseId: string): { visits: number; amount: number } {
   const visits = state.visits.filter((v) => v.nurseId === nurseId && v.status === "complete").length;
-  return { visits, amount: visits * NURSE_PAY_PER_VISIT_NGN };
+  return { visits, amount: visits * EARNINGS_PER_VISIT_NGN };
 }

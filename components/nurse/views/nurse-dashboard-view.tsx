@@ -6,7 +6,7 @@ import { ChevronRight, Users, Wallet } from "lucide-react";
 import { acceptAssignment, declineAssignment } from "@/lib/assignments";
 import { useDemo } from "@/lib/demo-context";
 import { firstName, formatLongDate, formatNaira } from "@/lib/format";
-import { DEMO_NURSE_ID, NURSE_PAY_PER_VISIT_NGN } from "@/lib/mock-data";
+import { DEMO_NURSE_ID, EARNINGS_PER_VISIT_NGN } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
 import {
   assignmentsForNurse,
@@ -80,7 +80,10 @@ export function NurseDashboardView() {
           <AssignmentRequests assignments={assignments} recent={recent} onAccept={accept} onDecline={decline} />
 
           <section aria-label="Your work so far" className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-line bg-surface p-4">
+            <Link
+              href={routes.nurseEarnings}
+              className="rounded-2xl border border-line bg-surface p-4 transition-[border-color,transform] duration-150 hover:-translate-y-px hover:border-teal"
+            >
               <p className="flex items-center gap-1.5 text-small">
                 <Wallet aria-hidden className="size-4 text-navy" />
                 Earned to date
@@ -89,12 +92,16 @@ export function NurseDashboardView() {
                 {formatNaira(earnings.amount)}
               </p>
               <p className="text-small">
-                {earnings.visits} visits × {formatNaira(NURSE_PAY_PER_VISIT_NGN)}
+                {earnings.visits} visits × {formatNaira(EARNINGS_PER_VISIT_NGN)}
               </p>
-            </div>
+              <p className="mt-1 inline-flex items-center gap-0.5 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4">
+                See earnings
+                <ChevronRight aria-hidden className="size-4" />
+              </p>
+            </Link>
             <Link
               href={routes.nurseClients}
-              className="group rounded-2xl border border-line bg-surface p-4 transition-[border-color,transform] duration-150 hover:-translate-y-px hover:border-teal"
+              className="rounded-2xl border border-line bg-surface p-4 transition-[border-color,transform] duration-150 hover:-translate-y-px hover:border-teal"
             >
               <p className="flex items-center gap-1.5 text-small">
                 <Users aria-hidden className="size-4 text-navy" />

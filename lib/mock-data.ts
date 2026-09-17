@@ -1,7 +1,9 @@
 // Single source of truth for demo data. Nothing here talks to a backend —
 // see DEMO-SPEC.md §5. Every screen reads from the state this file seeds.
 
+import type { NurseOnboardingDraft } from "./nurse-onboarding";
 import type { OnboardingDraft } from "./onboarding";
+import type { VisitWorkflow } from "./visit-flow";
 
 export type CareStatus = "green" | "yellow" | "red";
 
@@ -62,6 +64,7 @@ export interface Visit {
   mobilityNote?: string;
   wellbeingNote?: string;
   nurseNotes?: string;
+  checkOutGpsConfirmed?: boolean; // location at check-out, when the visit ends
   flagged: boolean; // drives Yellow/Red status
   flagReason?: string;
 }
@@ -110,6 +113,10 @@ export interface DemoState {
   assignmentRequests: AssignmentRequest[];
   /** What a visitor typed into the F1–F7 flow. Never turned into records above. */
   onboarding: OnboardingDraft;
+  /** What a visitor typed into the N1–N5 flow. Never turned into a Nurse record. */
+  nurseOnboarding: NurseOnboardingDraft;
+  /** In-progress visit reports, keyed by the existing Visit id. */
+  visitWorkflows: Record<string, VisitWorkflow>;
 }
 
 export const PLANS: Plan[] = [
@@ -143,7 +150,7 @@ export const DEMO_NURSE_ID = NURSE_ADAEZE_ID;
 
 // Per-visit pay behind the deck's earning maths (spec §7, N1):
 // 4 clients × 4 visits a month = ₦80,000.
-export const NURSE_PAY_PER_VISIT_NGN = 80_000 / (4 * 4);
+export const EARNINGS_PER_VISIT_NGN = 80_000 / (4 * 4);
 
 const NURSES: Nurse[] = [
   {
@@ -506,5 +513,7 @@ export function createSeedState(): DemoState {
     plans: PLANS,
     assignmentRequests: buildAssignmentRequests(),
     onboarding: {},
+    nurseOnboarding: {},
+    visitWorkflows: {},
   });
 }

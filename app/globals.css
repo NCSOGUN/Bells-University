@@ -37,6 +37,7 @@
   --animate-tick-in: tick-in 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   --animate-highlight: highlight 300ms ease-out;
   --animate-reveal: reveal 200ms ease-out both;
+  --animate-progress: progress 1200ms linear both;
 
   @keyframes tick-in {
     from {
@@ -46,6 +47,12 @@
     to {
       transform: scale(1);
       opacity: 1;
+    }
+  }
+
+  @keyframes progress {
+    from {
+      transform: scaleX(0);
     }
   }
 
