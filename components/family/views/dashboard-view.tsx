@@ -15,6 +15,8 @@ import {
 } from "@/lib/selectors";
 import { routes } from "@/lib/routes";
 import { PrimaryButtonLink } from "@/components/ui/button-link";
+import { Card } from "@/components/ui/card";
+import { WhatsAppMark } from "@/components/ui/whatsapp-mark";
 import { TextLink } from "@/components/ui/text-link";
 import { RecordNotFound } from "@/components/ui/record-not-found";
 import { PageSkeleton } from "@/components/ui/skeleton";
@@ -101,11 +103,19 @@ export function DashboardView() {
             familyTerm={familyTerm}
           />
           <VisitHistoryList completed={completed} nurses={state.nurses} familyTerm={familyTerm} />
-          <TextLink href={routes.familyWhatsApp}>See the update as the family received it</TextLink>
         </div>
         <div className="space-y-6">
           {nurse && <NurseCard nurse={nurse} title={`${familyTerm}'s nurse`} />}
           <FamilyCircleCard account={account} familyTerm={familyTerm} />
+          <Card title="Updates on WhatsApp">
+            <p className="flex items-start gap-2">
+              <WhatsAppMark className="mt-0.5 size-5" />
+              After every visit we message you the readings and the nurse&apos;s note.
+            </p>
+            <TextLink href={routes.familyWhatsApp} className="mt-1">
+              See the update as the family received it
+            </TextLink>
+          </Card>
           <PlanSummaryCard
             plan={findPlan(state, elder.planId)}
             nextBillingDate={elder.nextBillingDate}
