@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { CARE_STATUS_COPY } from "@/lib/care-status";
 import { EXAMPLE_VISITS_PER_CLIENT, monthlyEarningsFor } from "@/lib/earnings";
-import { formatNaira, formatVisitsPerWeek, nurseShortName } from "@/lib/format";
+import { formatNaira, planFrequency, nurseShortName } from "@/lib/format";
 import { PLANS, createSeedState } from "@/lib/mock-data";
 import { SERVICE_CITIES } from "@/lib/onboarding";
 import { routes } from "@/lib/routes";
@@ -267,7 +267,7 @@ export default function LandingPage() {
             <h2 className="text-h1 font-bold sm:text-display">Start with one visit a week</h2>
             <p className="mx-auto mt-3 max-w-xl">
               {cheapest.name} is {formatNaira(cheapest.priceNGN)} a month for{" "}
-              {formatVisitsPerWeek(cheapest.visitsPerWeek)}. Choose a plan, tell us about your parent, and
+              {planFrequency(cheapest)}. Choose a plan, tell us about your parent, and
               we&apos;ll match a nurse near them.
             </p>
             <div className="mt-6 flex justify-center">

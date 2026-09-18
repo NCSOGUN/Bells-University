@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Check, Loader2, MapPin, Undo2 } from "lucide-react";
 import { DECLINE_REASONS, type DeclineReason } from "@/lib/assignments";
-import { formatRelativeDay, formatTime, formatVisitsPerWeek } from "@/lib/format";
+import { formatRelativeDay, formatTime, planFrequency } from "@/lib/format";
 import type { AssignmentRequest, Elder, Plan } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
 import { Card } from "@/components/ui/card";
@@ -100,7 +100,7 @@ function PendingRequest({
             <div>
               <dt className="font-semibold text-navy">Plan</dt>
               <dd>
-                {plan.name}, {formatVisitsPerWeek(plan.visitsPerWeek)}
+                {plan.name}, {planFrequency(plan)}
               </dd>
             </div>
           )}

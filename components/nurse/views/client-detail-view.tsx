@@ -2,7 +2,7 @@
 
 import { MapPin } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
-import { formatShortDate, formatVisitsPerWeek } from "@/lib/format";
+import { formatShortDate, planFrequency } from "@/lib/format";
 import { DEMO_NURSE_ID } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
 import {
@@ -69,7 +69,7 @@ export function ClientDetailView({ elderId }: { elderId: string }) {
             <CareStatusChip status={elder.careStatus} />
             {plan && (
               <Chip>
-                {plan.name} · {formatVisitsPerWeek(plan.visitsPerWeek)}
+                {plan.name} · {planFrequency(plan)}
               </Chip>
             )}
             <Chip>
@@ -86,7 +86,7 @@ export function ClientDetailView({ elderId }: { elderId: string }) {
           {plan ? (
             <>
               <p className="font-semibold text-navy">
-                {plan.name} · {formatVisitsPerWeek(plan.visitsPerWeek)}
+                {plan.name} · {planFrequency(plan)}
               </p>
               <ul className="mt-2 list-disc space-y-1 pl-5">
                 {plan.features.map((f) => (

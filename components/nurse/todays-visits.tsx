@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MapPin, UserPlus } from "lucide-react";
-import { formatTime, formatVisitsPerWeek } from "@/lib/format";
+import { formatTime, planFrequency } from "@/lib/format";
 import type { Elder, Plan } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
 import type { TodayVisit, TodayVisitState } from "@/lib/selectors";
@@ -82,7 +82,7 @@ export function TodaysVisits({ visits, elders, plans, newClients, highlightId }:
                   </p>
                   <p className="text-small">
                     {elder.conditions.join(", ")}
-                    {plan && ` · ${plan.name}, ${formatVisitsPerWeek(plan.visitsPerWeek)}`}
+                    {plan && ` · ${plan.name}, ${planFrequency(plan)}`}
                   </p>
                   {(upNext || elder.careStatus !== "green") && (
                     <div className="flex flex-wrap items-start gap-2">

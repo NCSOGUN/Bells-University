@@ -1,4 +1,4 @@
-import { DEMO_TIME_ZONE } from "./mock-data";
+import { DEMO_TIME_ZONE, type Plan } from "./mock-data";
 
 // All display formatting is pinned to Lagos time so server and browser agree
 // and a family member abroad sees the time the visit happened locally.
@@ -91,9 +91,14 @@ export function minutesBetween(startIso: string, endIso: string): number {
   return Math.round((new Date(endIso).getTime() - new Date(startIso).getTime()) / 60_000);
 }
 
-/** "1 visit/week", "2 visits/week" */
+/** "1 visit per week", "2 visits per week" */
 export function formatVisitsPerWeek(count: number): string {
-  return `${count} ${count === 1 ? "visit" : "visits"}/week`;
+  return `${count} ${count === 1 ? "visit" : "visits"} per week`;
+}
+
+/** How often a plan visits: its own wording where it has one, else the count. */
+export function planFrequency(plan: Plan): string {
+  return plan.frequencyLabel ?? formatVisitsPerWeek(plan.visitsPerWeek);
 }
 
 /** "₦55,000" */

@@ -2,7 +2,7 @@
 
 import { Bell, ClipboardCheck, DoorOpen } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
-import { firstName, formatNaira, formatVisitsPerWeek, nurseShortName } from "@/lib/format";
+import { firstName, formatNaira, planFrequency, nurseShortName } from "@/lib/format";
 import { formatPhone, matchedNurseFor } from "@/lib/onboarding";
 import { routes } from "@/lib/routes";
 import { findElder, findPlan } from "@/lib/selectors";
@@ -48,7 +48,7 @@ export function ConfirmedStep() {
           <div className="flex justify-between gap-4 p-4">
             <dt>Plan</dt>
             <dd className="text-right font-semibold text-navy">
-              {plan.name}, {formatVisitsPerWeek(plan.visitsPerWeek)}
+              {plan.name}, {planFrequency(plan)}
             </dd>
           </div>
         )}

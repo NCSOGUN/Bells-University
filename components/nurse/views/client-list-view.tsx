@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
 import { useFirstLoad } from "@/lib/use-first-load";
-import { formatVisitWhen, formatVisitsPerWeek } from "@/lib/format";
+import { formatVisitWhen, planFrequency } from "@/lib/format";
 import { DEMO_NURSE_ID } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
 import { completedVisits, findPlan, nurseClients, visitsForElder } from "@/lib/selectors";
@@ -60,7 +60,7 @@ export function ClientListView() {
                     <dl className="contents text-small">
                       <div>
                         <dt className="font-semibold text-navy">Plan</dt>
-                        <dd>{plan ? `${plan.name}, ${formatVisitsPerWeek(plan.visitsPerWeek)}` : "No plan"}</dd>
+                        <dd>{plan ? `${plan.name}, ${planFrequency(plan)}` : "No plan"}</dd>
                       </div>
                       <div>
                         <dt className="font-semibold text-navy">Last visit</dt>

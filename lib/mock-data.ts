@@ -73,7 +73,9 @@ export interface Plan {
   id: string;
   name: string;
   priceNGN: number;
-  visitsPerWeek: number; // display text is always derived from this, never typed
+  visitsPerWeek: number; // display text is derived from this unless frequencyLabel is set
+  /** For plans the weekly count doesn't describe, e.g. "Daily or live-in". */
+  frequencyLabel?: string;
   features: string[];
 }
 
@@ -125,21 +127,22 @@ export const PLANS: Plan[] = [
     name: "Essential",
     priceNGN: 40000,
     visitsPerWeek: 1,
-    features: ["Basic health checks", "Medication reminders"],
+    features: ["Vitals check", "Medication reminders", "Weekly WhatsApp report"],
   },
   {
     id: "standard",
     name: "Standard",
     priceNGN: 77000,
     visitsPerWeek: 2,
-    features: ["Full vitals & medication management", "24/7 emergency contact"],
+    features: ["Full vitals & medication management", "Twice-weekly reports", "Priority nurse matching"],
   },
   {
     id: "live-in",
     name: "Live-In",
     priceNGN: 150000,
     visitsPerWeek: 7,
-    features: ["Daily/live-in nurse", "Real-time dashboard", "Virtual doctor consults"],
+    frequencyLabel: "Daily or live-in",
+    features: ["Daily care & companionship", "Real-time family updates", "Dedicated nurse"],
   },
 ];
 

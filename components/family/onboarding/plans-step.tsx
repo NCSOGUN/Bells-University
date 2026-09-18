@@ -2,7 +2,7 @@
 
 import { Check } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
-import { formatNaira, formatVisitsPerWeek } from "@/lib/format";
+import { formatNaira, planFrequency } from "@/lib/format";
 import { patchOnboarding } from "@/lib/onboarding";
 import { routes } from "@/lib/routes";
 import { findPlan } from "@/lib/selectors";
@@ -51,7 +51,7 @@ function PlanPicker() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-display text-h2 font-semibold text-navy">{plan.name}</p>
-                    <p className="mt-0.5 font-medium text-navy">{formatVisitsPerWeek(plan.visitsPerWeek)}</p>
+                    <p className="mt-0.5 font-medium text-navy">{planFrequency(plan)}</p>
                   </div>
                   <div className="flex items-start gap-3">
                     <p className="text-right">

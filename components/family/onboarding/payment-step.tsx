@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Globe, Lock } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
-import { formatLongDate, formatNaira, formatVisitsPerWeek } from "@/lib/format";
+import { formatLongDate, formatNaira, planFrequency } from "@/lib/format";
 import {
   CROSS_BORDER_FEE,
   INDICATIVE_NGN_PER,
@@ -88,7 +88,7 @@ function Checkout() {
         <h2 id="order-heading" className="text-h2 font-semibold">
           {plan.name} plan
         </h2>
-        <p className="mt-0.5">{formatVisitsPerWeek(plan.visitsPerWeek)}, billed monthly</p>
+        <p className="mt-0.5">{planFrequency(plan)}, billed monthly</p>
 
         <dl className="mt-4 space-y-2 border-t border-line pt-4">
           <div className="flex justify-between gap-4">
@@ -223,7 +223,7 @@ function Receipt() {
               {formatNaira(payment.amountNGN)} paid
             </p>
             <p className="text-navy">
-              {plan.name} plan, {formatVisitsPerWeek(plan.visitsPerWeek)}
+              {plan.name} plan, {planFrequency(plan)}
             </p>
           </div>
         </div>
