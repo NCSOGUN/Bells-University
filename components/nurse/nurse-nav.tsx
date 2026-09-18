@@ -7,6 +7,7 @@ import { routes } from "@/lib/routes";
 const LINKS = [
   { href: routes.nurseDashboard, label: "Today", matches: (path: string) => path === routes.nurseDashboard },
   { href: routes.nurseClients, label: "Clients", matches: (path: string) => path.startsWith(routes.nurseClients) },
+  { href: routes.nurseEarnings, label: "Earnings", matches: (path: string) => path === routes.nurseEarnings },
 ];
 
 export function NurseNav() {
@@ -22,7 +23,7 @@ export function NurseNav() {
               <Link
                 href={link.href}
                 aria-current={active ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-xl px-3 font-semibold text-navy transition-colors duration-150 ${
+                className={`inline-flex min-h-11 items-center rounded-xl px-2.5 text-small font-semibold text-navy transition-colors duration-150 sm:px-3 sm:text-body ${
                   active ? "bg-teal-tint" : "hover:bg-bg"
                 }`}
               >

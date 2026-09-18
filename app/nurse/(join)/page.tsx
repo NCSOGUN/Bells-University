@@ -35,7 +35,7 @@ export default function NurseLandingPage() {
           </ButtonLink>
         </div>
         <TextLink href={routes.nurseDashboard} className="mt-2 text-small">
-          Already a CareCircle nurse? Go to today&apos;s visits
+          Already with CareCircle? Open your dashboard
         </TextLink>
       </section>
 

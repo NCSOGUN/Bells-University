@@ -9,7 +9,7 @@ export default function NurseWorkspaceLayout({ children }: { children: ReactNode
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
           <Link href="/" className="font-display text-h2 font-bold text-navy">
             Care<span className="text-teal">Circle</span>
-            <span className="ml-2 align-middle font-sans text-label font-semibold text-ink">Nurse</span>
+            <span className="ml-2 hidden align-middle font-sans text-label font-semibold text-ink sm:inline">Nurse</span>
           </Link>
           <NurseNav />
         </div>
