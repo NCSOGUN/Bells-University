@@ -38,6 +38,7 @@
   --animate-highlight: highlight 300ms ease-out;
   --animate-reveal: reveal 200ms ease-out both;
   --animate-progress: progress 1200ms linear both;
+  --animate-shimmer: shimmer 1400ms ease-in-out infinite;
 
   @keyframes tick-in {
     from {
@@ -47,6 +48,12 @@
     to {
       transform: scale(1);
       opacity: 1;
+    }
+  }
+
+  @keyframes shimmer {
+    to {
+      background-position: -200% 0;
     }
   }
 
@@ -71,8 +78,27 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-bg font-sans text-body text-ink antialiased;
+  }
+
+  /* Headings break on sense rather than leaving one word alone on a line. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    @apply bg-teal-tint text-navy;
   }
 
   h1,

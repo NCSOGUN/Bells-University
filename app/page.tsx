@@ -83,7 +83,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main>
+      <main id="main-content">
         <section className="relative overflow-hidden">
           <div
             aria-hidden
@@ -129,22 +129,23 @@ export default function LandingPage() {
             </div>
 
             <div className="lg:order-1">
-              <h1 className="text-display font-bold sm:text-[46px] sm:leading-[52px]">
+              {/* One quiet entrance on the hero only, not section by section. */}
+              <h1 className="text-display font-bold motion-safe:animate-reveal sm:text-[46px] sm:leading-[52px]">
                 Someone checks on your parents. You hear about it the same day.
               </h1>
-              <p className="mt-4 max-w-prose text-[17px] leading-7">
+              <p className="mt-4 max-w-prose text-[17px] leading-7 motion-safe:animate-reveal [animation-delay:80ms]">
                 CareCircle sends a verified nurse to your mum or dad at home in {cities}, then tells you how
                 they are, what was recorded, and when the next visit is. Wherever you live.
               </p>
 
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-7 flex flex-col gap-3 motion-safe:animate-reveal [animation-delay:160ms] sm:flex-row">
                 <ButtonLink href={routes.familyPlans}>Get care for a loved one</ButtonLink>
                 <ButtonLink href="#how-it-works" variant="secondary">
                   See how it works
                 </ButtonLink>
               </div>
 
-              <ul className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3 text-small">
+              <ul className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3 text-small motion-safe:animate-reveal [animation-delay:240ms]">
                 <li>
                   <VerifiedBadge />
                 </li>
@@ -301,7 +302,7 @@ export default function LandingPage() {
             ]}
           />
         </div>
-        <div className="mx-auto max-w-6xl px-4 pb-10 sm:px-6">
+        <div className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
           <p className="border-t border-line pt-6 text-small">
             A working demo. No payments are taken, no messages are sent, and every name and reading is sample
             data. Use the Demo button to jump between screens.

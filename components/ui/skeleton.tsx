@@ -1,5 +1,9 @@
 function Block({ className }: { className: string }) {
-  return <div className={`rounded-2xl bg-line/70 ${className}`} />;
+  return (
+    <div
+      className={`rounded-2xl bg-line/70 bg-[linear-gradient(100deg,transparent_20%,rgba(255,255,255,0.65)_40%,transparent_60%)] bg-[length:200%_100%] motion-safe:animate-shimmer ${className}`}
+    />
+  );
 }
 
 /** Placeholder shown until saved demo state has been read in the browser. */

@@ -123,14 +123,14 @@ export const PLANS: Plan[] = [
   {
     id: "essential",
     name: "Essential",
-    priceNGN: 30000,
+    priceNGN: 40000,
     visitsPerWeek: 1,
     features: ["Basic health checks", "Medication reminders"],
   },
   {
     id: "standard",
     name: "Standard",
-    priceNGN: 55000,
+    priceNGN: 77000,
     visitsPerWeek: 2,
     features: ["Full vitals & medication management", "24/7 emergency contact"],
   },

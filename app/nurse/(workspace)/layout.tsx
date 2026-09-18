@@ -15,7 +15,7 @@ export default function NurseWorkspaceLayout({ children }: { children: ReactNode
         </div>
       </header>
       {/* Bottom padding keeps content clear of the fixed "Reset demo" control. */}
-      <main className="mx-auto max-w-5xl px-4 pt-6 pb-24 sm:px-6 sm:pt-10">{children}</main>
+      <main id="main-content" className="mx-auto max-w-5xl px-4 pt-6 pb-24 sm:px-6 sm:pt-10">{children}</main>
     </div>
   );
 }
