@@ -2,6 +2,7 @@
 
 import { ArrowDown } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
+import { useFirstLoad } from "@/lib/use-first-load";
 import { familyTermFor, firstName, formatRelativeDay, formatTime, nurseShortName } from "@/lib/format";
 import {
   completedVisits,
@@ -27,7 +28,8 @@ import { VisitHistoryList } from "../visit-history-list";
 
 export function DashboardView() {
   const { state, hydrated } = useDemo();
-  if (!hydrated) return <PageSkeleton />;
+  const loaded = useFirstLoad("family-dashboard");
+  if (!hydrated || !loaded) return <PageSkeleton />;
 
   const account = state.familyAccount;
   const elder = findElder(state, account.elderIds[0]);

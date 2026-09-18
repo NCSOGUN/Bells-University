@@ -52,9 +52,12 @@ function ExampleUpdate({ className = "" }: { className?: string }) {
         <WhatsAppMark className="size-4" />
         Example update on WhatsApp
       </p>
-      <div className="mt-2 rounded-xl rounded-tl-sm bg-teal-tint p-3 text-small text-navy">
-        <CareStatusChip status="green" />
-        <p className="mt-2">
+      {/* §4.3: the parts of the message arrive 150ms apart, like a real one. */}
+      <div className="mt-2 rounded-xl rounded-tl-sm bg-teal-tint p-3 text-small text-navy motion-safe:animate-reveal">
+        <span className="block motion-safe:animate-reveal [animation-delay:150ms]">
+          <CareStatusChip status="green" />
+        </span>
+        <p className="mt-2 motion-safe:animate-reveal [animation-delay:300ms]">
           {nurse} has finished today&apos;s visit with Mum. Her blood pressure and pulse are in her usual
           range, and she&apos;s taken her medication.
         </p>

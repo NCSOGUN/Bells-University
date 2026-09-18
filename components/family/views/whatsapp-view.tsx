@@ -74,7 +74,11 @@ export function WhatsAppView() {
           ) : (
             <ol className="space-y-3 p-3 sm:p-4">
               {messages.map((message, i) => (
-                <li key={message.id}>
+                <li
+                  key={message.id}
+                  className="motion-safe:animate-reveal"
+                  style={{ animationDelay: `${i * 150}ms` }}
+                >
                   {showDaySeparator(messages, i) && (
                     <p className="mb-3 text-center">
                       <span className="rounded-full bg-surface px-3 py-1 text-label font-semibold text-ink capitalize">

@@ -13,8 +13,8 @@ import { Card } from "@/components/ui/card";
 import { CareStatusChip } from "../care-status-chip";
 import { VisitFrame, type VisitContext } from "./visit-frame";
 
-// Long enough to read "Confirming your location…", short enough not to drag.
-const GPS_MS = 1500;
+// §4.3: about a second of "confirming location…" before the note appears.
+const GPS_MS = 1000;
 
 export function StartVisitStep({ visitId }: { visitId: string }) {
   return (

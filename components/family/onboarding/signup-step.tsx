@@ -47,11 +47,22 @@ export function SignupStep() {
 
 function DetailsForm({ account }: { account?: AccountDraft }) {
   const { update } = useDemo();
-  const { after } = useTimers();
+  const { after, cancelAll } = useTimers();
   const [name, setName] = useState(account?.name ?? "");
   const [phone, setPhone] = useState(account ? formatPhone(account.phone) : "");
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
   const [sending, setSending] = useState(false);
+
+  const sendNow = () => {
+    const normalised = normalisePhone(phone);
+    if (!normalised) return;
+    cancelAll();
+    update((prev) =>
+      patchOnboarding(prev, {
+        account: { name: name.trim(), phone: normalised, codeSentAt: new Date().toISOString(), codeChannel: "sms" },
+      }),
+    );
+  };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -123,6 +134,17 @@ function DetailsForm({ account }: { account?: AccountDraft }) {
       <Button type="submit" loading={sending} loadingText="Sending code…" className="w-full">
         Send code
       </Button>
+      {sending && (
+        <p className="text-center">
+          <button
+            type="button"
+            onClick={sendNow}
+            className="inline-flex min-h-11 items-center px-2 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4"
+          >
+            Skip
+          </button>
+        </p>
+      )}
     </form>
   );
 }

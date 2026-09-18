@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronRight, Users, Wallet } from "lucide-react";
 import { acceptAssignment, declineAssignment } from "@/lib/assignments";
 import { useDemo } from "@/lib/demo-context";
+import { useFirstLoad } from "@/lib/use-first-load";
 import { firstName, formatLongDate, formatNaira } from "@/lib/format";
 import { DEMO_NURSE_ID, EARNINGS_PER_VISIT_NGN } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
@@ -17,25 +18,27 @@ import {
   nurseEarnings,
   todaysVisits,
 } from "@/lib/selectors";
+import { Highlight } from "@/components/ui/highlight";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { AssignmentRequests, type AssignmentView } from "../assignment-requests";
 import { TodaysVisits } from "../todays-visits";
 
 // §4.3: accepting is optimistic, the client moves into today's work at once,
-// and the confirmation lands shortly after.
-const ACCEPT_CONFIRM_MS = 600;
+// and the confirmation lands shortly after. Declining confirms on the same beat.
+const CONFIRM_MS = 600;
 
 export function NurseDashboardView() {
   const { state, hydrated, update } = useDemo();
   const [recent, setRecent] = useState<{ id: string; confirmed: boolean }>();
+  const loaded = useFirstLoad("nurse-dashboard");
 
   useEffect(() => {
     if (!recent || recent.confirmed) return;
-    const timer = setTimeout(() => setRecent({ ...recent, confirmed: true }), ACCEPT_CONFIRM_MS);
+    const timer = setTimeout(() => setRecent({ ...recent, confirmed: true }), CONFIRM_MS);
     return () => clearTimeout(timer);
   }, [recent]);
 
-  if (!hydrated) return <PageSkeleton />;
+  if (!hydrated || !loaded) return <PageSkeleton />;
 
   const nurse = findNurse(state, DEMO_NURSE_ID);
   const visits = todaysVisits(state, DEMO_NURSE_ID);
@@ -57,7 +60,7 @@ export function NurseDashboardView() {
   };
   const decline = (requestId: string, reason: string) => {
     update((prev) => declineAssignment(prev, requestId, reason));
-    setRecent({ id: requestId, confirmed: true });
+    setRecent({ id: requestId, confirmed: false });
   };
 
   return (
@@ -89,7 +92,7 @@ export function NurseDashboardView() {
                 Earned to date
               </p>
               <p className="mt-1 font-display text-h2 font-semibold tabular-nums text-navy">
-                {formatNaira(earnings.amount)}
+                <Highlight value={earnings.amount}>{formatNaira(earnings.amount)}</Highlight>
               </p>
               <p className="text-small">
                 {earnings.visits} visits × {formatNaira(EARNINGS_PER_VISIT_NGN)}
@@ -108,7 +111,7 @@ export function NurseDashboardView() {
                 Your clients
               </p>
               <p className="mt-1 font-display text-h2 font-semibold tabular-nums text-navy">
-                {clients.length}
+                <Highlight value={clients.length}>{clients.length}</Highlight>
               </p>
               <p className="inline-flex items-center gap-0.5 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4">
                 View all clients

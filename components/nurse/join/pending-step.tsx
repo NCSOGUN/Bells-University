@@ -1,8 +1,10 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { BadgeCheck, FileWarning, FlaskConical, Hourglass } from "lucide-react";
+import { BadgeCheck, FileWarning, FlaskConical, Hourglass, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { useDemo } from "@/lib/demo-context";
+import { useTimers } from "@/lib/use-timers";
 import { firstName, formatRelativeDay, formatTime } from "@/lib/format";
 import {
   RESUBMISSION,
@@ -17,6 +19,9 @@ import { Chip, type ChipTone } from "@/components/ui/chip";
 import { JoinShell } from "./join-shell";
 
 type ReviewState = Exclude<ApplicationStatus, "pending_verification">;
+
+// In the spirit of the other simulated waits: the decision takes a beat.
+const DECISION_MS = 600;
 
 const STATES: Record<ReviewState, { label: string; tone: ChipTone; icon: LucideIcon; panel: string }> = {
   in_review: { label: "In review", tone: "amber", icon: Hourglass, panel: "border-amber bg-amber/10" },
@@ -38,6 +43,8 @@ export function NursePendingStep() {
 
 function Pending() {
   const { state, update } = useDemo();
+  const { after } = useTimers();
+  const [deciding, setDeciding] = useState(false);
   const { applicant, reviewedAt } = state.nurseOnboarding;
   const status: ReviewState =
     state.nurseOnboarding.status && state.nurseOnboarding.status !== "pending_verification"
@@ -47,15 +54,21 @@ function Pending() {
   const Icon = view.icon;
   const name = applicant ? firstName(applicant.name) : undefined;
 
-  const setStatus = (next: ReviewState) =>
-    update((prev: DemoState) =>
-      next === "needs_resubmission"
-        ? requestResubmission(prev)
-        : patchNurseOnboarding(prev, {
-            status: next,
-            reviewedAt: next === "approved" ? new Date().toISOString() : undefined,
-          }),
-    );
+  const setStatus = (next: ReviewState) => {
+    if (next === status) return;
+    setDeciding(true);
+    after(DECISION_MS, () => {
+      update((prev: DemoState) =>
+        next === "needs_resubmission"
+          ? requestResubmission(prev)
+          : patchNurseOnboarding(prev, {
+              status: next,
+              reviewedAt: next === "approved" ? new Date().toISOString() : undefined,
+            }),
+      );
+      setDeciding(false);
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -134,12 +147,19 @@ function Pending() {
         <p className="mt-1 text-small">
           Not part of the nurse&apos;s app. In the real service, only the verification team can change this.
         </p>
+        {deciding && (
+          <p role="status" className="mt-2 flex items-center gap-2 text-small font-semibold text-navy">
+            <Loader2 aria-hidden className="size-4 motion-safe:animate-spin" />
+            Updating the application…
+          </p>
+        )}
         <div role="group" aria-label="Simulate the reviewer's decision" className="mt-3 flex flex-wrap gap-2">
           {(Object.keys(STATES) as ReviewState[]).map((key) => (
             <button
               key={key}
               type="button"
               aria-pressed={status === key}
+              disabled={deciding}
               onClick={() => setStatus(key)}
               className={`min-h-11 rounded-xl border px-3 text-small font-semibold text-navy transition-colors duration-150 ${
                 status === key ? "border-navy bg-surface" : "border-line hover:border-navy"

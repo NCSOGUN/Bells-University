@@ -14,6 +14,7 @@ import { routes } from "@/lib/routes";
 import { useTimers } from "@/lib/use-timers";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { Highlight } from "@/components/ui/highlight";
 import { JoinShell } from "./join-shell";
 
 // §4.3: each simulated upload takes 1.2s with a progress bar.
@@ -148,9 +149,11 @@ function Documents() {
           Send for review
         </Button>
         <p id="docs-status" role="status" className="mt-2 text-center text-small">
-          {allUploaded
-            ? "All three documents are ready."
-            : `${uploaded.length} of ${NURSE_DOCUMENTS.length} uploaded. Upload all three to continue.`}
+          <Highlight value={uploaded.length}>
+            {allUploaded
+              ? "All three documents are ready."
+              : `${uploaded.length} of ${NURSE_DOCUMENTS.length} uploaded. Upload all three to continue.`}
+          </Highlight>
         </p>
       </div>
     </div>

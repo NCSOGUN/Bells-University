@@ -17,7 +17,7 @@ import { VitalsInline } from "../vitals-inline";
 import { VisitFrame, type VisitContext } from "./visit-frame";
 
 // §4.3: report submission narrates both halves of what happens, ~1.5s in all.
-const STAGES = ["Submitting report…", "Sending family update…"] as const;
+const STAGES = ["Saving report…", "Sending family update…"] as const;
 const STAGE_MS = 750;
 
 export function CompleteVisitStep({ visitId }: { visitId: string }) {

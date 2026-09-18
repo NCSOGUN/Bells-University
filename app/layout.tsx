@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DemoNavigator } from "@/components/demo/demo-navigator";
 import { DemoProvider } from "@/lib/demo-context";
+import { PageTransition } from "@/components/ui/page-transition";
 import { fraunces, inter } from "./fonts";
 import "./globals.css";
 
@@ -15,7 +16,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
       <body className="min-h-dvh">
         <DemoProvider>
-          {children}
+          <PageTransition>{children}</PageTransition>
           <DemoNavigator />
         </DemoProvider>
       </body>

@@ -15,10 +15,14 @@ import {
   type RequestCity,
 } from "@/lib/onboarding";
 import { routes } from "@/lib/routes";
+import { useTimers } from "@/lib/use-timers";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, INPUT_CLASSES } from "@/components/ui/field";
 import { WhatsAppMark } from "@/components/ui/whatsapp-mark";
 import { OnboardingShell } from "./onboarding-shell";
+
+// §4.3: a beat while we "check" the area, rather than an instant swap.
+const AREA_CHECK_MS = 400;
 
 const MIN_AGE = 18;
 const MAX_AGE = 120;
@@ -52,6 +56,8 @@ type Errors = Partial<Record<"name" | "age" | "city" | "careNeeds", string>>;
 function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved: () => void }) {
   const { update } = useDemo();
   const router = useRouter();
+  const { after } = useTimers();
+  const [checking, setChecking] = useState(false);
   const [name, setName] = useState(relative?.name ?? "");
   const [age, setAge] = useState(relative ? String(relative.age) : "");
   const [city, setCity] = useState<RequestCity | "">(relative?.city ?? "");
@@ -81,13 +87,17 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
     }
 
     // A draft for this visit only, it never becomes an Elder record.
-    update((prev) =>
-      patchOnboarding(prev, {
-        relative: { name: name.trim(), age: ageNumber, city, careNeeds: careNeeds.trim() },
-      }),
-    );
-    onSaved();
-    if (isServiceCity(city)) router.push(routes.familyMatching);
+    setChecking(true);
+    after(AREA_CHECK_MS, () => {
+      update((prev) =>
+        patchOnboarding(prev, {
+          relative: { name: name.trim(), age: ageNumber, city, careNeeds: careNeeds.trim() },
+        }),
+      );
+      onSaved();
+      if (isServiceCity(city)) router.push(routes.familyMatching);
+      else setChecking(false);
+    });
   };
 
   return (
@@ -187,7 +197,7 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
         </p>
       </div>
 
-      <Button type="submit" className="w-full">
+      <Button type="submit" loading={checking} loadingText={`Checking nurses near ${city || "them"}…`} className="w-full">
         Continue
       </Button>
     </form>

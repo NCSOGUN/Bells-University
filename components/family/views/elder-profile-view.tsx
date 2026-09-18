@@ -2,6 +2,7 @@
 
 import { MapPin } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
+import { useFirstLoad } from "@/lib/use-first-load";
 import { familyTermFor } from "@/lib/format";
 import { completedVisits, findElder, findNurse, isFamilyElder, visitsForElder } from "@/lib/selectors";
 import { routes } from "@/lib/routes";
@@ -16,7 +17,8 @@ import { VitalsTable } from "../vitals-table";
 
 export function ElderProfileView({ elderId }: { elderId: string }) {
   const { state, hydrated } = useDemo();
-  if (!hydrated) return <PageSkeleton />;
+  const loaded = useFirstLoad(`family-elder-${elderId}`);
+  if (!hydrated || !loaded) return <PageSkeleton />;
 
   const elder = isFamilyElder(state, elderId) ? findElder(state, elderId) : undefined;
   if (!elder) {

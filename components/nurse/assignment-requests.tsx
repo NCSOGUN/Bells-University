@@ -297,6 +297,9 @@ function AnsweredRequest({
               </>
             )
           ) : (
+            confirming ? (
+            <p className="font-semibold text-navy">Returning {elder.name} to the coordinator&apos;s queue…</p>
+          ) : (
             <>
               <p className="font-semibold text-navy">Declined: {elder.name} returned to the queue</p>
               <p className="mt-1 text-small">
@@ -308,6 +311,7 @@ function AnsweredRequest({
                 </p>
               )}
             </>
+          )
           )}
         </div>
       </div>

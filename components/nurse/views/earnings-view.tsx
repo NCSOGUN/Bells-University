@@ -7,6 +7,7 @@ import { DEMO_NURSE_ID, EARNINGS_PER_VISIT_NGN, type Elder, type Visit } from "@
 import { routes } from "@/lib/routes";
 import { Card } from "@/components/ui/card";
 import { Chip, type ChipTone } from "@/components/ui/chip";
+import { Highlight } from "@/components/ui/highlight";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { TextLink } from "@/components/ui/text-link";
 import { EarningsExamples } from "../earnings-examples";
@@ -50,7 +51,7 @@ export function EarningsView() {
           </Chip>
         </div>
         <p className="mt-3 font-display text-[40px] leading-[44px] font-bold tabular-nums text-navy">
-          {formatNaira(current.amount)}
+          <Highlight value={current.amount}>{formatNaira(current.amount)}</Highlight>
         </p>
         <p className="mt-1 text-navy">
           {current.visits.length} completed {current.visits.length === 1 ? "visit" : "visits"} ×{" "}

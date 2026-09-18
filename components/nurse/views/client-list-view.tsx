@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
+import { useFirstLoad } from "@/lib/use-first-load";
 import { formatVisitWhen, formatVisitsPerWeek } from "@/lib/format";
 import { DEMO_NURSE_ID } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
@@ -14,7 +15,8 @@ import { CareStatusChip } from "../care-status-chip";
 
 export function ClientListView() {
   const { state, hydrated } = useDemo();
-  if (!hydrated) return <PageSkeleton />;
+  const loaded = useFirstLoad("nurse-clients");
+  if (!hydrated || !loaded) return <PageSkeleton />;
 
   const clients = nurseClients(state, DEMO_NURSE_ID);
 

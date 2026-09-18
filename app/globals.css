@@ -84,4 +84,18 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-teal;
   }
+
+  /* One global switch for people who ask for less movement (§4.3): state still
+     changes, it just stops moving. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
