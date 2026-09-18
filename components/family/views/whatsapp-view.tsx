@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CheckCheck, MapPin, MapPinOff } from "lucide-react";
+import { Bell, CheckCheck, ClipboardCheck, DoorOpen, MapPin, MapPinOff } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
 import { familyTermFor, formatRelativeDay, formatShortDate, formatTime, nurseShortName } from "@/lib/format";
 import type { Elder, Nurse, Visit } from "@/lib/mock-data";
@@ -14,6 +14,12 @@ import { RecordNotFound } from "@/components/ui/record-not-found";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { TextLink } from "@/components/ui/text-link";
 import { WhatsAppMark } from "@/components/ui/whatsapp-mark";
+
+const WHEN_WE_MESSAGE = [
+  { icon: DoorOpen, title: "The nurse arrives", body: "With the time and, where there is a signal, GPS confirmation." },
+  { icon: ClipboardCheck, title: "The visit is finished", body: "Readings, medication, and the nurse's note in their own words." },
+  { icon: Bell, title: "A reading needs attention", body: "Straight away, with what the nurse did about it." },
+];
 
 export function WhatsAppView() {
   const { state, hydrated } = useDemo();
@@ -49,6 +55,7 @@ export function WhatsAppView() {
         </p>
       </header>
 
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start">
       {/* Phone frame: a picture of the messages, not a working chat. */}
       <div className="mx-auto w-full max-w-sm rounded-[2rem] border-4 border-navy bg-navy p-1.5 shadow-lg shadow-navy/20">
         <div className="overflow-hidden rounded-[1.6rem] bg-bg">
@@ -100,9 +107,34 @@ export function WhatsAppView() {
         </div>
       </div>
 
-      <p className="text-center text-small">
-        This is what CareCircle sends. {latest && `The last update went out after ${familyTerm}'s visit on ${formatShortDate(latest.scheduledAt)}.`}
-      </p>
+      <div className="space-y-6">
+        <section aria-labelledby="when-heading" className="rounded-2xl border border-line bg-surface p-5">
+          <h2 id="when-heading" className="text-h2 font-semibold">
+            When we message you
+          </h2>
+          <ul className="mt-3 space-y-3">
+            {WHEN_WE_MESSAGE.map(({ icon: Icon, title, body }) => (
+              <li key={title} className="flex items-start gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-teal-tint text-navy">
+                  <Icon aria-hidden className="size-4" />
+                </span>
+                <div>
+                  <p className="font-semibold text-navy">{title}</p>
+                  <p className="text-small">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <p className="text-small">
+          {latest
+            ? `The last update went out after ${familyTerm}'s visit on ${formatShortDate(latest.scheduledAt)}.`
+            : "Updates start after the first visit."}{" "}
+          No WhatsApp signal? Everything is on your dashboard too.
+        </p>
+        <TextLink href={routes.familyDashboard}>Open {familyTerm}&apos;s dashboard</TextLink>
+      </div>
+      </div>
     </div>
   );
 }
