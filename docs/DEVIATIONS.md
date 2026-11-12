@@ -38,3 +38,18 @@ Every place the build differs from the design, or where the design was silent. F
 ## D-007 P1 fixtures skipped for now (owner's call, 13 Nov)
 - The Prep B harness is built but has no fixtures to score, so NFR-15 is NOT RUN. Freeze item 12 stays open.
 - The pipeline was checked once live on a hand-built synthetic PDF (three invented lab lines): schema accepted by Gemini, `ThinkingLevel.MINIMAL` accepted, 8.3 s, values and dates correct.
+
+## D-008 ERD gaps filled (P3)
+- **What:** columns the ERD does not draw were added exactly as listed in Locked decision L5, plus `document.started_at` (L22), `document.storage_path/mime/byte_size`, `fact.flag_as_printed`, `fact.created_at`, `viewer_session.created_at`, `hospital_credential.hospital_id`, `facility.created_at`, `glossary.display_name`, and `drug_allergy_rule.rule_key` (a natural key so the seed can upsert). `access_log.actor_type` has a CHECK (patient, clinician, partner, system); `fact_event.actor_type` has a CHECK (system, patient, partner). Patch the design doc at the freeze.
+- **Why:** the design requires these and the ERD omits them.
+
+## D-009 Glossary lookup reads the seed content, not the database (P3)
+- **What:** `lookupTestKey` and `getGlossaryRow` in `lib/glossary.ts` use `lib/db/seed-data.ts`, the same rows `db:seed` writes. The `glossary` table still exists and is seeded.
+- **Why:** the guards call the lookup synchronously inside extraction; no database round trip, and the explanation engine stays a pure function.
+- **Alternative:** load from the table once and cache. Needed only if someone edits glossary rows in the database directly.
+- **Consequence:** after editing `seed-data.ts`, run `npm run db:seed` so the table matches.
+
+## D-010 Verified on the live project (P3, 13 Nov)
+- Drizzle over the Supabase **transaction pooler** with `prepare: false` applied the migrations to an empty database (design section 18 item: now verified). `MIGRATION_DATABASE_URL` was not needed.
+- supabase-js 2.119 accepts the new `sb_secret_` key for Storage and the Auth admin API.
+- CHECK values are inlined as SQL literals (DDL cannot take bind parameters); `oneOf()` in the schema refuses anything but `[a-z0-9_/+.-]`.
