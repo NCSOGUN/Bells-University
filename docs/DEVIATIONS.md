@@ -53,3 +53,13 @@ Every place the build differs from the design, or where the design was silent. F
 - Drizzle over the Supabase **transaction pooler** with `prepare: false` applied the migrations to an empty database (design section 18 item: now verified). `MIGRATION_DATABASE_URL` was not needed.
 - supabase-js 2.119 accepts the new `sb_secret_` key for Storage and the Auth admin API.
 - CHECK values are inlined as SQL literals (DDL cannot take bind parameters); `oneOf()` in the schema refuses anything but `[a-z0-9_/+.-]`.
+
+## D-011 Policy details (P4)
+- Matrix row "Confirm or correct an AI-read fact" is the action `confirm_or_correct_fact`. The holder may also correct their own `patient_added` facts (lifecycle: confirmed to confirmed, not provider_entered); provider_entered is denied `provider_entered_immutable`.
+- `tag_sensitive_category` was added now rather than in P6 (allowed for a holder on any origin; denied for every other actor). It is the patient's privacy tag, not a clinical edit.
+- A clinician whose share is for a different record gets 404 `wrong_record`, the same as a holder (NFR-06). A clinician viewing the source image of a fact hidden by the share gets 404 `hidden_category` (P8 says a hidden fact's image is 404).
+- "—" cells (holder: hidden category via share, write through the feed) are denied `not_applicable`.
+- Added routes `GET /api/records` and `GET /api/consent` so Dev A can load the record list and the consent state.
+
+## D-012 Commit author placeholder
+- Commits use the author `Itan Dev B <devb@itan.invalid>` because no git identity was set on this machine. Set `git config user.name` / `user.email` to change it for future commits.

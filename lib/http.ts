@@ -1,0 +1,69 @@
+// Response helpers for route handlers (Locked decision L7).
+// Every error is { "error": { "code": string, "message": string } }. Messages never contain record content,
+// codes, tokens or keys (L31).
+import type { z } from "zod";
+import type { Decision } from "./policy";
+
+export function json(data: unknown, status = 200, headers: HeadersInit = {}): Response {
+  return Response.json(data, { status, headers: { "Cache-Control": "no-store", ...headers } });
+}
+
+export function errorResponse(code: string, message: string, status: number, headers: HeadersInit = {}): Response {
+  return json({ error: { code, message } }, status, headers);
+}
+
+export const unauthenticated = () => errorResponse("unauthenticated", "Sign in to continue.", 401);
+export const notFound = () => errorResponse("not_found", "Not found.", 404);
+export const forbidden = (code = "forbidden", message = "You do not have permission to do this.") =>
+  errorResponse(code, message, 403);
+
+/** Turn a denied can() decision into the right response. */
+export function denied(d: Decision): Response {
+  if (d.status === 401) return unauthenticated();
+  if (d.status === 404) return notFound();
+  if (d.reason === "provider_entered_immutable") {
+    return forbidden("provider_entered_immutable", "This was sent by a hospital and cannot be changed. You can mark it as disputed.");
+  }
+  return forbidden(d.reason === "not_a_holder" ? "forbidden" : d.reason);
+}
+
+/** Parse a JSON body with a Zod schema. Returns the data or a 400 response. */
+export async function parseBody<S extends z.ZodType>(
+  request: Request,
+  schema: S,
+): Promise<{ ok: true; data: z.infer<S> } | { ok: false; response: Response }> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return { ok: false, response: errorResponse("invalid_request", "The request body must be JSON.", 400) };
+  }
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    // Field paths only; never echo submitted values back.
+    const fields = [...new Set(parsed.error.issues.map((i) => i.path.join(".") || "(body)"))].join(", ");
+    return { ok: false, response: errorResponse("invalid_request", `Invalid or missing fields: ${fields}`, 400) };
+  }
+  return { ok: true, data: parsed.data };
+}
+
+type Handler<C> = (request: Request, ctx: C) => Promise<Response>;
+
+/** Wrap a route handler: an unexpected throw becomes a 500 with no detail leaked. */
+export function withErrors<C>(handler: Handler<C>): Handler<C> {
+  return async (request, ctx) => {
+    try {
+      return await handler(request, ctx);
+    } catch (e) {
+      // Name and Postgres code only (L31): no message, which could contain data.
+      console.error("route error", (e as Error)?.name, (e as { code?: string })?.code ?? "");
+      return errorResponse("internal_error", "Something went wrong. Please try again.", 500);
+    }
+  };
+}
+
+/** Next.js 16: route params arrive as a Promise (L32). */
+export type RouteCtx<P extends Record<string, string>> = { params: Promise<P> };
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const isUuid = (s: string) => UUID_RE.test(s);

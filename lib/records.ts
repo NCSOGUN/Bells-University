@@ -70,7 +70,11 @@ export async function recordAiConsent(accountId: string): Promise<Date> {
   return row.at!;
 }
 
-export async function hasAiConsent(accountId: string): Promise<boolean> {
+export async function getAiConsentAt(accountId: string): Promise<Date | null> {
   const [row] = await getDb().select({ at: account.ai_consent_at }).from(account).where(eq(account.id, accountId));
-  return Boolean(row?.at);
+  return row?.at ?? null;
+}
+
+export async function hasAiConsent(accountId: string): Promise<boolean> {
+  return (await getAiConsentAt(accountId)) !== null;
 }
