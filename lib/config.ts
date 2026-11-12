@@ -35,6 +35,21 @@ export function env(): Env {
   return cached;
 }
 
+const geminiEnvSchema = envSchema.pick({ GEMINI_API_KEY: true, GEMINI_MODEL: true });
+
+/** Only the two Gemini variables, so the extraction harness can run without a database configured. */
+export function geminiEnv(): z.infer<typeof geminiEnvSchema> {
+  const parsed = geminiEnvSchema.safeParse({
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY || undefined,
+    GEMINI_MODEL: process.env.GEMINI_MODEL || undefined,
+  });
+  if (!parsed.success) {
+    const names = parsed.error.issues.map((i) => String(i.path[0]));
+    throw new Error(`Missing environment variables: ${names.join(", ")}`);
+  }
+  return parsed.data;
+}
+
 /** For tests only: forget the cached environment. */
 export function resetEnvCache(): void {
   cached = undefined;

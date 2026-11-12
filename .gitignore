@@ -20,3 +20,6 @@ next-env.d.ts
 *.iml
 *.pem
 npm-debug.log*
+
+# local experiments
+/scratch/

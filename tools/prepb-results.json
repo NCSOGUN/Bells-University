@@ -1,0 +1,13 @@
+{
+  "model": "gemini-3.6-flash",
+  "prompt_version": "v1",
+  "date": "2026-11-12",
+  "runs": 1,
+  "scores": [],
+  "failed": [
+    {
+      "id": "tiny-fbc-pdf",
+      "code": "model_timeout"
+    }
+  ]
+}
