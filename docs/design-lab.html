@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Itan Design Lab</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a workbench. Sticky tab rail over one working surface per tab; a detail panel beside each surface on wide screens, below it on phones. */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --sunk:#e8ecee; --line:#d3dade; --ink:#14212b; --muted:#56656f;
+  --accent:#0f6f8a; --accent-soft:#d9eef3; --ok:#1e7a46; --ok-soft:#dcf1e4; --bad:#b3261e; --bad-soft:#f9e1df;
+  --warn:#8a5a00; --warn-soft:#f8ecd2; --sim:#6a4fb3; --sim-soft:#ece6fa;
+  --f-display:"Space Grotesk",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1519; --surface:#172027; --sunk:#1e2a32; --line:#2c3a44; --ink:#e3eaee; --muted:#9aabb6;
+  --accent:#4fb7d3; --accent-soft:#163845; --ok:#5cc98a; --ok-soft:#173527; --bad:#f08a80; --bad-soft:#3d1d1b;
+  --warn:#e2b25a; --warn-soft:#3a2d14; --sim:#b39cf0; --sim-soft:#2a2240; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1519; --surface:#172027; --sunk:#1e2a32; --line:#2c3a44; --ink:#e3eaee; --muted:#9aabb6;
+  --accent:#4fb7d3; --accent-soft:#163845; --ok:#5cc98a; --ok-soft:#173527; --bad:#f08a80; --bad-soft:#3d1d1b;
+  --warn:#e2b25a; --warn-soft:#3a2d14; --sim:#b39cf0; --sim-soft:#2a2240; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:20px 12px}
+h1{font:600 26px/1.15 var(--f-display);margin:0;text-wrap:balance}
+h2{font:600 19px/1.2 var(--f-display);margin:0 0 4px;text-wrap:balance}
+h3{font:600 15px/1.3 var(--f-display);margin:0}
+.lede{color:var(--muted);margin:6px 0 0;max-width:70ch}
+.meta{font:12px var(--f-mono);color:var(--muted);margin-top:8px;display:flex;flex-wrap:wrap;gap:6px 14px}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px}
+nav.tabs a{flex:none;text-decoration:none;color:var(--muted);font:500 14px var(--f-body);padding:7px 12px;border-radius:6px;white-space:nowrap}
+nav.tabs a:hover{background:var(--sunk);color:var(--ink)}
+nav.tabs a[aria-current="page"]{background:var(--accent-soft);color:var(--ink)}
+nav.tabs a .n{font:12px var(--f-mono);color:var(--accent);margin-right:6px}
+main{padding-block:20px 48px}
+section.view{display:grid;gap:16px}
+.intro{max-width:75ch;color:var(--muted)}
+.split{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:860px){.split{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.panel.sticky{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px)}
+@media (max-width:860px){.panel.sticky{position:static}}
+.label{font:500 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--f-mono);font-size:13px}
+code,pre{font-family:var(--f-mono);font-size:12.5px}
+pre{background:var(--sunk);border-radius:6px;padding:10px;margin:4px 0 0;white-space:pre-wrap;word-break:break-word}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip{display:inline-flex;align-items:center;gap:4px;font:500 12px var(--f-mono);padding:2px 7px;border-radius:999px;background:var(--sunk);color:var(--ink);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.acc{background:var(--accent-soft);color:var(--accent)}
+.chip.sim{background:var(--sim-soft);color:var(--sim)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+dl.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 12px;margin:10px 0 0}
+dl.kv dt{font:500 12px var(--f-mono);color:var(--muted);padding-top:2px}
+dl.kv dd{margin:0;min-width:0}
+
+/* System map */
+.layers{display:grid;gap:14px}
+.layer{border:1px dashed var(--line);border-radius:10px;padding:12px}
+.layer.sim{border-color:var(--sim)}
+.layer>.label{display:block;margin-bottom:8px}
+.blocks{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
+.block{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:2px;min-height:64px}
+.block:hover{border-color:var(--accent)}
+.block[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.block .id{font:500 11px var(--f-mono);color:var(--accent)}
+.block .nm{font-weight:600;font-size:14px;line-height:1.25}
+.block .sub{font:11px var(--f-mono);color:var(--muted)}
+.block.ext .id{color:var(--muted)}
+.block.simb{border-color:var(--sim)} .block.simb .id{color:var(--sim)}
+
+/* Flow player */
+.picker{display:flex;flex-wrap:wrap;gap:6px}
+.picker button{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13.5px}
+.picker button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.picker.danger button[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.stage{overflow-x:auto;padding:4px 0 8px}
+.track{position:relative;display:flex;gap:10px;padding:34px 4px 6px;min-width:max-content}
+.node{width:104px;flex:none;border:1px solid var(--line);border-radius:8px;padding:8px 6px;text-align:center;font-size:12.5px;line-height:1.25;background:var(--surface);transition:border-color .2s,background .2s}
+.node .ic{display:block;font:500 10.5px var(--f-mono);color:var(--muted);margin-bottom:2px}
+.node.from{border-color:var(--accent);background:var(--accent-soft)}
+.node.to{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.node.to.refused{border-color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad);background:var(--bad-soft)}
+.node.simn{border-style:dashed;border-color:var(--sim)}
+.packet{position:absolute;top:8px;left:0;height:20px;padding:0 8px;border-radius:999px;background:var(--accent);color:var(--surface);font:500 11px/20px var(--f-mono);white-space:nowrap;transform:translateX(0);transition:transform .55s ease}
+.packet.refused{background:var(--bad)}
+@media (prefers-reduced-motion:reduce){.packet{transition:none}}
+.stepnav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.dots{display:flex;gap:4px;flex-wrap:wrap}
+.dots button{width:24px;height:24px;border-radius:5px;border:1px solid var(--line);background:var(--surface);font:11px var(--f-mono);padding:0}
+.dots button[aria-current="step"]{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+.dots button.refused{border-color:var(--bad);color:var(--bad)}
+.dots button.refused[aria-current="step"]{background:var(--bad);color:var(--surface)}
+.stepcard{display:grid;gap:10px}
+.stepcard .ttl{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.io{display:grid;gap:8px}
+.io>div{min-width:0}
+.outcome{border-radius:8px;padding:10px 12px;font-size:14px}
+.outcome.ok{background:var(--ok-soft);color:var(--ok)}
+.outcome.bad{background:var(--bad-soft);color:var(--bad)}
+
+/* Data explorer */
+.erd{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.ent{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:4px;transition:opacity .2s}
+.ent .nm{font:600 13px var(--f-mono)}
+.ent .fs{font:11.5px/1.45 var(--f-mono);color:var(--muted)}
+.ent.dim{opacity:.35}
+.ent[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ent.rel{border-color:var(--accent)}
+.fact{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:6px}
+.fact .val{font:600 20px var(--f-display)}
+.evlog{display:grid;gap:6px;max-height:300px;overflow:auto}
+.ev{border-left:2px solid var(--accent);padding:2px 0 2px 10px;font:12px/1.45 var(--f-mono)}
+.ev.bad{border-color:var(--bad)}
+
+/* Permissions */
+.permgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.field{display:grid;gap:4px}
+.field select{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 8px;min-width:0;width:100%}
+.verdict{border-radius:10px;padding:14px 16px;display:grid;gap:6px}
+.verdict.ok{background:var(--ok-soft)} .verdict.bad{background:var(--bad-soft)}
+.verdict .big{font:600 22px var(--f-display)}
+.verdict.ok .big{color:var(--ok)} .verdict.bad .big{color:var(--bad)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{font:500 11.5px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+td.y{color:var(--ok);font-weight:600} td.n{color:var(--bad)} td.c{color:var(--warn);font-weight:600}
+tr.hl td{background:var(--accent-soft)}
+
+/* Screens */
+.screens{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:700px){.screens{grid-template-columns:minmax(0,1fr)}}
+.slist{display:grid;gap:4px}
+.slist button{text-align:left;background:none;border:1px solid transparent;border-radius:6px;padding:6px 8px;font-size:13.5px;display:flex;gap:8px}
+.slist button .who{font:11px var(--f-mono);color:var(--muted);min-width:56px}
+.slist button[aria-current="true"]{background:var(--surface);border-color:var(--line)}
+.phonebox{display:flex;flex-wrap:wrap;gap:16px;align-items:start}
+.phone{width:340px;max-width:100%;border:8px solid var(--ink);border-radius:26px;background:var(--surface);overflow:hidden}
+.scr{min-height:560px;display:flex;flex-direction:column;font-size:14px}
+.scr .bar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);font:600 14px var(--f-display)}
+.scr .body{padding:14px;display:grid;gap:10px;align-content:start;flex:1}
+.scr .foot{padding:10px 14px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.wf{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:4px}
+.wf.soft{background:var(--sunk);border-color:transparent}
+.wf .k{font:11px var(--f-mono);color:var(--muted)}
+.ph{background:repeating-linear-gradient(45deg,var(--sunk) 0 6px,var(--surface) 6px 12px);border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;color:var(--muted);font:11px var(--f-mono)}
+.hot{background:var(--accent);color:var(--surface);border:0;border-radius:6px;padding:8px 12px;font-weight:500}
+.hot.ghost{background:var(--surface);color:var(--accent);border:1px solid var(--accent)}
+.hot.warnb{background:var(--bad)}
+.note{font-size:12.5px;color:var(--muted)}
+.disclose{font-size:12px;background:var(--warn-soft);color:var(--warn);border-radius:6px;padding:6px 8px}
+.annot{flex:1 1 260px;min-width:0}
+.big{font:600 28px/1 var(--f-mono);letter-spacing:.06em}
+
+/* Build board */
+.boardtop{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.meter{height:8px;border-radius:999px;background:var(--sunk);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.cps{display:grid;gap:8px}
+.cp{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.cp .when{font:12px var(--f-mono);color:var(--muted)}
+.day{display:grid;gap:8px}
+.daycols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.col{display:grid;gap:6px;align-content:start}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.task input{margin-top:3px;width:16px;height:16px}
+.task .tt{font-size:13.5px}
+.task .tm{font:11px var(--f-mono);color:var(--muted)}
+.task.done .tt{text-decoration:line-through;color:var(--muted)}
+.task.cut{opacity:.4;border-style:dashed}
+.task.cut .tt::after{content:" · cut";color:var(--bad);font:11px var(--f-mono)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.toggle button{border:0;background:var(--surface);padding:6px 12px;font-size:13.5px}
+.toggle button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.namein{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 8px;width:130px}
+footer{color:var(--muted);font-size:12.5px;padding-block:0 32px}
+</style>
+
+<header class="top wrap">
+  <h1>Itan Design Lab</h1>
+  <p class="lede">Stage 2 system design, playable. One Next.js deployable, one Supabase database in London, Gemini for reading documents, and a simulated partner hospital that only knows the public feed. Every block, step and permission here matches the written design document.</p>
+  <div class="meta"><span>Freeze: Fri 13 Nov, 12:00</span><span>Code due: Tue 17 Nov</span><span>Assumes printed documents and lab PDFs (Prep B not run)</span></div>
+</header>
+
+<nav class="tabs" aria-label="Design views"><div class="wrap" id="tabs">
+  <a href="#map"><span class="n">1</span>System map</a>
+  <a href="#flows"><span class="n">2</span>Flow player</a>
+  <a href="#break"><span class="n">3</span>Break it</a>
+  <a href="#data"><span class="n">4</span>Data and provenance</a>
+  <a href="#perms"><span class="n">5</span>Permissions</a>
+  <a href="#screens"><span class="n">6</span>Screens</a>
+  <a href="#board"><span class="n">7</span>Build board</a>
+</div></nav>
+
+<main class="wrap">
+
+<section class="view" id="v-map">
+  <div class="intro"><h2>System map</h2>Every component, grouped by where it runs. Tap a block for its purpose, inputs and outputs, requirements, estimate, owner and build order.</div>
+  <div class="split">
+    <div class="layers" id="layers"></div>
+    <div class="panel sticky" id="compDetail" aria-live="polite"></div>
+  </div>
+</section>
+
+<section class="view" id="v-flows" hidden>
+  <div class="intro"><h2>Flow player</h2>Pick a flow and step through it. The packet moves between components; each step shows the request, the response and what is stored.</div>
+  <div class="picker" id="flowPick" role="group" aria-label="Choose a flow"></div>
+  <div class="panel" id="flowPanel"></div>
+</section>
+
+<section class="view" id="v-break" hidden>
+  <div class="intro"><h2>Break it</h2>Each switch sends the system down a failure path. Watch where it is refused, what the person sees, and what gets logged. Every one of these is a Stage 4 test.</div>
+  <div class="picker danger" id="breakPick" role="group" aria-label="Choose a failure"></div>
+  <div class="panel" id="breakPanel"></div>
+</section>
+
+<section class="view" id="v-data" hidden>
+  <div class="intro"><h2>Data and provenance</h2>The tables, and the life of one fact. Tap a table to see what it connects to. Then pick an origin and act on the fact: only the moves the design allows are open.</div>
+  <div class="panel"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h3>Tables</h3><span class="note" id="erdHint">Tap a table</span></div><div class="erd" id="erd"></div></div>
+  <div class="split">
+    <div class="panel">
+      <h3>Fact lifecycle</h3>
+      <div class="picker" id="originPick" role="group" aria-label="Fact origin" style="margin:10px 0"></div>
+      <div id="factCard"></div>
+      <div class="row" id="factActions" style="margin-top:12px"></div>
+    </div>
+    <div class="panel"><h3>fact_event history</h3><p class="note">Append-only. Nothing the AI read or a hospital sent is ever overwritten.</p><div class="evlog" id="evlog"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-perms" hidden>
+  <div class="intro"><h2>Permissions tester</h2>The same table that <code>lib/policy.ts</code> implements and <code>tests/policy.test.ts</code> checks cell by cell.</div>
+  <div class="panel">
+    <div class="permgrid">
+      <div class="field"><label class="label" for="pActor">Actor</label><select id="pActor"></select></div>
+      <div class="field"><label class="label" for="pAction">Action</label><select id="pAction"></select></div>
+      <div class="field" id="fCode"><label class="label" for="pCode">Share code</label><select id="pCode"><option value="valid">Valid, unexpired</option><option value="expired">Expired</option><option value="revoked">Revoked by patient</option><option value="general">Valid, but a general share (not referral)</option></select></div>
+      <div class="field" id="fLink"><label class="label" for="pLink">Hospital link</label><select id="pLink"><option value="active">Active, this hospital</option><option value="revoked">Revoked by patient</option><option value="none">Patient never linked</option><option value="other">Linked to a different hospital</option></select></div>
+      <div class="field" id="fCred"><label class="label" for="pCred">Credential</label><select id="pCred"><option value="valid">Valid key</option><option value="wrong">Wrong or revoked key</option></select></div>
+    </div>
+    <div id="verdict" style="margin-top:14px" aria-live="polite"></div>
+  </div>
+  <div class="panel"><h3>Full matrix</h3><p class="note">Y allowed · N denied · C allowed only under the condition shown in the tester.</p><div class="tablewrap"><table id="matrix"></table></div></div>
+</section>
+
+<section class="view" id="v-screens" hidden>
+  <div class="intro"><h2>Screens</h2>Low-fidelity wireframes of the key screens. Blue buttons inside the phone are live and move you to the next screen.</div>
+  <div class="screens">
+    <div class="slist" id="slist"></div>
+    <div class="phonebox"><div class="phone"><div class="scr" id="scr"></div></div><div class="annot panel" id="sannot"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-board" hidden>
+  <div class="intro"><h2>Build board</h2>Tasks by developer and day. Ticks, names and switches are saved in this browser only, so each developer keeps their own copy; agree the state in the team chat at each checkpoint.</div>
+  <div class="boardtop">
+    <div class="panel"><div class="label">Progress</div><div id="prog" style="margin-top:8px;display:grid;gap:10px"></div></div>
+    <div class="panel">
+      <div class="label">Saturday 20:00 decision: partner feed</div>
+      <div class="row" style="margin-top:8px"><div class="toggle" id="feedTog"><button data-v="go">Go</button><button data-v="nogo">No-go</button></div></div>
+      <p class="note" id="feedNote" style="margin:8px 0 0"></p>
+    </div>
+    <div class="panel">
+      <label class="label" for="cut">Cut order switch</label>
+      <input type="range" id="cut" min="0" max="11" value="0" style="margin-top:10px">
+      <p class="note" id="cutNote" style="margin:6px 0 0"></p>
+    </div>
+  </div>
+  <div class="panel"><div class="label" style="margin-bottom:8px">Checkpoints</div><div class="cps" id="cps"></div></div>
+  <div class="panel"><div class="row" style="justify-content:space-between"><div class="label">Developers</div><div class="row"><label class="note" for="nA">Dev A</label><input class="namein" id="nA" placeholder="Name"><label class="note" for="nB">Dev B</label><input class="namein" id="nB" placeholder="Name"></div></div></div>
+  <div id="days" style="display:grid;gap:18px"></div>
+</section>
+
+</main>
+<footer class="wrap">Companion to the document “Itan: System Design (Stage 2)”. FR and NFR numbers follow the Stage 1 Requirements. The partner hospital is simulated; no partner exists.</footer>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const store={get(k,d){try{const v=localStorage.getItem("itanlab:"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem("itanlab:"+k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- 1. SYSTEM MAP ---------- */
+const COMPS=[
+ {id:"C01",name:"Platform skeleton",layer:"platform",purpose:"Repo, Next.js app, Vercel project with functions in London (lhr1), Supabase project in London, environment variables, README stub.",in:"Nothing",out:"A deployed URL and an empty database every other component builds on",tech:"Next.js 16, Vercel Hobby, Supabase Free",trace:"NFR-02 (TLS)",h:3,o:"B",day:"Fri",ord:1},
+ {id:"C02",name:"Data layer",layer:"data",purpose:"Schema, migrations and seed data: facilities, glossary, drug–allergy rules, the simulated hospital and its key.",in:"Schema in lib/db/schema.ts",out:"Tables in Postgres; typed queries for the API",tech:"Drizzle ORM, drizzle-kit, Postgres",trace:"FR-01 to FR-14, NFR-16, NFR-24",h:4,o:"B",day:"Fri",ord:2},
+ {id:"C03",name:"Auth, records, consent",layer:"server",purpose:"Email and password sign-up; consent screen with the AI disclosure before first capture; a patient record and its holder.",in:"Email, password (8+ characters), consent tap",out:"Session cookie; patient_record; record_member; account.ai_consent_at",tech:"Supabase Auth, @supabase/ssr",trace:"FR-01, NFR-03, NFR-04; FR-18 ready",h:3,o:"A",day:"Fri",ord:3},
+ {id:"C04",name:"Policy module",layer:"server",purpose:"The single function can(actor, action, resource) that decides every permission, with one test per matrix cell.",in:"Actor, action, resource, share or link state",out:"allow, or deny with a reason",tech:"TypeScript, Vitest",trace:"NFR-01, NFR-06, NFR-22",h:2,o:"B",day:"Fri",ord:3},
+ {id:"C05",name:"Capture and upload",layer:"device",purpose:"Camera or file input; compress to 500 KB or less; strip EXIF by re-encoding; put the file in the device queue first, then upload.",in:"Photo or PDF from the patient",out:"POST /api/documents with client_upload_id",tech:"Canvas re-encode, idb-keyval (IndexedDB)",trace:"FR-02, NFR-09, NFR-12",h:4,o:"A",day:"Fri",ord:4},
+ {id:"C06",name:"Extraction service",layer:"server",purpose:"Sends the document to Gemini with prompt v1 and a JSON schema, then runs the guards: printed range check, value-in-quote check, unreadable means empty. Doubles as the Prep B harness.",in:"Document bytes, prompt v1, schema",out:"fact rows (ai_read, unverified), document.status, raw_extraction",tech:"@google/genai, Zod, responseJsonSchema",trace:"FR-03, FR-04, FR-05, NFR-10, NFR-13, NFR-15, NFR-17, NFR-18",h:6,o:"B",day:"Fri–Sat",ord:4},
+ {id:"C07",name:"Fact review and correction",layer:"device",purpose:"Each fact beside a crop of its source; confirm, correct, remove; add a fact by hand; tag a sensitive category.",in:"Facts with source_quote and source_box",out:"confirm / correct / remove calls; fact_event rows",tech:"React (Next.js client components)",trace:"FR-05, FR-06, FR-07, FR-15 tagging, NFR-16",h:5,o:"A",day:"Sat",ord:5},
+ {id:"C08",name:"Timeline",layer:"device",purpose:"All facts by date and document, unverified ones clearly marked.",in:"GET /api/records/{id}/facts",out:"Timeline screen",tech:"Server component",trace:"FR-08",h:2,o:"A",day:"Sat",ord:6},
+ {id:"C09",name:"Explanation engine",layer:"server",purpose:"Compares the value with the range printed on the same document, in code. Adds one glossary sentence and fixed questions to ask. No AI involved.",in:"A confirmed lab fact; glossary",out:"Plain-language text",tech:"TypeScript, seed glossary (no ranges)",trace:"FR-09, NFR-17, NFR-19, NFR-20",h:3,o:"B",day:"Sat",ord:6},
+ {id:"C10",name:"Shares and viewer sessions",layer:"server",purpose:"8-character code (2^40), stored as a keyed hash; expiry (default 60 min); revocation; 5 failed tries per IP per 10 min; hidden-category filter; a short viewer session for the clinician.",in:"Patient's share request; clinician's code, name, practice number",out:"share row; viewer cookie; refusals",tech:"node:crypto HMAC-SHA256, Postgres",trace:"FR-10, FR-11, FR-15, NFR-05, NFR-06",h:4,o:"B",day:"Sat",ord:5},
+ {id:"C11",name:"Clinician view",layer:"server",purpose:"One server-rendered screen: alerts, medicines, conditions, recent results with printed range and previous value, referral. Origin and state badges on every item; source image on tap.",in:"Viewer session",out:"HTML under 300 KB; access_log rows",tech:"Next.js server components, print CSS",trace:"FR-12, FR-24, NFR-07, NFR-08, NFR-11, NFR-16",h:5,o:"A",day:"Sat",ord:7},
+ {id:"C12",name:"Access log",layer:"server",purpose:"Append-only record of every open, image view, refusal and feed delivery; shown to the patient.",in:"Events from C10, C11, C13, C15",out:"access_log rows; patient's access screen",tech:"Postgres",trace:"FR-13, NFR-23",h:2,o:"A+B",day:"Sat",ord:7},
+ {id:"C13",name:"Referral packet and acknowledgement",layer:"server",purpose:"Packet built from existing facts; reason and urgency carried with their source or marked not stated; receiving clinician's acknowledgement; short facility list; print stylesheet.",in:"Referral source fact; patient's selections",out:"referral, referral_ack; packet page",tech:"Next.js, print CSS",trace:"FR-14, FR-19, FR-20, FR-21, NFR-19",h:5,o:"A+B",day:"Sun",ord:8},
+ {id:"C14",name:"Hospital link",layer:"server",purpose:"Patient links a partner hospital and gets a link reference to hand to its records officer; can revoke at any time.",in:"Patient's choice of partner",out:"hospital_link with link_ref; revocation",tech:"Postgres",trace:"FR-25, NFR-23",h:2,o:"B",day:"Sun (if go)",ord:9},
+ {id:"C15",name:"Partner feed API",layer:"server",purpose:"POST /api/feed/v1/bundles only. Bearer key, Idempotency-Key, FHIR R4 subset checked with Zod, one transaction, provider-entered facts. No read route exists.",in:"FHIR Bundle (Observation, ServiceRequest)",out:"202 receipt or 401 / 403 / 405 / 413 / 422",tech:"Next.js route handler, Zod",trace:"FR-26, FR-27, NFR-22, NFR-24",h:5,o:"B",day:"Sun (if go)",ord:9},
+ {id:"C16",name:"Simulated hospital",layer:"sim",purpose:"A command-line script that plays a partner's record system: sends results and a referral, then tries the four refused cases. Labelled SIMULATED everywhere. Not deployed.",in:"Fixture JSON, its own key, a link_ref",out:"HTTPS calls to the public feed",tech:"tsx script in tools/sim-hospital",trace:"Demonstrates FR-25 to FR-27",h:2,o:"B",day:"Sun (if go)",ord:10},
+ {id:"C17",name:"Offline app shell",layer:"device",purpose:"Service worker caches the shell so the app opens offline; queue screen with Retry now.",in:"App shell files",out:"Offline launch; retried uploads",tech:"Hand-written service worker",trace:"FR-16, NFR-12",h:2,o:"A",day:"Sun",ord:10},
+ {id:"C18",name:"Drug–allergy advisory",layer:"server",purpose:"Small hand-built list of allergy and drug-class pairs; a non-blocking banner telling the patient to confirm with a clinician.",in:"Confirmed allergy and medication facts",out:"Advisory banner on patient and clinician views",tech:"Seed table",trace:"FR-17, NFR-21",h:2,o:"B",day:"Sun",ord:11},
+ {id:"C19",name:"Caregiver records",layer:"device",purpose:"Create a record for someone else; switch between records.",in:"record_member rows",out:"Record switcher",tech:"Existing tables",trace:"FR-18",h:2,o:"A",day:"Sun",ord:11},
+ {id:"PG",name:"Postgres",layer:"data",ext:1,purpose:"The one database. London (eu-west-2). Row-level security on and deny-all for the public role; only the server key reads and writes.",in:"Queries from the API",out:"Rows",tech:"Supabase Postgres",trace:"NFR-01, NFR-02",h:0,o:"—",day:"—",ord:"—"},
+ {id:"ST",name:"Private storage",layer:"data",ext:1,purpose:"Document images and PDFs. Private bucket; signed URLs that live 60 seconds.",in:"Files from C05 via the API",out:"Signed URLs",tech:"Supabase Storage",trace:"FR-05, NFR-16",h:0,o:"—",day:"—",ord:"—"},
+ {id:"AU",name:"Supabase Auth",layer:"data",ext:1,purpose:"Accounts and sessions for patients and caregivers only. Clinicians never get accounts.",in:"Sign-up and sign-in",out:"Session",tech:"Supabase Auth",trace:"FR-01, NFR-04",h:0,o:"—",day:"—",ord:"—"},
+ {id:"GM",name:"Gemini API",layer:"external",ext:1,purpose:"Reads documents into JSON. Paid tier: not used to improve Google products, may be cached in any country. Never asked to explain or advise.",in:"Document bytes, prompt, schema",out:"JSON items",tech:"Stable Gemini Flash model, pinned in GEMINI_MODEL",trace:"FR-03",h:0,o:"—",day:"—",ord:"—"}
+];
+const LAYERS=[["device","On the patient's phone (PWA)"],["server","Itan app on Vercel, London: one deployable"],["platform","Platform"],["data","Supabase, London"],["external","Outside: Google"],["sim","SIMULATED partner hospital (team laptop, not deployed)"]];
+function renderMap(){
+  $("#layers").innerHTML=LAYERS.map(([k,l])=>`<div class="layer ${k==="sim"?"sim":""}"><span class="label">${l}</span><div class="blocks">${COMPS.filter(c=>c.layer===k).map(c=>`<button class="block ${c.ext?"ext":""} ${k==="sim"?"simb":""}" data-c="${c.id}" aria-pressed="false"><span class="id">${c.ext?"service":c.id}${k==="sim"?" · SIMULATED":""}</span><span class="nm">${c.name}</span><span class="sub">${c.ext?c.tech:`${c.h} h · Dev ${c.o} · ${c.day}`}</span></button>`).join("")}</div></div>`).join("");
+  $$("#layers .block").forEach(b=>b.onclick=()=>showComp(b.dataset.c));
+  showComp(store.get("comp","C06"));
+}
+function showComp(id){
+  const c=COMPS.find(x=>x.id===id)||COMPS[0]; store.set("comp",c.id);
+  $$("#layers .block").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c===c.id));
+  $("#compDetail").innerHTML=`<div class="row" style="justify-content:space-between"><span class="label">${c.ext?"Managed service":c.id}</span>${c.layer==="sim"?'<span class="chip sim">SIMULATED</span>':""}</div><h2 style="margin-top:4px">${c.name}</h2><p style="margin:6px 0 0">${c.purpose}</p>
+  <dl class="kv"><dt>Inputs</dt><dd>${c.in}</dd><dt>Outputs</dt><dd>${c.out}</dd><dt>Tech</dt><dd>${c.tech}</dd><dt>Serves</dt><dd class="mono">${c.trace}</dd>${c.ext?"":`<dt>Estimate</dt><dd>${c.h} hours</dd><dt>Owner</dt><dd>Dev ${c.o}</dd><dt>Build</dt><dd>${c.day} · order ${c.ord}</dd>`}</dl>`;
+}
+
+/* ---------- 2/3. FLOW PLAYER ---------- */
+const NODES={P:["Patient phone","device"],Q:["Device queue","IndexedDB"],API:["Itan API","Next.js"],POL:["Policy can()","C04"],EXT:["Extraction","C06"],G:["Gemini","Google"],DB:["Postgres","London"],ST:["Storage","private"],CL:["Clinician browser","no account"],FD:["Feed API","C15"],H:["Hospital script","SIMULATED"]};
+const FLOWS={
+ capture:{name:"Capture to share",nodes:["P","Q","API","POL","ST","EXT","G","DB"],steps:[
+  ["P","Q","Photo queued","Camera image 3.1 MB → JPEG 412 KB, longest edge 1600 px, EXIF removed","Queued on the device","IndexedDB: {client_upload_id: cu_7f3a, blob, status: queued}"],
+  ["Q","API","Upload","POST /api/documents\nmultipart: file, client_upload_id=cu_7f3a","(waiting on checks)","—"],
+  ["API","POL","Permission check","can(holder, upload, record r_12)","allow","—"],
+  ["API","ST","Store the file","PUT records/r_12/doc_88.jpg (private bucket)","ok","Storage object"],
+  ["API","DB","Document row","INSERT document","doc_88, status = uploaded","document; IndexedDB status → uploaded"],
+  ["P","API","Ask for extraction","POST /api/documents/doc_88/extract","(running)","document.status = extracting"],
+  ["EXT","G","Read the document","image + prompt v1 + JSON schema (responseJsonSchema)",'{"items":[{"label_as_printed":"Haemoglobin","value_as_printed":"9.8","unit_as_printed":"g/dL","range_as_printed":"12.0 - 16.0","readable":true,"confidence":"high","source_quote":"Haemoglobin 9.8 g/dL 12.0 - 16.0"}]}',"—"],
+  ["EXT","DB","Guards, then store","Digits 9.8 in value? yes. 12.0 and 16.0 in printed range? yes. Value inside quote? yes.","3 facts stored","fact origin=ai_read state=unverified; fact_event created; document.status = extracted"],
+  ["API","P","Review screen","GET /api/documents/doc_88","Facts with source crops and the AI disclosure","—"],
+  ["P","API","Confirm","POST /api/facts/f_301/confirm","200","fact.state = confirmed; fact_event confirmed (original kept)"],
+  ["P","API","Create share","POST /api/shares {expires_in_min: 60, hidden_categories: [\"mental_health\"]}","201 code K7Q2-M9XD + QR, shown once","share: code_hash = HMAC(pepper, code), expires_at = now + 60 min"]]},
+ read:{name:"Clinician reads",nodes:["CL","API","POL","DB","ST"],steps:[
+  ["CL","API","Open the page","GET /c#K7Q2M9XD (the code stays in the fragment; servers never see it)","Code entry page","—"],
+  ["CL","API","Submit code","POST /api/view/open {code, name: \"Dr T. Ade\", practice_no: \"MDCN 41xxx\"}","(checking)","—"],
+  ["API","DB","Rate limit and lookup","code_attempt for this IP under 5 in 10 min? share where code_hash matches","share s_44 found, not expired, not revoked","—"],
+  ["API","POL","Permission check","can(clinician, read_summary, share s_44)","allow","—"],
+  ["API","DB","Open session","INSERT viewer_session; INSERT access_log","—","viewer_session (30 min or share expiry); access_log: opened by Dr T. Ade (name not verified)"],
+  ["API","CL","Cookie","—","Set-Cookie itan_view (HttpOnly, Secure, SameSite=Strict); 303 to /v","—"],
+  ["CL","API","Read summary","GET /v","(re-checks the share on every request)","—"],
+  ["API","DB","Load facts","facts for r_12 minus hidden categories","12 facts; 2 hidden","—"],
+  ["API","CL","One screen","—","Server-rendered summary, 140 KB; notice: some items hidden by the patient","—"],
+  ["CL","API","Tap a result","GET /v/facts/f_301/image","(checking)","access_log: viewed source image"],
+  ["API","ST","Signed URL","createSignedUrl(doc_88.jpg, 60 s)","302 to a URL valid for 60 seconds","—"]]},
+ referral:{name:"Referral",nodes:["P","API","EXT","G","DB","CL"],steps:[
+  ["P","API","Photograph the letter","POST /api/documents + /extract (referral letter)","(running)","document doc_91"],
+  ["EXT","G","Read it verbatim","prompt v1 asks for reason_as_written and urgency_as_written",'{"referral":{"reason_as_written":"Poorly controlled DM, for review","urgency_as_written":"Urgent","referred_to":"Medical OPD"}}',"—"],
+  ["EXT","DB","Store as written","No classification, no rewording","—","fact kind=referral, unverified, with source_quote"],
+  ["P","API","Confirm the transcription","POST /api/facts/f_410/confirm","200","state = confirmed"],
+  ["P","API","Build the packet","POST /api/referrals {source_fact_id: f_410}","201 ref_7","referral: reason_as_written, urgency_as_written, source_fact_id"],
+  ["P","API","Share for referral","POST /api/shares {purpose: \"referral\", expires_in_min: 10080}","code H3WP-6RXT","share purpose=referral (7 days, to be agreed at freeze)"],
+  ["CL","API","Receiving doctor opens","POST /api/view/open, then GET /v/referral","Packet: reason and urgency with “From the referral letter, photographed 12 Nov”, results, medicines, allergies","access_log: opened packet"],
+  ["CL","API","Acknowledge","POST /api/view/ack {status: \"service_offered\"}","200 “Received, service offered here”. Not a statement that a bed is available.","referral_ack"],
+  ["API","P","Patient sees it","GET /api/referrals/ref_7","Acknowledged by Dr T. Ade, 14:05","—"]]},
+ partner:{name:"Partner link and feed",nodes:["P","API","DB","H","FD","POL"],steps:[
+  ["P","API","Link a hospital","POST /api/links {hospital: \"Demo General (SIMULATED)\"}","(creating)","—"],
+  ["API","DB","Store the link","INSERT hospital_link","link_ref ITN-LNK-7K2Q9MWD","hospital_link active; access_log: link granted"],
+  ["API","P","Reference to hand over","—","link_ref and a QR for the records officer","—"],
+  ["H","FD","Hospital sends results","POST /api/feed/v1/bundles\nAuthorization: Bearer itan_sk_sim_…\nIdempotency-Key: 5b1e…\nBundle: Patient(identifier urn:itan:link ITN-LNK-7K2Q9MWD), Observation ×3, ServiceRequest(priority urgent, reasonCode “For review”)","(checking)","—"],
+  ["FD","POL","Check key and link","key hash matches Demo General? link active and for this hospital? bundle inside the subset?","allow","—"],
+  ["FD","DB","One transaction","INSERT facts, feed_receipt, access_log","4 facts","fact origin=provider_entered state=confirmed; feed_receipt accepted; access_log: delivery from Demo General"],
+  ["FD","H","Receipt","—","202 {receipt_id: rc_19, facts_created: 4}","—"],
+  ["H","FD","Same request again","Same Idempotency-Key 5b1e…","200 {receipt_id: rc_19} (nothing written)","—"],
+  ["API","P","Patient sees it","Timeline","Four items badged “Sent by Demo General (SIMULATED)”; can dispute, cannot edit","—"]]}
+};
+const BREAKS={
+ unreadable:{name:"Unreadable document",nodes:["P","API","EXT","G","DB"],steps:[
+  ["P","API","Extract a blurred page","POST /api/documents/doc_93/extract","(running)","—"],
+  ["EXT","G","Read it","image + prompt v1",'{"items":[{"label_as_printed":"Creatinine","value_as_printed":null,"readable":false,"unreadable_reason":"value smudged"}]}',"—"],
+  ["EXT","DB","Guard: never guess","readable = false forces value empty","stored as unreadable","fact unreadable=true, value null, unverified"],
+  ["API","P","Shown to the patient","—","“We couldn't read the Creatinine value. Type it from the document or retake the photo.”","—",1]],
+  sees:"A clear unreadable marker with retake and type-it options. No value appears anywhere until the patient enters one.",logs:"fact_event created with readable=false",req:"FR-04, NFR-15"},
+ expired:{name:"Expired code",nodes:["CL","API","DB"],steps:[
+  ["CL","API","Submit an old code","POST /api/view/open {code: K7Q2M9XD}","(checking)","—"],
+  ["API","DB","Lookup","share by code_hash","found, expires_at passed 2 h ago","code_attempt +1"],
+  ["API","CL","Refuse","—","404 “This code is not valid or has ended. Ask the patient for a new one.” No record content.","access_log: refused, expired code",1]],
+  sees:"The same message as for a wrong code, so nobody learns which codes once existed.",logs:"Patient's access log shows a refused attempt with the name entered",req:"FR-10, NFR-05, NFR-06"},
+ revoked:{name:"Code revoked mid-visit",nodes:["P","API","DB","CL"],steps:[
+  ["P","API","Patient revokes","POST /api/shares/s_44/revoke","200","share.revoked_at = now"],
+  ["CL","API","Clinician refreshes","GET /v with a still-valid cookie","(re-checking the share)","—"],
+  ["API","DB","Re-check","share s_44 revoked?","yes","—"],
+  ["API","CL","Refuse","—","403 “The patient has ended this access.” Cookie cleared.","access_log: refused after revocation",1]],
+  sees:"Access ends on the next request, not when the cookie expires.",logs:"Revocation and the refused read",req:"FR-11, NFR-05"},
+ unlinked:{name:"Unlinked patient",nodes:["H","FD","POL","DB"],steps:[
+  ["H","FD","Send for an unknown link","POST bundle, Patient identifier ITN-LNK-ZZZZ0000","(checking)","—"],
+  ["FD","POL","Check link","link exists, active, for this hospital?","no","—"],
+  ["FD","H","Refuse","—","403 {error: \"link_not_active\"}. Identical for unknown, revoked and other-hospital links.","feed_receipt refused (no patient record touched)",1]],
+  sees:"The hospital cannot tell whether this person uses Itan.",logs:"feed_receipt only",req:"FR-26, NFR-22"},
+ linkrev:{name:"Revoked hospital link",nodes:["P","API","H","FD","DB"],steps:[
+  ["P","API","Patient unlinks","POST /api/links/l_5/revoke","200","hospital_link.revoked_at = now; access_log"],
+  ["H","FD","Hospital sends again","POST bundle for ITN-LNK-7K2Q9MWD","(checking)","—"],
+  ["FD","DB","Check link","link l_5 active?","revoked","—"],
+  ["FD","H","Refuse","—","403 link_not_active","feed_receipt refused; access_log on the patient's record: refused delivery from Demo General",1]],
+  sees:"The patient's access log shows the refused delivery.",logs:"feed_receipt and access_log",req:"FR-25, NFR-23"},
+ wrongkey:{name:"Wrong credential",nodes:["H","FD","POL"],steps:[
+  ["H","FD","Send with a bad key","Authorization: Bearer itan_sk_wrong…","(checking)","—"],
+  ["FD","POL","Check key","hash matches an active credential?","no","—"],
+  ["FD","H","Refuse","—","401, no detail","feed_receipt refused (no hospital matched)",1]],
+  sees:"Nothing about any patient.",logs:"feed_receipt refused",req:"NFR-22"},
+ readattempt:{name:"Hospital tries to read",nodes:["H","FD"],steps:[
+  ["H","FD","GET a patient","GET /api/feed/v1/bundles?patient=ITN-LNK-7K2Q9MWD","(no read route exists)","—"],
+  ["FD","H","Refuse","—","405 Method Not Allowed, empty body","feed_receipt refused: read attempt",1]],
+  sees:"The feed is write-only by construction.",logs:"feed_receipt",req:"FR-26, NFR-22"},
+ dropped:{name:"Dropped connection",nodes:["P","Q","API","DB"],steps:[
+  ["P","Q","Capture offline","photo compressed and queued","queued","IndexedDB status: queued"],
+  ["Q","API","Upload attempt","POST /api/documents client_upload_id=cu_9c21","network error","IndexedDB status stays queued; attempts = 1",1],
+  ["Q","API","Retry on the online event","Same request, same client_upload_id","(checking)","—"],
+  ["API","DB","Already have it?","document where client_upload_id = cu_9c21","not found → insert (or found → return it)","document doc_95"],
+  ["API","Q","Done","—","201 {document_id: doc_95}. A second retry returns the same id.","IndexedDB status: uploaded"]],
+  sees:"“Waiting for a connection. 1 page queued.” The patient never re-captures.",logs:"No duplicate document",req:"FR-16, NFR-12",recovers:1}
+};
+function player(container,flow,key,isBreak){
+  let i=store.get("step:"+key,0); if(i>=flow.steps.length)i=0;
+  container.innerHTML=`<div class="stage"><div class="track">${flow.nodes.map(n=>`<div class="node ${n==="H"?"simn":""}" data-n="${n}"><span class="ic">${NODES[n][1]}</span>${NODES[n][0]}</div>`).join("")}<div class="packet" aria-hidden="true"></div></div></div>
+  <div class="stepnav" style="margin:8px 0 12px"><div class="dots">${flow.steps.map((s,k)=>`<button class="${s[6]?"refused":""}" data-k="${k}" aria-label="Step ${k+1}">${k+1}</button>`).join("")}</div>
+  <div class="row"><button class="btn" data-a="prev">Back</button><button class="btn primary" data-a="next">Next step</button><button class="btn" data-a="play">Play all</button></div></div>
+  <div class="stepcard"></div>`;
+  const track=container.querySelector(".track"),pk=container.querySelector(".packet"),card=container.querySelector(".stepcard");
+  let timer=null;
+  function go(k){
+    i=Math.max(0,Math.min(flow.steps.length-1,k)); store.set("step:"+key,i);
+    const [f,t,title,req,res,st,ref]=flow.steps[i];
+    container.querySelectorAll(".node").forEach(n=>{n.classList.toggle("from",n.dataset.n===f);n.classList.toggle("to",n.dataset.n===t);n.classList.toggle("refused",n.dataset.n===t&&!!ref)});
+    const fn=track.querySelector(`[data-n="${f}"]`),tn=track.querySelector(`[data-n="${t}"]`);
+    pk.textContent=title; pk.classList.toggle("refused",!!ref);
+    const x0=fn.offsetLeft+fn.offsetWidth/2-pk.offsetWidth/2,x1=tn.offsetLeft+tn.offsetWidth/2-pk.offsetWidth/2;
+    pk.style.transition="none";pk.style.transform=`translateX(${Math.max(0,x0)}px)`;void pk.offsetWidth;pk.style.transition="";
+    requestAnimationFrame(()=>pk.style.transform=`translateX(${Math.max(0,x1)}px)`);
+    const sc=container.querySelector(".stage");sc.scrollLeft=Math.max(0,Math.min(x0,x1)-40);
+    container.querySelectorAll(".dots button").forEach(b=>{if(+b.dataset.k===i)b.setAttribute("aria-current","step");else b.removeAttribute("aria-current")});
+    const last=i===flow.steps.length-1;
+    let out="";
+    if(isBreak&&last){out=flow.recovers?`<div class="outcome ok"><b>Recovered.</b> ${flow.sees}</div>`:`<div class="outcome bad"><b>Refused.</b> ${flow.sees}</div>`;
+      out+=`<dl class="kv"><dt>Logged</dt><dd>${flow.logs}</dd><dt>Test for</dt><dd class="mono">${flow.req}</dd></dl>`}
+    card.innerHTML=`<div class="ttl"><span class="label">Step ${i+1} of ${flow.steps.length}</span><h3>${title}</h3><span class="chip ${ref?"bad":"acc"}">${NODES[f][0]} → ${NODES[t][0]}</span></div>
+    <div class="io"><div><div class="label">Request</div><pre>${esc(req)}</pre></div><div><div class="label">Response</div><pre>${esc(res)}</pre></div><div><div class="label">Stored</div><pre>${esc(st)}</pre></div></div>${out}`;
+    container.querySelector('[data-a="prev"]').disabled=i===0; container.querySelector('[data-a="next"]').disabled=last;
+  }
+  container.querySelector('[data-a="prev"]').onclick=()=>{stop();go(i-1)};
+  container.querySelector('[data-a="next"]').onclick=()=>{stop();go(i+1)};
+  container.querySelectorAll(".dots button").forEach(b=>b.onclick=()=>{stop();go(+b.dataset.k)});
+  const playBtn=container.querySelector('[data-a="play"]');
+  function stop(){if(timer){clearInterval(timer);timer=null;playBtn.textContent="Play all"}}
+  playBtn.onclick=()=>{if(timer)return stop();go(0);playBtn.textContent="Pause";timer=setInterval(()=>{if(i>=flow.steps.length-1)return stop();go(i+1)},1800)};
+  container._go=()=>go(i);
+  go(i);
+}
+function picker(el,obj,key,panel,isBreak){
+  let cur=store.get(key,Object.keys(obj)[0]); if(!obj[cur])cur=Object.keys(obj)[0];
+  el.innerHTML=Object.entries(obj).map(([k,f])=>`<button data-k="${k}" aria-pressed="${k===cur}">${f.name}</button>`).join("");
+  const show=k=>{cur=k;store.set(key,k);el.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===k));player(panel,obj[k],key+":"+k,isBreak)};
+  el.querySelectorAll("button").forEach(b=>b.onclick=()=>show(b.dataset.k));
+  show(cur);
+}
+
+/* ---------- 4. DATA ---------- */
+const ENTS={
+ account:["id PK","ai_consent_at"],patient_record:["id PK","display_name","birth_year","is_self"],record_member:["account_id FK","record_id FK","role"],
+ document:["id PK","client_upload_id UK","storage_path","status","doc_type","model_version","prompt_version","raw_extraction"],
+ fact:["id PK","origin","state","kind","label_as_printed","test_key","value_as_printed","unit_as_printed","range_as_printed","unreadable","source_quote","source_box","sensitive_category","superseded_by"],
+ fact_event:["id PK","fact_id FK","actor_type","event","before","after"],share:["id PK","code_hash UK","purpose","hidden_categories","expires_at","revoked_at"],
+ viewer_session:["token_hash PK","share_id FK","viewer_name","practice_no (unverified)"],access_log:["id PK","record_id FK","actor_type","action","outcome","at"],
+ referral:["id PK","reason_as_written","urgency_as_written","urgency_code","source_fact_id FK"],referral_ack:["id PK","referral_id FK","status"],
+ hospital:["id PK","name","simulated"],hospital_credential:["id PK","hospital_id FK","key_hash","revoked_at"],hospital_link:["id PK","link_ref UK","hospital_patient_ref","revoked_at"],
+ feed_receipt:["id PK","idempotency_key UK","status","refusal_reason"]};
+const RELS=[["account","record_member"],["patient_record","record_member"],["patient_record","document"],["patient_record","fact"],["document","fact"],["fact","fact_event"],["patient_record","share"],["share","viewer_session"],["patient_record","access_log"],["patient_record","referral"],["referral","referral_ack"],["referral","fact"],["hospital","hospital_credential"],["patient_record","hospital_link"],["hospital","hospital_link"],["hospital_link","feed_receipt"],["feed_receipt","fact"]];
+function renderERD(){
+  $("#erd").innerHTML=Object.entries(ENTS).map(([k,f])=>`<button class="ent" data-e="${k}" aria-pressed="false"><span class="nm">${k}</span><span class="fs">${f.join("<br>")}</span></button>`).join("");
+  $$("#erd .ent").forEach(b=>b.onclick=()=>{
+    const on=b.getAttribute("aria-pressed")==="true"; const k=b.dataset.e;
+    const rel=new Set(RELS.filter(r=>r.includes(k)).flat());
+    $$("#erd .ent").forEach(x=>{x.setAttribute("aria-pressed",!on&&x.dataset.e===k);x.classList.toggle("dim",!on&&!rel.has(x.dataset.e));x.classList.toggle("rel",!on&&rel.has(x.dataset.e)&&x.dataset.e!==k)});
+    $("#erdHint").textContent=on?"Tap a table":`${k} connects to ${[...rel].filter(x=>x!==k).join(", ")}`;
+  });
+}
+const ORIGINS={ai_read:"Read by AI",patient_added:"Added by patient",provider_entered:"Sent by hospital (SIMULATED)"};
+let fact,events;
+function newFact(origin){
+  fact={origin,state:origin==="ai_read"?"unverified":"confirmed",value:"9.8",unit:"g/dL",label:"Haemoglobin",range:"12.0 - 16.0",source:origin==="ai_read"?"doc_88 · quote “Haemoglobin 9.8 g/dL 12.0 - 16.0”":origin==="provider_entered"?"Demo General (SIMULATED) · receipt rc_19":"Entered by the record holder"};
+  events=[{e:"created",a:origin==="provider_entered"?"hospital":origin==="ai_read"?"system":"patient",d:`origin=${origin}, state=${fact.state}, value=9.8`}];
+  renderFact();
+}
+const ACTIONS=[
+ ["confirm","Confirm",f=>f.origin==="ai_read"&&f.state==="unverified"?null:"Only an unverified AI-read fact can be confirmed",f=>{f.state="confirmed"}],
+ ["correct","Correct value",f=>f.state==="removed"?"Removed":f.origin==="provider_entered"?"Provider-entered facts are never edited (NFR-24). Dispute instead.":f.state==="disputed"?"Disputed":null,f=>{const o=f.value;f.value=o==="9.8"?"9.6":"9.8";f.state="confirmed";return `value ${o} → ${f.value}; original kept in this event`}],
+ ["remove","Remove",f=>f.state==="removed"?"Already removed":f.origin==="provider_entered"?"A hospital's record cannot be removed by the patient":null,f=>{f.state="removed"}],
+ ["dispute","Dispute",f=>f.origin!=="provider_entered"?"Only provider-entered facts are disputed; others are corrected":f.state==="disputed"?"Already disputed":null,f=>{f.state="disputed";return 'note: “This was repeated on 3 Nov and came back normal”'}],
+ ["withdraw","Withdraw dispute",f=>f.state!=="disputed"?"Nothing to withdraw":null,f=>{f.state="confirmed"}]];
+function renderFact(){
+  const sc={unverified:"warn",confirmed:"ok",disputed:"bad",removed:""}[fact.state];
+  $("#factCard").innerHTML=`<div class="fact"><div class="row"><span class="chip ${fact.origin==="provider_entered"?"sim":"acc"}">${ORIGINS[fact.origin]}</span><span class="chip ${sc}">${fact.state[0].toUpperCase()+fact.state.slice(1)}</span></div>
+  <div><span class="note">${fact.label}</span><div class="val">${fact.state==="removed"?"<s>":""}${fact.value} ${fact.unit}${fact.state==="removed"?"</s>":""}</div><div class="note">Printed range ${fact.range} ${fact.unit} · below the printed range</div></div>
+  <div class="mono" style="color:var(--muted)">Source: ${fact.source}</div></div>`;
+  $("#factActions").innerHTML=ACTIONS.map(([k,l,can])=>{const why=can(fact);return `<button class="btn" data-k="${k}" ${why?"disabled":""} title="${why?esc(why):""}">${l}</button>`}).join("")+`<button class="btn" data-k="reset">Start again</button>`;
+  $$("#factActions button").forEach(b=>b.onclick=()=>{
+    if(b.dataset.k==="reset")return newFact(fact.origin);
+    const a=ACTIONS.find(x=>x[0]===b.dataset.k);const before=fact.state;const note=a[3](fact);
+    events.push({e:a[0],a:"patient",d:`state ${before} → ${fact.state}${note?"; "+note:""}`});renderFact();
+  });
+  $("#factActions").insertAdjacentHTML("beforeend",`<p class="note" style="flex-basis:100%;margin:4px 0 0">Greyed buttons are moves the design does not allow. Hover or long-press for the reason.</p>`);
+  $("#evlog").innerHTML=events.map((e,k)=>`<div class="ev"><b>#${k+1} ${e.e}</b> · actor ${e.a}<br>${esc(e.d)}</div>`).join("");
+}
+function renderData(){
+  renderERD();
+  const o=store.get("origin","ai_read");
+  $("#originPick").innerHTML=Object.entries(ORIGINS).map(([k,l])=>`<button data-k="${k}" aria-pressed="${k===o}">${l}</button>`).join("");
+  $$("#originPick button").forEach(b=>b.onclick=()=>{store.set("origin",b.dataset.k);$$("#originPick button").forEach(x=>x.setAttribute("aria-pressed",x===b));newFact(b.dataset.k)});
+  newFact(o);
+}
+
+/* ---------- 5. PERMISSIONS ---------- */
+const ACTORS={holder:"Record holder (patient or caregiver)",clinician:"Clinician by code",partner:"Partner system by credential",anon:"No credential"};
+const PACTS={upload:"Upload a document",read_full:"See the whole record",read_summary:"See the shared summary",read_hidden:"See a hidden-category fact",read_image:"See a fact's source image",confirm_ai:"Confirm or correct an AI-read fact",edit_provider:"Edit a provider-entered fact",dispute_provider:"Dispute a provider-entered fact",share_create:"Create or revoke a share code",read_log:"Read the access log",set_urgency:"Set urgency or reason",ack_referral:"Acknowledge a referral",link_hospital:"Link or unlink a hospital",feed_write:"Write through the feed",feed_read:"Read through the feed"};
+const HOLDER_OK=["upload","read_full","read_summary","read_hidden","read_image","confirm_ai","dispute_provider","share_create","read_log","link_hospital"];
+function evaluate(actor,act,c){
+  const D=(why,http,test)=>({ok:false,why,http,test}),A=(why,http,test)=>({ok:true,why,http,test});
+  if(act==="set_urgency")return D("Nobody sets urgency or reason in Itan. They are carried verbatim from a partner ServiceRequest or a confirmed referral-letter quote (NFR-19).","No endpoint exists","grep: no route writes urgency_as_written except extraction and feed intake");
+  if(act==="edit_provider")return D("Provider-entered facts keep the facility's original content; the patient can only dispute (NFR-24).",actor==="holder"?"403 provider_entered_immutable":actor==="anon"?"401":"403","policy.test: holder cannot edit provider_entered");
+  if(actor==="anon")return D("No session, no code, no key: nothing is served (NFR-06).","401","policy.test: anonymous denied for "+act);
+  if(actor==="holder"){
+    if(HOLDER_OK.includes(act))return A(act==="read_hidden"?"It is their own record; hiding applies only to what a share shows.":"The record holder controls their own record.","200","policy.test: holder "+act);
+    if(act==="ack_referral")return D("Only the receiving clinician acknowledges a referral.","403","policy.test: holder cannot ack");
+    return D("The feed is only for partner systems.","401","policy.test: holder has no feed access");
+  }
+  if(actor==="clinician"){
+    if(["read_summary","read_image","ack_referral"].includes(act)){
+      if(c.code==="expired")return D("The share has expired. Same message as a wrong code.","404 code not valid","policy.test: expired share refused");
+      if(c.code==="revoked")return D("The patient revoked the share; checked on every request.","403 access ended","policy.test: revoked share refused mid-session");
+      if(act==="ack_referral"&&c.code==="general")return D("Acknowledgement needs a share made for a referral.","403","policy.test: ack needs purpose=referral");
+      return A(act==="read_image"?"Allowed while the share is valid; the view is logged and the URL lives 60 seconds.":act==="ack_referral"?"Records “received, service offered here”. Never a bed statement.":"Allowed while the share is valid. Name and practice number are recorded, not verified.","200","policy.test: clinician "+act+" with valid share");
+    }
+    if(act==="read_hidden")return D("Hidden categories never leave through a share; the screen says some items are hidden.","Not in the response","policy.test: hidden facts filtered");
+    return D("A clinician can only read what the share shows. No accounts, no writes (Stage 1 Decision 1).","403","policy.test: clinician denied "+act);
+  }
+  if(actor==="partner"){
+    if(act==="feed_read")return D("There is no read route. The feed is write-only by construction.","405","feed.test: GET refused");
+    if(act!=="feed_write")return D("A partner key only works on POST /api/feed/v1/bundles.","401","feed.test: key rejected outside the feed");
+    if(c.cred==="wrong")return D("Key does not match an active credential.","401","feed.test: wrong credential");
+    if(c.link!=="active")return D({revoked:"The patient revoked this link.",none:"This patient never linked this hospital.",other:"The link belongs to another hospital."}[c.link]+" Same response in all three cases, so a hospital cannot probe who uses Itan.","403 link_not_active","feed.test: "+c.link+" link refused");
+    return A("Active link to this hospital and a valid key. Facts are written as provider-entered in one transaction.","202 receipt","feed.test: accepted delivery");
+  }
+}
+function needs(actor,act){return{code:actor==="clinician"&&["read_summary","read_image","ack_referral"].includes(act),link:actor==="partner"&&act==="feed_write",cred:actor==="partner"&&act==="feed_write"}}
+function renderPerms(){
+  $("#pActor").innerHTML=Object.entries(ACTORS).map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
+  $("#pAction").innerHTML=Object.entries(PACTS).map(([k,l])=>`<option value="${k}">${l}</option>`).join("");
+  const s=store.get("perm",{a:"clinician",x:"read_summary"}); $("#pActor").value=s.a; $("#pAction").value=s.x;
+  const upd=()=>{
+    const a=$("#pActor").value,x=$("#pAction").value; store.set("perm",{a,x});
+    const n=needs(a,x); $("#fCode").hidden=!n.code; $("#fLink").hidden=!n.link; $("#fCred").hidden=!n.cred;
+    const r=evaluate(a,x,{code:$("#pCode").value,link:$("#pLink").value,cred:$("#pCred").value});
+    $("#verdict").innerHTML=`<div class="verdict ${r.ok?"ok":"bad"}"><div class="big">${r.ok?"Allowed":"Denied"}</div><div>${r.why}</div><dl class="kv"><dt>Response</dt><dd class="mono">${r.http}</dd><dt>Test</dt><dd class="mono">${r.test}</dd></dl></div>`;
+    $$("#matrix tr").forEach(tr=>tr.classList.toggle("hl",tr.dataset.x===x));
+  };
+  ["#pActor","#pAction","#pCode","#pLink","#pCred"].forEach(s=>$(s).onchange=upd);
+  const base={code:"valid",link:"active",cred:"valid"};
+  $("#matrix").innerHTML=`<thead><tr><th>Action</th>${Object.values(ACTORS).map(l=>`<th>${l}</th>`).join("")}</tr></thead><tbody>${Object.entries(PACTS).map(([x,l])=>`<tr data-x="${x}"><td>${l}</td>${Object.keys(ACTORS).map(a=>{const r=evaluate(a,x,base),cond=Object.values(needs(a,x)).some(Boolean);return `<td class="${r.ok?(cond?"c":"y"):"n"}">${r.ok?(cond?"C":"Y"):"N"}</td>`}).join("")}</tr>`).join("")}</tbody>`;
+  upd();
+}
+
+/* ---------- 6. SCREENS ---------- */
+const AI_NOTE=`<div class="disclose">Read by AI from your document. It may contain errors. Not medical advice.</div>`;
+const SCREENS={
+ consent:{who:"Patient",name:"Consent",html:`<div class="bar">Before your first document</div><div class="body">
+  <div class="wf"><b>How Itan reads your documents</b><span class="note">Your photo is sent to Google's Gemini service, which reads the text into fields. Processing can happen outside Nigeria. Your documents and record are stored in London, UK.</span></div>
+  <div class="wf"><b>What is kept</b><span class="note">Your photos and the facts read from them, until you delete them. Google does not keep them to improve its products.</span></div>
+  <div class="wf"><b>Nothing is shared unless you share it</b><span class="note">You choose who sees what, and for how long.</span></div></div>
+  <div class="foot"><button class="hot" data-go="home">I understand, continue</button></div>`,
+  note:"NFR-03: a reader can state what reads the documents, where, and what is kept. Shown once, before the first capture; consent time stored on the account."},
+ home:{who:"Patient",name:"Home and timeline",html:`<div class="bar">Itan <span class="chip">Mrs Bisi A. ▾</span></div><div class="body">
+  <div class="row"><button class="hot" data-go="capture">+ Add a document</button><button class="hot ghost" data-go="share">Share</button></div>
+  <div class="label">12 Nov</div><div class="wf"><div class="row" style="justify-content:space-between"><b>Haemoglobin 9.8 g/dL</b><span class="chip warn">Unverified</span></div><span class="k">Read by AI · Lab report, Sacred Heart Lab</span><button class="hot ghost" data-go="review" style="justify-self:start">Review</button></div>
+  <div class="wf"><div class="row" style="justify-content:space-between"><b>HbA1c 8.9 %</b><span class="chip sim">Sent by hospital</span></div><span class="k">Demo General (SIMULATED) · 10 Nov</span></div>
+  <div class="wf"><div class="row" style="justify-content:space-between"><b>Metformin 500 mg twice daily</b><span class="chip ok">Confirmed</span></div><span class="k">Read by AI · Prescription · 2 Oct</span></div>
+  <div class="row"><button class="hot ghost" data-go="log">Who has seen my record</button><button class="hot ghost" data-go="link">Linked hospitals</button></div></div>`,
+  note:"FR-08 timeline. Every item shows origin and state in words, never colour alone (NFR-07). The record switcher at the top is FR-18."},
+ capture:{who:"Patient",name:"Capture and queue",html:`<div class="bar">Add a document</div><div class="body">
+  <div class="ph" style="height:200px">camera preview</div>
+  <div class="row"><button class="hot" data-go="review">Take photo</button><button class="hot ghost">Choose file or PDF</button></div>
+  <div class="wf soft"><b>Waiting for a connection</b><span class="note">1 page queued · 412 KB · will send when you're back online</span><button class="hot ghost" style="justify-self:start">Retry now</button></div>
+  <span class="note">Photos are made smaller and location data is removed before they leave your phone.</span></div>`,
+  note:"FR-02, FR-16, NFR-09, NFR-12. The queue card appears only when something is waiting."},
+ review:{who:"Patient",name:"Review a document",html:`<div class="bar">Lab report · 12 Nov</div><div class="body">${AI_NOTE}
+  <div class="wf"><div class="ph" style="height:46px">crop: “Haemoglobin 9.8 g/dL 12.0 - 16.0”</div><div class="row" style="justify-content:space-between"><b>Haemoglobin</b><span class="chip warn">Unverified</span></div><span>9.8 g/dL <span class="note">· printed range 12.0 – 16.0</span></span>
+  <div class="row"><button class="hot" data-go="explain">Confirm</button><button class="hot ghost">Correct</button><button class="hot ghost">Not on document</button></div></div>
+  <div class="wf"><div class="ph" style="height:46px">crop: “Creatinine ▒▒ µmol/L”</div><div class="row" style="justify-content:space-between"><b>Creatinine</b><span class="chip bad">Couldn't read</span></div><span class="note">Type it from the document or retake the photo.</span><button class="hot ghost" style="justify-self:start">Type value</button></div></div>`,
+  note:"FR-04, FR-05, FR-06, FR-07, NFR-13, NFR-16. The crop comes from the source box; if boxes fail, the whole page shows with the quote underneath."},
+ explain:{who:"Patient",name:"Explanation",html:`<div class="bar">Haemoglobin</div><div class="body">
+  <div class="wf"><span>Your Haemoglobin was <b>9.8 g/dL</b>. The range printed on this report is 12.0–16.0 g/dL. Your result is <b>below that printed range</b>.</span></div>
+  <div class="wf soft"><span class="k">About this test</span><span>Haemoglobin is the part of red blood cells that carries oxygen.</span></div>
+  <div class="wf"><span class="k">Questions to ask your doctor</span><span>What does this result mean for me?<br>Do I need to repeat this test, and when?</span></div>
+  <span class="note">Comparison done by Itan using only the range printed on your report. Not medical advice; discuss with your doctor.</span></div><div class="foot"><button class="hot" data-go="home">Done</button></div>`,
+  note:"FR-09, NFR-17, NFR-19, NFR-20. No AI writes this text: the comparison is code, the description is a reviewed glossary line with no ranges and no causes."},
+ share:{who:"Patient",name:"Share",html:`<div class="bar">Share with a clinician</div><div class="body">
+  <div class="wf"><span class="k">How long</span><div class="row"><span class="chip">15 min</span><span class="chip acc">60 min ✓</span><span class="chip">24 h</span></div></div>
+  <div class="wf"><span class="k">Hide from this share</span><span>☑ Mental health &nbsp; ☐ Sexual and reproductive health</span><span class="note">The clinician will see that some items are hidden.</span></div>
+  <div class="wf" style="text-align:center"><span class="k">Show this to the clinician</span><span class="big">K7Q2-M9XD</span><div class="ph" style="height:110px;width:110px;justify-self:center">QR</div><span class="note">itan.app/c · ends 13:42</span></div></div>
+  <div class="foot"><button class="hot warnb">End access now</button><button class="hot ghost" data-go="center">See what they see</button></div>`,
+  note:"FR-10, FR-11, FR-15, NFR-05. The code is shown once; if lost, the patient makes a new one."},
+ log:{who:"Patient",name:"Access log",html:`<div class="bar">Who has seen my record</div><div class="body">
+  <div class="wf"><b>Dr T. Ade opened your summary</b><span class="k">12 Nov 12:46 · code K7Q2… · name not verified</span></div>
+  <div class="wf"><b>Dr T. Ade viewed the lab report photo</b><span class="k">12 Nov 12:48</span></div>
+  <div class="wf"><b>Refused: expired code tried</b><span class="k">12 Nov 15:10 · name entered: “Nurse K.”</span></div>
+  <div class="wf"><b>Demo General (SIMULATED) sent 4 results</b><span class="k">10 Nov 09:02 · through your hospital link</span></div></div>`,
+  note:"FR-13, NFR-23. Refusals are shown too, so the patient sees attempts as well as reads."},
+ center:{who:"Clinician",name:"Enter code",html:`<div class="bar">Itan · view a shared record</div><div class="body">
+  <div class="wf"><label class="k" for="wfc">Code from the patient</label><div class="ph" style="height:36px" id="wfc">K7Q2-M9XD</div>
+  <span class="k">Your name</span><div class="ph" style="height:36px">Dr T. Ade</div><span class="k">Practice number</span><div class="ph" style="height:36px">MDCN …</div></div>
+  <span class="note">Your name and practice number are recorded and shown to the patient. They are not verified.</span></div>
+  <div class="foot"><button class="hot" data-go="cview">Open record</button></div>`,
+  note:"FR-10, FR-12. No account, no install. Scanning the QR fills the code from the URL fragment."},
+ cview:{who:"Clinician",name:"One-screen summary",html:`<div class="bar">Bisi A. · F · 54</div><div class="body">
+  <div class="wf soft"><span class="note">Shared by the patient · ends 13:42 · some items hidden by the patient</span></div>
+  <div class="wf" style="border-color:var(--bad)"><span class="k">Allergies and advisory</span><b>Penicillin (confirmed by patient)</b><span class="note">Advisory: amoxicillin on a 2024 prescription belongs to the same class. Confirm with the patient.</span></div>
+  <div class="wf"><span class="k">Medicines</span><span>Metformin 500 mg bd <span class="chip ok">Confirmed</span></span></div>
+  <div class="wf"><span class="k">Recent results</span><span>HbA1c 8.9 % <span class="chip sim">Hospital</span> <span class="note">prev 7.8 % (Mar)</span></span><span>Hb 9.8 g/dL ↓ printed 12–16 <span class="chip warn">Unverified</span></span><span>Creatinine <span class="chip bad">Couldn't read</span></span></div>
+  <div class="row"><button class="hot ghost" data-go="cpacket">Referral packet</button><button class="hot ghost">Source images</button></div></div>`,
+  note:"FR-12, FR-17, FR-24, NFR-08, NFR-11, NFR-16. Server-rendered; images load only on tap. Previous value appears only when units match exactly."},
+ cpacket:{who:"Clinician",name:"Referral packet",html:`<div class="bar">Referral packet</div><div class="body">
+  <div class="wf"><span class="k">Reason, as written</span><b>Poorly controlled DM, for review</b><span class="k">Urgency, as written</span><b>Urgent</b><span class="note">From the referral letter, photographed 12 Nov, confirmed by the patient. Itan does not set urgency.</span></div>
+  <div class="wf"><span class="k">To</span><span>Medical OPD, Federal Medical Centre Abeokuta</span></div>
+  <div class="wf"><span class="k">Results, medicines, allergies</span><span class="note">As on the summary, with sources</span></div>
+  <div class="wf soft"><span class="k">Acknowledge</span><div class="row"><button class="hot">Received, service offered here</button><button class="hot ghost">Received, service not offered</button></div><span class="note">This is not a statement that a bed is available.</span></div></div>`,
+  note:"FR-14, FR-19, FR-20, NFR-19. When no source states urgency the field reads “Not stated by the referring clinician”."},
+ link:{who:"Patient",name:"Link a hospital",html:`<div class="bar">Linked hospitals</div><div class="body">
+  <div class="wf"><div class="row" style="justify-content:space-between"><b>Demo General</b><span class="chip sim">SIMULATED</span></div><span class="note">Can send results and referrals into your record. Cannot read anything.</span>
+  <span class="k">Give this to the records officer</span><span class="mono">ITN-LNK-7K2Q9MWD</span><button class="hot warnb" style="justify-self:start">Unlink</button></div>
+  <span class="note">No real hospital is connected in this version.</span></div>`,
+  note:"FR-25, NFR-23. Standing access, separate from per-visit codes; revoking refuses the next delivery."}
+};
+function renderScreens(){
+  const ids=Object.keys(SCREENS); let cur=store.get("screen","cview"); if(!SCREENS[cur])cur="home";
+  $("#slist").innerHTML=ids.map(k=>`<button data-s="${k}"><span class="who">${SCREENS[k].who}</span>${SCREENS[k].name}</button>`).join("");
+  const show=k=>{cur=k;store.set("screen",k);$("#scr").innerHTML=SCREENS[k].html;$("#sannot").innerHTML=`<div class="label">${SCREENS[k].who}</div><h3 style="margin:4px 0 6px">${SCREENS[k].name}</h3><p style="margin:0">${SCREENS[k].note}</p>`;
+    $$("#slist button").forEach(b=>b.setAttribute("aria-current",b.dataset.s===k));$$("#scr [data-go]").forEach(b=>b.onclick=()=>show(b.dataset.go))};
+  $$("#slist button").forEach(b=>b.onclick=()=>show(b.dataset.s)); show(cur);
+}
+
+/* ---------- 7. BUILD BOARD ---------- */
+const TASKS=[
+ ["t1","C01","Repo, Next.js app, Vercel (lhr1), Supabase (London), env vars","B","Fri",3,[],1],
+ ["t2","C02","Schema, migrations, seed","B","Fri",4,[],1],
+ ["t3","C06","Gemini adapter, prompt v1, Zod schema (Prep B harness)","B","Fri",3,[],1],
+ ["t4","C03","Sign-up, sign-in, consent screen, records","A","Fri",3,[],1],
+ ["t5","C05","Capture, compress, strip EXIF, queue-first upload","A","Fri",4,[],1],
+ ["t6","C04","Policy can() and matrix tests","B","Sat",2,[],2],
+ ["t7","C06","Extraction guards, unreadable handling, status","B","Sat",3,[],2],
+ ["t8","C07","Review screen: source crop, confirm, correct, remove","A","Sat",4,[],2],
+ ["t10","C08","Timeline","A","Sat",2,[],2],
+ ["t11","C09","Explanation engine and glossary seed","B","Sat",3,[],2],
+ ["t12","C10","Share codes, hash, expiry, revoke, rate limit, viewer session","B","Sat",3,[],2],
+ ["t14","C11","Clinician one-screen view, source image on tap","A","Sat",4,[],2],
+ ["t16","C12","Access log writes","B","Sat",1,[],2],
+ ["t17","C12","Access log screen","A","Sat",1,[],2],
+ ["t9","C07","Tag a fact's sensitive category","A","Sun",1,["FR-15"],3],
+ ["t13","C10","Hidden-category filter on shares","B","Sun",1,["FR-15"],3],
+ ["t18","C13","Referral packet data: reason and urgency with source","B","Sun",2,[],3],
+ ["t19","C13","Referral packet screens","A","Sun",3,[],3],
+ ["t23","C14","Hospital link and revoke","B","Sun",2,["FR-25"],3],
+ ["t24","C15","Feed intake, validation, refusals","B","Sun",4,["FR-26"],3],
+ ["t26","C16","Simulated hospital CLI","B","Sun",2,["FR-25","FR-26"],3],
+ ["t25","C15","Provider-entered facts: badge and dispute","A","Sun",1,["FR-27"],3],
+ ["t15","C11","Previous-value comparison","A","Sun",1,["FR-24"],3],
+ ["t20","C13","Referral acknowledgement","A","Sun",1,["FR-19"],3],
+ ["t28","C18","Drug–allergy advisory","B","Sun",2,["FR-17"],3],
+ ["t21","C13","Short facility list","B","Sun",0.5,["FR-20"],3],
+ ["t29","C19","Caregiver records and switcher","A","Sun",2,["FR-18"],3],
+ ["t27","C17","Offline app shell and retry UI","A","Sun",2,["FR-16"],3],
+ ["t22","C13","Print stylesheet for the packet","A","Sun",0.5,["FR-21"],3],
+ ["t30","S4","Stage 4: policy and feed tests, throttled 3G, accessibility pass","AB","Mon",6,[],4],
+ ["t31","S5","README, install steps, screenshots, limitations list","AB","Mon",4,[],4],
+ ["t32","S6","Push to organisers' repo, two rehearsals, backup video","AB","Tue",4,[],5]
+].map(([id,c,t,o,d,h,fr,cp])=>({id,c,t,o,d,h,fr,cp}));
+const CUTS=[["FR-22"],["FR-21"],["FR-18"],["FR-20"],["FR-17"],["FR-24"],["FR-19"],["FR-27"],["FR-25","FR-26"],["FR-15"],["FR-16"]];
+const CPS=[[1,"CP1 Walking skeleton","Fri 23:00","Deployed: sign up, upload a printed lab result, see its facts as unverified"],[2,"CP2 MUST spine","Sat 20:00","Deployed: confirm, correct, timeline, explanation, share, clinician view, access log"],[3,"CP3 Feature freeze","Sun 22:00","Referral packet plus the SHOULDs still in scope"],[4,"Stage 4 evidence","Mon 16","Tests, throttled runs, screenshots, limitations"],[5,"Push and rehearse","Tue 17","Code and README in the organisers' repo"]];
+let done=store.get("done",{}),cutN=store.get("cutN",0),feed=store.get("feed","undecided");
+function cutSet(){const s=new Set(CUTS.slice(0,cutN).flat());if(feed==="nogo")["FR-25","FR-26","FR-27"].forEach(x=>s.add(x));return s}
+function isCut(t,s){return t.fr.length>0&&t.fr.every(f=>s.has(f))}
+function renderBoard(){
+  const s=cutSet(),live=TASKS.filter(t=>!isCut(t,s));
+  const hrs=f=>f.reduce((a,t)=>a+t.h,0);
+  const pct=(arr)=>{const tot=hrs(arr);return tot?Math.round(100*hrs(arr.filter(t=>done[t.id]))/tot):0};
+  const names={A:store.get("nA","")||"Dev A",B:store.get("nB","")||"Dev B"};
+  $("#prog").innerHTML=[["Everyone",live],[names.A,live.filter(t=>t.o.includes("A"))],[names.B,live.filter(t=>t.o.includes("B"))]].map(([l,a])=>`<div><div class="row" style="justify-content:space-between"><span>${esc(l)}</span><span class="mono">${pct(a)}% · ${hrs(a.filter(t=>done[t.id]))}/${hrs(a)} h</span></div><div class="meter"><i style="width:${pct(a)}%"></i></div></div>`).join("");
+  const cp2ok=TASKS.filter(t=>t.cp<=2).every(t=>done[t.id]);
+  $("#cps").innerHTML=CPS.map(([n,name,when,desc])=>{const req=live.filter(t=>t.cp<=n),ok=req.every(t=>done[t.id]),got=req.filter(t=>done[t.id]).length;
+    return `<div class="cp"><span class="chip ${ok?"ok":""}">${ok?"Passed":`${got}/${req.length}`}</span><div><b>${name}</b><div class="note">${desc}</div></div><span class="when">${when}</span></div>`}).join("")+
+    `<div class="cp"><span class="chip ${feed==="go"?"ok":feed==="nogo"?"bad":"warn"}">${feed==="go"?"Go":feed==="nogo"?"No-go":"Pending"}</span><div><b>Partner feed decision</b><div class="note">Rule: Go if CP2 has passed. CP2 is ${cp2ok?"passed, so the rule says Go":"not yet passed"}.</div></div><span class="when">Sat 20:00</span></div>`;
+  $$("#feedTog button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===feed));
+  $("#feedNote").textContent=feed==="nogo"?"FR-25, FR-26 and FR-27 are cut. The referral packet takes reason and urgency from a photographed letter, and the pitch says the partner path is the architecture, not the demo.":feed==="go"?"Build C14, C15 and C16 on Sunday, before the other SHOULDs.":`Rule: Go if CP2 passed by Sat 20:00. CP2 is ${cp2ok?"passed":"not passed yet"}.`;
+  const cutList=CUTS.slice(0,cutN).flat();
+  $("#cutNote").innerHTML=cutN?`Cut: <span class="mono">${cutList.join(", ")}</span> · saves ${hrs(TASKS.filter(t=>isCut(t,s)))} h. Never cut FR-04, FR-05, FR-06.`:"Nothing cut. Slide right to apply the Stage 1 cut order, worst first.";
+  const days=["Fri","Sat","Sun","Mon","Tue"],dn={Fri:"Friday 13, from noon",Sat:"Saturday 14",Sun:"Sunday 15",Mon:"Monday 16",Tue:"Tuesday 17"};
+  $("#days").innerHTML=days.map(d=>{const ts=TASKS.filter(t=>t.d===d);const cols=d==="Mon"||d==="Tue"?[["Both",ts]]:[[names.A,ts.filter(t=>t.o==="A")],[names.B,ts.filter(t=>t.o==="B")]];
+    return `<div class="day"><div class="row" style="justify-content:space-between"><h3>${dn[d]}</h3><span class="mono note">${hrs(ts.filter(t=>!isCut(t,s)))} h planned</span></div><div class="daycols">${cols.map(([l,arr])=>`<div class="col"><span class="label">${esc(l)}</span>${arr.map(t=>{const c=isCut(t,s);return `<label class="task ${done[t.id]?"done":""} ${c?"cut":""}"><input type="checkbox" data-t="${t.id}" ${done[t.id]?"checked":""} ${c?"disabled":""}><span><span class="tt">${t.t}</span><br><span class="tm">${t.c}${t.fr.length?" · "+t.fr.join(", "):" · MUST spine"}</span></span><span class="tm">${t.h} h</span></label>`}).join("")}</div>`).join("")}</div></div>`}).join("");
+  $$("#days input[data-t]").forEach(i=>i.onchange=()=>{done[i.dataset.t]=i.checked;store.set("done",done);renderBoard()});
+}
+function initBoard(){
+  $("#cut").value=cutN; $("#cut").oninput=e=>{cutN=+e.target.value;store.set("cutN",cutN);renderBoard()};
+  $$("#feedTog button").forEach(b=>b.onclick=()=>{feed=feed===b.dataset.v?"undecided":b.dataset.v;store.set("feed",feed);renderBoard()});
+  ["nA","nB"].forEach(k=>{$("#"+k).value=store.get(k,"");$("#"+k).oninput=e=>{store.set(k,e.target.value);renderBoard()}});
+  renderBoard();
+}
+
+/* ---------- ROUTER ---------- */
+const VIEWS=["map","flows","break","data","perms","screens","board"];
+let started={};
+function route(){
+  const v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"map";
+  VIEWS.forEach(k=>$("#v-"+k).hidden=k!==v);
+  $$("#tabs a").forEach(a=>a.setAttribute("aria-current",a.getAttribute("href")==="#"+v?"page":"false"));
+  if(!started[v]){started[v]=1;({map:renderMap,flows:()=>picker($("#flowPick"),FLOWS,"flow",$("#flowPanel"),false),break:()=>picker($("#breakPick"),BREAKS,"brk",$("#breakPanel"),true),data:renderData,perms:renderPerms,screens:renderScreens,board:initBoard})[v]()}
+  else if(v==="flows")$("#flowPanel")._go&&$("#flowPanel")._go(); else if(v==="break")$("#breakPanel")._go&&$("#breakPanel")._go();
+}
+window.addEventListener("hashchange",route); route();
+</script>
+
+</body>
+</html>

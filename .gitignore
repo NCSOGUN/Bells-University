@@ -1,0 +1,22 @@
+# secrets
+.env*
+!.env.example
+tools/sim-hospital/.env.local
+
+# deps and build
+node_modules/
+.next/
+out/
+build/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# misc
+.DS_Store
+.vercel/
+.idea/
+*.iml
+*.pem
+npm-debug.log*
