@@ -19,7 +19,7 @@ Every place the build differs from the design, or where the design was silent. F
 ## D-004 Model pinned to gemini-3.6-flash (P0 follow-up, freeze item 6)
 - **What:** `GEMINI_MODEL=gemini-3.6-flash`, chosen 13 Nov 2026 from the models page (badge "Stable") and a live call on the team key.
 - **Why:** `gemini-2.5-flash` is deprecated (routes to 3.5 Flash-Lite from 1 Dec 2026). `gemini-3.8-flash` is Stable but returned 503 "high demand" on three calls. `gemini-3.5-flash-lite` is Stable and faster but is the smaller model, which is a worse choice for reading documents. `-latest` aliases and previews were excluded.
-- **Watch:** one text-only call took 79 s (transient; the next ones took 1.6 s). `gemini-3.6-flash` spends "thinking" tokens even on trivial prompts, which costs latency. P2 should set the lowest thinking level the installed SDK allows, and Prep B must report real latency against NFR-10.
+- **Watch:** one text-only call took 79 s and one harness run on a tiny PDF hit the 60 s timeout (13 Nov) (transient; the next ones took 1.6 s). `gemini-3.6-flash` spends "thinking" tokens even on trivial prompts, which costs latency. P2 should set the lowest thinking level the installed SDK allows, and Prep B must report real latency against NFR-10.
 - **Alternative:** `gemini-3.5-flash-lite` if latency or quota is a problem; `gemini-3.8-flash` once demand settles. Change only `GEMINI_MODEL`.
 
 ## D-005 Prompt held as a TS constant as well as the .md (P2)
