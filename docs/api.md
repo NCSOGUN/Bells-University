@@ -108,3 +108,61 @@ Patient. Records consent to AI processing of document images (NFR-03). Idempoten
 { "ai_consent_at": "2026-11-13T09:12:44.120Z" }
 ```
 Errors: 401. Until this is set, `POST /api/documents/{id}/extract` returns 403 `consent_required`.
+
+## FactDTO
+
+Every fact returned by any route has this shape. Nothing in it says "abnormal", "better" or "worse"; the UI shows words from the fields.
+
+```json
+{
+  "id": "…", "record_id": "…", "document_id": "… or null",
+  "origin": "ai_read | patient_added | provider_entered",
+  "state": "unverified | confirmed | disputed",
+  "kind": "lab | medication | allergy | diagnosis | referral | other",
+  "label_as_printed": "Haemoglobin", "value_as_printed": "9.8", "unit_as_printed": "g/dL",
+  "range_as_printed": "12.0 - 16.0", "flag_as_printed": null,
+  "value_num": 9.8, "range_low": 12, "range_high": 16,
+  "unreadable": false, "check_carefully": false, "confidence": "high",
+  "source_quote": "Haemoglobin 9.8 g/dL 12.0 - 16.0", "source_box": [118, 83, 133, 448], "source_page": 1,
+  "fact_date": "2026-11-03", "fact_date_as_printed": "03/11/2026",
+  "test_key": "haemoglobin", "sensitive_category": null, "facility_name": "Sample Diagnostics Laboratory",
+  "extra": {}, "superseded_by": null, "has_image": true, "created_at": "2026-11-13T01:02:03.000Z"
+}
+```
+`source_box` is `[ymin, xmin, ymax, xmax]` on a 0 to 1000 scale of the page, or null (crop to the whole page then). `fact_date` null means "date not readable": show `fact_date_as_printed`. `unreadable: true` means show "could not be read", never a value. `check_carefully: true` means ask the patient to compare with the document before confirming.
+
+## POST /api/documents
+
+Patient. `multipart/form-data` with `record_id` (uuid), `client_upload_id` (uuid the device generates once per capture and reuses on every retry), `file` (image/jpeg, image/png up to 1 MB; application/pdf up to 4 MB). The device compresses and strips EXIF; the server does not re-encode.
+
+```json
+201  { "document_id": "3d0296b8-…", "status": "uploaded" }
+200  { "document_id": "3d0296b8-…", "status": "uploaded" }   ← same client_upload_id again (safe retry)
+```
+Errors: 400 `invalid_request`, 400 `unsupported_type`, 401, 404 (not your record), 409 `client_upload_id_conflict`, 413 `file_too_large`, 502 `storage_failed` (retry with the same id).
+
+## POST /api/documents/{id}/extract
+
+Patient. No body. Reads the document with the AI, applies the guards, stores facts as `ai_read` + `unverified`. Takes 5 to 30 s; the app should show progress and may poll `GET /api/documents/{id}` if the connection drops. Calling it again after success returns the stored facts without calling the model.
+
+```json
+200  { "document_id": "…", "status": "extracted", "facts": [ FactDTO, … ] }
+```
+A document with nothing readable still returns 200 with `"facts": []` (show "no facts found, add them by hand").
+Errors: 401, 403 `consent_required` (POST /api/consent first), 404, 409 `extraction_in_progress` (another call is running; retry in a moment), 502 `extraction_failed` with message "Itan could not read this document. Try again or add the facts by hand." (document status becomes `failed`; the same route can be called again).
+
+## GET /api/documents/{id}
+
+Patient.
+```json
+200
+{ "document_id": "…", "status": "uploaded | extracting | extracted | failed", "error_code": null,
+  "doc_type": "lab_report", "mime": "application/pdf", "uploaded_at": "…", "extracted_at": "…",
+  "facility_as_printed": "Sample Diagnostics Laboratory", "document_date_as_printed": "03/11/2026",
+  "facts": [ FactDTO, … ] }
+```
+Errors: 401, 404.
+
+## GET /api/documents/{id}/image
+
+Patient. Responds `302 Location: <signed URL valid 60 s>`. Use it as an `<img src>` or `<iframe src>` for PDFs; request it again when it expires. `Cache-Control: no-store`. Errors: 401, 404.
