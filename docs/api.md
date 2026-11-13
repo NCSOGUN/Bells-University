@@ -270,3 +270,92 @@ An `unverified` fact gets "You have not confirmed this value yet." first; a `che
 **Show every string in `notices` on the screen** (NFR-13): the second one appears for AI-read facts. Never add your own wording about what a result means.
 
 Errors: 400 `not_explainable` (not a lab), 401, 404.
+
+---
+
+## POST /api/shares
+
+Patient. Creates a share code. **The code is returned once and never again** (only its hash is stored), so show it immediately.
+
+```json
+{ "record_id": "…", "purpose": "general", "expires_in_minutes": 60,
+  "hidden_categories": ["mental_health"], "hidden_document_ids": ["…"] }
+```
+Strict body. Only `record_id` and `purpose` (`general` or `referral`) are required. `expires_in_minutes` defaults to 60; general shares allow 15 to 1440; referral shares up to 10080 (7 days) and need a `referral_id`. `hidden_categories` must come from the fixed list (see POST /api/facts/{id}/category); every hidden document and the referral must belong to the record.
+
+```json
+201
+{ "share_id": "…", "code": "7KQ2-M9XD",
+  "url": "https://<host>/c#7KQ2-M9XD", "qr_svg": "<svg …>…</svg>", "expires_at": "2026-11-13T11:42:00.000Z" }
+```
+The code is in the URL **fragment** (after `#`), so it never reaches a server log. Render `qr_svg` for the doctor to scan, or show `code` to read aloud. Errors: 400 `invalid_request` / `invalid_expiry` / `document_not_in_record` / `referral_not_in_record`, 401, 404.
+
+## POST /api/shares/{id}/revoke
+
+Patient. Revokes now. Idempotent. The doctor's next request is refused. `200 { "revoked": true }`. Errors: 401, 404 (not your share).
+
+## GET /api/records/{id}/shares
+
+Patient. Never returns codes or hashes.
+```json
+200
+{ "shares": [ { "id": "…", "purpose": "general", "created_at": "…", "expires_at": "…", "revoked_at": null,
+                "status": "valid", "hidden_categories": ["mental_health"], "hidden_document_ids": [], "viewer_count": 1 } ] }
+```
+`status` is `valid | expired | revoked`. Errors: 401, 404.
+
+## GET /api/records/{id}/access-log?limit=
+
+Patient. Newest first, default 100, max 200. Append-only; entries cannot be removed. Show `label` as the line of text.
+```json
+200
+{ "entries": [
+  { "id": "…", "at": "2026-11-13T10:02:11.000Z", "actor_type": "clinician",
+    "actor_label": "Dr A · MDCN 12345 (unverified)", "action": "viewer_opened", "outcome": "allowed",
+    "reason": null, "share_id": "…", "link_id": null, "fact_id": null,
+    "label": "Dr A · MDCN 12345 (unverified) opened your record" } ] }
+```
+`action` is one of `share_created, share_revoked, viewer_opened, viewer_open_refused, viewer_image_viewed, referral_acknowledged, link_created, link_revoked, feed_delivery_accepted, feed_delivery_refused`. A `viewer_open_refused` entry means someone tried a code of yours that had expired or been revoked (`reason`). Errors: 401, 404.
+
+## POST /api/view/open (clinician, no sign-in)
+
+Body: `{ "code": "7KQ2-M9XD", "name": "Dr A", "practice_no": "MDCN 12345" }` (name 2 to 80 characters, practice number 2 to 40; both trimmed). The code is case-insensitive and tolerant: spaces and hyphens are ignored, `O` reads as `0`, `I` and `L` read as `1`. The name and practice number are **recorded but not verified**; say so on screen.
+
+```json
+200  { "ok": true, "next": "/v" }        // "/v/referral" for a referral share; sets the itan_v cookie
+403  { "error": { "code": "code_not_valid", "message": "This code is not valid." } }
+429  { "error": { "code": "too_many_attempts", … } }   // header Retry-After: 600
+```
+Unknown, expired and revoked codes return the **identical** 403 body, so nothing can be learned by guessing. After 5 wrong tries from one address in 10 minutes the 6th gets 429 and the code is not even checked. The cookie (`itan_v`, HttpOnly, SameSite=Lax, Secure in production) lasts at most 30 minutes and never past the share's expiry. The response never contains record content. Errors: 400 `invalid_request`.
+
+Client flow on `/c`: read the code from `location.hash`, POST it here, then navigate to `next`. Do not put the code in a query string.
+
+## GET /v/facts/{id}/image (clinician)
+
+Needs the `itan_v` cookie. `302` to a signed URL valid for 60 seconds; every view is written to the patient's access log. `403 share_revoked | share_expired | session_expired | no_cookie` when the access is no longer valid. `404` for a fact that is hidden by the share, belongs to another record, or has no image (identical, so hidden items are not revealed).
+
+## Library functions for the clinician pages (Dev A)
+
+`/v` and `/c` pages call these directly instead of fetching the API. Import from `@/lib/share/service`:
+
+| Function | Use |
+|---|---|
+| `getViewerFromRequest(request)` | In a server component or route: pass a `Request` carrying the cookie. Returns `{ ok: true, actor, viewer, share, recordId, purpose }` or `{ ok: false, reason }` (`no_cookie`, `session_expired`, `share_expired`, `share_revoked`). It re-checks the share every call. On `ok: false`, show "This access is no longer valid." and a way to enter a new code. |
+| `getViewerSummary(ctx)` | Pass the `ok: true` result. Returns the one-screen summary below, or `null`. |
+
+Server components read the cookie with `cookies()` from `next/headers`; build a `Request` for the helper: `new Request("http://x", { headers: { cookie: "itan_v=" + value } })`.
+
+```json
+{
+  "record": { "display_name": "Demo Patient (SYNTHETIC)", "birth_year": 1972, "held_by_caregiver": false },
+  "viewer": { "name": "Dr A", "practice_no": "MDCN 12345" },
+  "recorded_notice": "Name and practice number were recorded but not verified.",
+  "partial_notice": "The patient has chosen not to share some items. This record may be incomplete.",
+  "sections": {
+    "medicines": [ FactDTO ], "allergies": [ FactDTO ], "diagnoses": [ FactDTO ],
+    "recent_results": [ FactDTO & { "previous": { "value_as_printed": "8.1", "unit_as_printed": "%", "fact_date": "2026-05-14", "fact_id": "…" } } ]
+  },
+  "expires_at": "2026-11-13T11:42:00.000Z"
+}
+```
+`partial_notice` is null unless the patient hid something; it never says what. Show the **origin and state badges** on every fact (unverified, confirmed, disputed, "Sent by hospital") and make each fact with `has_image` open `/v/facts/{id}/image`. Recent results are the latest value per test, newest first, at most 12. Show the exact strings above; do not paraphrase.

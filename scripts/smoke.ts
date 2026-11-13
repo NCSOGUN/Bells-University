@@ -5,6 +5,7 @@ import "./load-env";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import postgres from "postgres";
+import { getViewerFromRequest, getViewerSummary } from "../lib/share/service";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const SMOKE_RECORD = "SMOKE TEST (SYNTHETIC)";
@@ -96,6 +97,7 @@ async function main() {
   const bogus = await fetch(`${BASE}/api/documents/${crypto.randomUUID()}`, { headers: H });
   check("unknown document is 404", bogus.status === 404);
   await factChecks(H, demoId, rid);
+  await shareChecks(H, rid);
 }
 
 // ---- P6: fact lifecycle, timeline, previous value, provider-entered immutability
@@ -164,3 +166,133 @@ main()
     console.error("smoke aborted:", (e as Error).message);
     process.exit(1);
   });
+
+// ---- P8: shares, viewer sessions, hidden items, rate limit, revoke, expiry, access log
+async function shareChecks(H: Record<string, string>, recordId: string) {
+  const J = { ...H, "content-type": "application/json" };
+  const post = (p: string, body?: unknown, extra: Record<string, string> = {}) =>
+    fetch(`${BASE}${p}`, { method: "POST", headers: { ...J, ...extra }, body: body ? JSON.stringify(body) : undefined });
+  const open = (code: string, ip: string) =>
+    fetch(`${BASE}/api/view/open`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-forwarded-for": ip },
+      body: JSON.stringify({ code, name: "Dr Smoke", practice_no: "MDCN 00000" }),
+    });
+  const ipOf = () => `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`;
+  const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1 });
+  try {
+    // Two extracted facts with images: hide one by category, leave the other visible.
+    const tl = await (await fetch(`${BASE}/api/records/${recordId}/facts`, { headers: H })).json();
+    const withImg = (tl.facts as { id: string; has_image: boolean; sensitive_category: string | null }[]).filter((f) => f.has_image);
+    const hiddenFact = withImg[0];
+    const visibleFact = withImg.find((f) => f.id !== hiddenFact?.id && !f.sensitive_category);
+    check("have two facts with images to test hiding", !!hiddenFact && !!visibleFact);
+    if (!hiddenFact || !visibleFact) return;
+    await post(`/api/facts/${hiddenFact.id}/category`, { sensitive_category: "mental_health" });
+
+    // limits
+    check("expiry under 15 minutes is 400", (await post("/api/shares", { record_id: recordId, purpose: "general", expires_in_minutes: 5 })).status === 400);
+    check("general expiry over 24 hours is 400", (await post("/api/shares", { record_id: recordId, purpose: "general", expires_in_minutes: 1441 })).status === 400);
+    check("referral share without a referral is 400", (await post("/api/shares", { record_id: recordId, purpose: "referral" })).status === 400);
+    check("hiding a category that does not exist is 400", (await post("/api/shares", { record_id: recordId, purpose: "general", hidden_categories: ["nope"] })).status === 400);
+    check("anonymous cannot create a share (401)", (await fetch(`${BASE}/api/shares`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" })).status === 401);
+
+    // create
+    const cr = await post("/api/shares", { record_id: recordId, purpose: "general", hidden_categories: ["mental_health"] });
+    const share = await cr.json();
+    check(
+      "POST /api/shares 201 with XXXX-XXXX code, fragment url and QR svg",
+      cr.status === 201 && /^[0-9A-Z]{4}-[0-9A-Z]{4}$/.test(share.code) && share.url.endsWith(`/c#${share.code}`) && share.qr_svg.startsWith("<svg"),
+    );
+    const list = await (await fetch(`${BASE}/api/records/${recordId}/shares`, { headers: H })).json();
+    const mine = list.shares.find((s: { id: string }) => s.id === share.share_id);
+    check("share listed as valid with its hidden category", mine?.status === "valid" && mine.hidden_categories.includes("mental_health"));
+    check("share list never contains the code or any hash", !JSON.stringify(list).includes(share.code) && !/hash/i.test(JSON.stringify(list)));
+    const [stored] = await sql`select code_hash from share where id = ${share.share_id}`;
+    check("only a 64-hex hash is stored, never the code", /^[0-9a-f]{64}$/.test(stored.code_hash) && !stored.code_hash.includes(share.code.replace("-", "")));
+
+    // wrong code, then the right code typed sloppily (lowercase, no hyphen, O for 0)
+    const unknown = await open("ZZZZ-ZZZZ", ipOf());
+    const unknownBody = await unknown.text();
+    check("unknown code: 403 code_not_valid", unknown.status === 403 && JSON.parse(unknownBody).error.code === "code_not_valid");
+    const typed = share.code.replace("-", "").toLowerCase().replace(/0/g, "o");
+    const ok = await open(typed, ipOf());
+    const okBody = await ok.json();
+    const cookie = ok.headers.get("set-cookie") ?? "";
+    check("correct code (typed sloppily) opens: 200, next /v", ok.status === 200 && okBody.next === "/v");
+    check("viewer cookie is HttpOnly, SameSite=Lax, Path=/", /itan_v=/.test(cookie) && /HttpOnly/i.test(cookie) && /SameSite=Lax/i.test(cookie) && /Path=\//.test(cookie));
+    check("open response contains no record content", !/Haemoglobin|display_name|fact/i.test(JSON.stringify(okBody)));
+    const cookieHeader = cookie.split(";")[0];
+
+    // summary through the library path (what Dev A's /v page will call)
+    const viewer = await getViewerFromRequest(new Request("http://x/v", { headers: { cookie: cookieHeader } }));
+    check("session resolves to a clinician on the right record", viewer.ok && viewer.recordId === recordId);
+    if (viewer.ok) {
+      const summary = await getViewerSummary(viewer);
+      const body = JSON.stringify(summary);
+      check("summary: partial notice shown, hidden fact absent, visible fact present", !!summary?.partial_notice && !body.includes(hiddenFact.id) && body.includes(visibleFact.id));
+      check("summary says name and practice number are unverified", !!summary?.recorded_notice);
+    }
+
+    // image route
+    const img = (id: string, cookieH?: string) => fetch(`${BASE}/v/facts/${id}/image`, { headers: cookieH ? { cookie: cookieH } : {}, redirect: "manual" });
+    const visImg = await img(visibleFact.id, cookieHeader);
+    check("visible fact image: 302 to a signed URL", visImg.status === 302 && !!visImg.headers.get("location"));
+    check("hidden fact image: 404 (looks like it does not exist)", (await img(hiddenFact.id, cookieHeader)).status === 404);
+    check("image without a cookie: 403", (await img(visibleFact.id)).status === 403);
+    const recs = await (await fetch(`${BASE}/api/records`, { headers: H })).json();
+    const demo = recs.records.find((r: { display_name: string }) => r.display_name.startsWith("Demo"));
+    const demoFacts = await (await fetch(`${BASE}/api/records/${demo.id}/facts`, { headers: H })).json();
+    check("a fact from ANOTHER record through this share is 404", (await img(demoFacts.facts[0].id, cookieHeader)).status === 404);
+
+    // access log (holder)
+    const log = await (await fetch(`${BASE}/api/records/${recordId}/access-log?limit=50`, { headers: H })).json();
+    const actions = (log.entries as { action: string }[]).map((e) => e.action);
+    check("access log has share_created, viewer_opened, viewer_image_viewed", ["share_created", "viewer_opened", "viewer_image_viewed"].every((a) => actions.includes(a)));
+    check("access log labels name the viewer and say unverified", (log.entries as { label: string }[]).some((e) => e.label.includes("Dr Smoke") && e.label.includes("unverified")));
+    check("access log is holder-only (anonymous 401)", (await fetch(`${BASE}/api/records/${recordId}/access-log`)).status === 401);
+
+    // revoke: the very next request is refused, and the open body is identical to an unknown code's
+    check("revoke 200", (await post(`/api/shares/${share.share_id}/revoke`)).status === 200);
+    check("revoke is idempotent", (await post(`/api/shares/${share.share_id}/revoke`)).status === 200);
+    const after = await getViewerFromRequest(new Request("http://x/v", { headers: { cookie: cookieHeader } }));
+    check("after revoke the session is refused: share_revoked", !after.ok && after.reason === "share_revoked");
+    const imgAfter = await img(visibleFact.id, cookieHeader);
+    check("after revoke the image route is 403 share_revoked", imgAfter.status === 403 && (await imgAfter.json()).error.code === "share_revoked");
+    const reopen = await open(share.code, ipOf());
+    check("revoked code body is IDENTICAL to the unknown-code body (L12)", reopen.status === 403 && (await reopen.text()) === unknownBody);
+    const log2 = await (await fetch(`${BASE}/api/records/${recordId}/access-log?limit=50`, { headers: H })).json();
+    check("the refused attempt on a revoked code is in the patient's log", (log2.entries as { action: string; reason: string }[]).some((e) => e.action === "viewer_open_refused" && e.reason === "revoked"));
+
+    // expiry
+    const ex = await (await post("/api/shares", { record_id: recordId, purpose: "general", expires_in_minutes: 15 })).json();
+    await sql`update share set expires_at = now() - interval '1 minute' where id = ${ex.share_id}`;
+    const exOpen = await open(ex.code, ipOf());
+    check("expired code body is IDENTICAL to the unknown-code body", exOpen.status === 403 && (await exOpen.text()) === unknownBody);
+    const log3 = await (await fetch(`${BASE}/api/records/${recordId}/access-log?limit=50`, { headers: H })).json();
+    check("the refused attempt on an expired code is logged with reason expired", (log3.entries as { action: string; reason: string }[]).some((e) => e.action === "viewer_open_refused" && e.reason === "expired"));
+
+    // session lifetime is capped by the share expiry
+    const short = await (await post("/api/shares", { record_id: recordId, purpose: "general", expires_in_minutes: 15 })).json();
+    const sOpen = await open(short.code, ipOf());
+    const maxAge = Number(/Max-Age=(\d+)/.exec(sOpen.headers.get("set-cookie") ?? "")?.[1]);
+    check("cookie Max-Age is at most the share lifetime (15 min)", maxAge > 0 && maxAge <= 15 * 60);
+    await post(`/api/shares/${short.share_id}/revoke`);
+
+    // rate limit: five wrong codes from one IP, then even a CORRECT code is not checked
+    const live = await (await post("/api/shares", { record_id: recordId, purpose: "general" })).json();
+    const ip = ipOf();
+    const codes: number[] = [];
+    for (let i = 0; i < 5; i++) codes.push((await open(`WRNG-000${i}`, ip)).status);
+    check("five wrong codes are each 403", codes.every((c) => c === 403));
+    const limited = await open(live.code, ip);
+    check("sixth attempt is 429 with Retry-After, even with a correct code", limited.status === 429 && !!limited.headers.get("retry-after"));
+    check("a different IP is unaffected", (await open(live.code, ipOf())).status === 200);
+    await post(`/api/shares/${live.share_id}/revoke`);
+
+    check("bad body on open is 400", (await fetch(`${BASE}/api/view/open`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: "x" }) })).status === 400);
+    check("unknown share id revoke is 404", (await post(`/api/shares/${crypto.randomUUID()}/revoke`)).status === 404);
+  } finally {
+    await sql.end({ timeout: 5 });
+  }
+}

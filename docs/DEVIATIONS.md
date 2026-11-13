@@ -84,3 +84,10 @@ Every place the build differs from the design, or where the design was silent. F
 - **Why:** measured the same afternoon on the same synthetic one-page PDF: `gemini-3.6-flash` failed 2 of 6 calls with provider errors even after our retries and had stalls of 24, 56 and 64 s; `gemini-3.5-flash-lite` completed 12 of 12 calls in 1.9 to 3.1 s and read the document identically (every value, unit, range, the date, and the blank result left empty). It is also the smaller, cheaper model, which fits the "lightweight" goal.
 - **Not yet known:** accuracy on phone photos, blur, and the prescription and referral layouts. Run Prep B (`npm run extract-test`) on real fixtures before the freeze. If NFR-15 fails on this model, set `GEMINI_MODEL=gemini-3.6-flash` (or `gemini-3.8-flash`) and re-run: only the env var changes.
 - Vercel needs the same `GEMINI_MODEL` value in its environment variables.
+
+## D-016 P8 file layout and small calls (13 Nov)
+- **Layout:** to keep SQL out of pure files, the rate-limit queries are in `lib/share/queries.ts` (not `ratelimit.ts`), `session.ts` holds only pure helpers, and `getViewerFromRequest` / `getViewerSummary` live in `lib/share/service.ts`. Dev A imports them from there.
+- **Referral shares need a `referral_id`** (the prompt left it optional). Without one there is nothing to acknowledge or build a packet from.
+- **Refused-open log entries carry the typed name and practice number** so the patient can see who tried an expired or revoked code. An unknown code is recorded only in `code_attempt` (L10).
+- **Cookie `Secure`:** set when `NODE_ENV === "production"`, not on local http development (browsers would refuse to store it there).
+- **The `/c` page is Dev A's.** It must read the code from `location.hash` and POST it to `/api/view/open`; the server never sees the fragment.
