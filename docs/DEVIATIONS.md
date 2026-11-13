@@ -63,3 +63,24 @@ Every place the build differs from the design, or where the design was silent. F
 
 ## D-012 Commit author placeholder
 - Commits use the author `Itan Dev B <devb@itan.invalid>` because no git identity was set on this machine. Set `git config user.name` / `user.email` to change it for future commits.
+
+## D-013 Model latency has a long tail; timeout policy changed (P5/P6 testing, 13 Nov)
+- **Measured** (gemini-3.6-flash, one-page synthetic PDF, 8 sequential calls): 3.2 to 6.2 s for seven, 24 s for one. Elsewhere in the same session: a 64 s timeout and a 79 s reply. The average is fine; the tail is not (NFR-10 target 30 s).
+- **Change:** per-attempt timeout 25 s (was 60 s) and one retry after a timeout. A request now fails only if two attempts both stall; worst case about 55 s, inside `maxDuration = 120`.
+- **Failure path verified:** a timed-out extraction returned 502 `extraction_failed`, marked the document `failed`, wrote no facts, and the route can simply be called again.
+- **Open:** if the tail stays bad on demo day, switch `GEMINI_MODEL` to `gemini-3.5-flash-lite` (stable, smaller) and re-run Prep B. Report the slowest time, not the median, as the NFR-10 result.
+
+## D-014 Database normalisation and integrity triggers (owner request, 13 Nov)
+- **Normalised to first normal form:** the array columns `share.hidden_categories`, `share.hidden_document_ids`, `glossary.aliases`, `glossary.questions`, `drug_allergy_rule.allergy_aliases/medicine_aliases` became child tables `share_hidden_category`, `share_hidden_document`, `glossary_alias`, `glossary_question`, `drug_allergy_alias` (migration 0002). A test fails if any table has an array column.
+- **Deliberate denormalisation, kept:** `fact.facility_name` and the `referral.*_as_written` strings are snapshots of what a source said, as printed or as sent. They must not change if a hospital is renamed or a facility row edited, so they are data, not duplicates. `access_log.actor_label` is a snapshot for the same reason. `fact_event.before/after` are JSON diffs.
+- **Atomicity (ACID):** every multi-row write runs in one transaction (record + holder; extraction facts + events + document status; fact change + event; seed reference data). Extraction claims use one atomic UPDATE.
+- **Consistency:** foreign keys, CHECK constraints, unique constraints, and migration 0003 triggers: `access_log` and `fact_event` reject UPDATE, DELETE and TRUNCATE; a `provider_entered` fact rejects any change except state (confirmed or disputed) and the patient's category tag; non-AI facts cannot be stored `unverified`. Verified against the live database.
+- **Isolation:** Postgres default (read committed). Races that matter are handled by atomic statements (extraction claim, upload idempotency via a unique key). Nothing relies on serialisable isolation.
+- **Cost of append-only:** test rows written to audit tables cannot be deleted, so scripts must write to a throwaway record, not the demo record (smoke does). A one-off cleanup of earlier smoke rows was run on the synthetic dev database inside one transaction, with the triggers re-enabled and checked afterwards.
+- **Layering (separation of concerns), enforced by tests/architecture.test.ts:** routes (`app/api`) do HTTP only and never import the database; services and queries own SQL and transactions; pure rule modules (policy, lifecycle, correct, compare, extract guards and parsers, glossary, crypto) import no database, storage, network client or environment.
+
+## D-015 Model switched to gemini-3.5-flash-lite (13 Nov, supersedes D-004)
+- **What:** `GEMINI_MODEL=gemini-3.5-flash-lite` (badge "Stable" on the models page).
+- **Why:** measured the same afternoon on the same synthetic one-page PDF: `gemini-3.6-flash` failed 2 of 6 calls with provider errors even after our retries and had stalls of 24, 56 and 64 s; `gemini-3.5-flash-lite` completed 12 of 12 calls in 1.9 to 3.1 s and read the document identically (every value, unit, range, the date, and the blank result left empty). It is also the smaller, cheaper model, which fits the "lightweight" goal.
+- **Not yet known:** accuracy on phone photos, blur, and the prescription and referral layouts. Run Prep B (`npm run extract-test`) on real fixtures before the freeze. If NFR-15 fails on this model, set `GEMINI_MODEL=gemini-3.6-flash` (or `gemini-3.8-flash`) and re-run: only the env var changes.
+- Vercel needs the same `GEMINI_MODEL` value in its environment variables.

@@ -166,3 +166,64 @@ Errors: 401, 404.
 ## GET /api/documents/{id}/image
 
 Patient. Responds `302 Location: <signed URL valid 60 s>`. Use it as an `<img src>` or `<iframe src>` for PDFs; request it again when it expires. `Cache-Control: no-store`. Errors: 401, 404.
+
+---
+
+## Fact lifecycle
+
+| Origin | Created as | Patient can |
+|---|---|---|
+| `ai_read` | `unverified` | confirm, correct, remove |
+| `patient_added` | `confirmed` | correct, remove |
+| `provider_entered` (from a hospital) | `confirmed` (the hospital vouched) | **dispute** and withdraw the dispute. Never edit or remove (403 `provider_entered_immutable`) |
+
+`confirmed` always carries the origin badge: the patient vouched for an AI-read fact, the sending facility vouched for a hospital fact. A patient can never set `origin`, `state` or `superseded_by`: those fields in a body give 400. A removed fact is hidden everywhere and cannot be changed again (409 `already_removed`). Every change appends a `fact_event` with before and after, so the AI's original reading is never lost.
+
+## GET /api/records/{id}/facts
+
+Patient. The timeline: active facts (not removed, not superseded), newest `fact_date` first, undated last, then newest created. Labs that have an earlier value with the identical printed unit carry `previous`. There is no difference, direction or "better/worse" field (FR-24).
+
+```json
+200
+{
+  "facts": [
+    { "id": "…", "label_as_printed": "HbA1c", "value_as_printed": "7.4", "unit_as_printed": "%",
+      "fact_date": "2026-11-03", "state": "confirmed", "origin": "ai_read", "…": "FactDTO",
+      "previous": { "value_as_printed": "8.1", "unit_as_printed": "%", "fact_date": "2026-05-14", "fact_id": "…" } }
+  ],
+  "documents": [
+    { "id": "…", "doc_type": "lab_report", "status": "extracted", "uploaded_at": "…",
+      "facility_as_printed": "Sample Diagnostics Laboratory", "document_date_as_printed": "03/11/2026" }
+  ]
+}
+```
+`previous` appears only when: same test (`test_key`), both numeric, an earlier date, and the **same printed unit**. Units are never converted. Errors: 401, 404.
+
+## POST /api/facts
+
+Patient adds a fact by hand. Strict body. Created `patient_added` + `confirmed`.
+```json
+{ "record_id": "…", "kind": "lab", "label_as_printed": "Hb", "value_as_printed": "10.1",
+  "unit_as_printed": "g/dL", "range_as_printed": "12.0 - 16.0", "fact_date_as_printed": "01/11/2026",
+  "sensitive_category": null }
+```
+Only `record_id`, `kind` (`lab|medication|allergy|diagnosis|other`) and `label_as_printed` are required. Dates are read day-first. `201 { "fact": FactDTO }`. Errors: 400, 401, 404.
+
+## POST /api/facts/{id}/confirm
+`unverified` to `confirmed`. `200 { "fact": FactDTO }`. Errors: 401, 404, 409 `invalid_transition` (already confirmed), 409 `already_removed`.
+
+## POST /api/facts/{id}/correct
+Strict body, any of `label_as_printed`, `value_as_printed`, `unit_as_printed`, `range_as_printed`, `fact_date_as_printed` (null or empty clears). Numbers, date and `test_key` are re-derived from the text; the fact becomes `confirmed` and `check_carefully` and `unreadable` clear. `kind`, the source quote/box and the image are never changed.
+```json
+{ "value_as_printed": "9.8" }
+```
+`200 { "fact": FactDTO }`. Errors: 400, 401, 403 `provider_entered_immutable`, 404, 409.
+
+## POST /api/facts/{id}/remove
+Soft delete. `200 { "removed": true, "fact_id": "…" }`. Errors: 401, 403 `provider_entered_immutable`, 404, 409.
+
+## POST /api/facts/{id}/dispute  and  DELETE /api/facts/{id}/dispute
+Hospital-sent facts only. `POST { "note": "This is not my result" }` (1 to 500 characters) sets `state: "disputed"`; `DELETE` (no body) withdraws it back to `confirmed`. The hospital's content is untouched and the note is stored beside it. The disputed state shows on the clinician view. `200 { "fact": FactDTO }`. Errors: 400, 401, 403 (not a hospital-sent fact), 404, 409.
+
+## POST /api/facts/{id}/category
+The patient's privacy tag, allowed on any origin (it is not an edit of clinical content). `{ "sensitive_category": "mental_health" }` or `null` to clear. Values: `sexual_reproductive`, `mental_health`, `infectious_disease`, `substance_use`, `other_sensitive`. `200 { "fact": FactDTO }`. Errors: 400, 401, 404, 409.

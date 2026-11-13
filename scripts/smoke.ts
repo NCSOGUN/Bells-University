@@ -4,8 +4,10 @@
 import "./load-env";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import postgres from "postgres";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
+const SMOKE_RECORD = "SMOKE TEST (SYNTHETIC)";
 let failures = 0;
 const check = (name: string, ok: boolean, detail = "") => {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? `  (${detail})` : ""}`);
@@ -35,9 +37,19 @@ async function main() {
   const token = await signIn();
   const H = { authorization: `Bearer ${token}` };
   const recs = await fetch(`${BASE}/api/records`, { headers: H }).then((r) => r.json());
-  const recordId: string | undefined = recs.records?.[0]?.id;
-  check("demo record listed", !!recordId);
-  if (!recordId) throw new Error("no demo record");
+  const demoId: string | undefined = recs.records?.find((r: { display_name: string }) => r.display_name === "Demo Patient (SYNTHETIC)")?.id;
+  check("demo record listed", !!demoId);
+  if (!demoId) throw new Error("no demo record");
+  // Everything that writes uses a separate throwaway record, so the demo record stays clean
+  // (audit tables are append-only, so test rows cannot be deleted afterwards).
+  let recordId: string | undefined = recs.records?.find((r: { display_name: string }) => r.display_name === SMOKE_RECORD)?.id;
+  if (!recordId) {
+    const c = await fetch(`${BASE}/api/records`, { method: "POST", headers: { ...H, "content-type": "application/json" }, body: JSON.stringify({ display_name: SMOKE_RECORD, is_self: false }) });
+    recordId = (await c.json()).record_id;
+  }
+  check("smoke record ready", !!recordId);
+  if (!recordId) throw new Error("could not create the smoke record");
+  const rid: string = recordId;
 
   const consent = await fetch(`${BASE}/api/consent`, { method: "POST", headers: H });
   check("POST /api/consent", consent.status === 200);
@@ -54,9 +66,9 @@ async function main() {
   const clientUploadId = crypto.randomUUID();
   const form = () => {
     const f = new FormData();
-    f.set("record_id", recordId);
+    f.set("record_id", rid);
     f.set("client_upload_id", clientUploadId);
-    f.set("file", new Blob([bytes], { type: mime }), path.basename(file));
+    f.set("file", new Blob([new Uint8Array(bytes)], { type: mime }), path.basename(file));
     return f;
   };
   const up1 = await fetch(`${BASE}/api/documents`, { method: "POST", headers: H, body: form() });
@@ -83,6 +95,64 @@ async function main() {
   check("GET image is a 302 to a signed URL", img.status === 302 && !!img.headers.get("location"));
   const bogus = await fetch(`${BASE}/api/documents/${crypto.randomUUID()}`, { headers: H });
   check("unknown document is 404", bogus.status === 404);
+  await factChecks(H, demoId, rid);
+}
+
+// ---- P6: fact lifecycle, timeline, previous value, provider-entered immutability
+async function factChecks(H: Record<string, string>, demoId: string, recordId: string) {
+  const J = { ...H, "content-type": "application/json" };
+  const post = (p: string, body?: unknown, method = "POST") => fetch(`${BASE}${p}`, { method, headers: J, body: body ? JSON.stringify(body) : undefined });
+
+  const tl = await (await fetch(`${BASE}/api/records/${demoId}/facts`, { headers: H })).json(); // read-only, on the demo record
+  const hba = (tl.facts as { test_key: string; value_as_printed: string; previous?: { value_as_printed: string } }[]).filter((f) => f.test_key === "hba1c");
+  const latest = hba.find((f) => f.value_as_printed === "7.4");
+  const older = hba.find((f) => f.value_as_printed === "8.1");
+  check("timeline: latest HbA1c has previous 8.1, older has none (FR-24)", latest?.previous?.value_as_printed === "8.1" && !!older && !older.previous);
+  check("timeline: no direction wording in previous", !JSON.stringify(latest?.previous ?? {}).match(/better|worse|improv|worsen/i));
+
+  const add = await post("/api/facts", { record_id: recordId, kind: "lab", label_as_printed: "Hb", value_as_printed: "10.1", unit_as_printed: "g/dL", range_as_printed: "12.0 - 16.0", fact_date_as_printed: "01/11/2026" });
+  const added = (await add.json()).fact;
+  check("POST /api/facts 201: patient_added, confirmed, test_key haemoglobin", add.status === 201 && added.origin === "patient_added" && added.state === "confirmed" && added.test_key === "haemoglobin");
+  const bad = await post("/api/facts", { record_id: recordId, kind: "lab", label_as_printed: "x", origin: "provider_entered" });
+  check("POST /api/facts rejects origin in the body (strict)", bad.status === 400);
+
+  const cor = await post(`/api/facts/${added.id}/correct`, { value_as_printed: "10.5" });
+  const corj = (await cor.json()).fact;
+  check("correct re-derives value_num", cor.status === 200 && corj.value_num === 10.5);
+  const cat = await post(`/api/facts/${added.id}/category`, { sensitive_category: "mental_health" });
+  check("category tag", cat.status === 200 && (await cat.json()).fact.sensitive_category === "mental_health");
+  const catBad = await post(`/api/facts/${added.id}/category`, { sensitive_category: "made_up" });
+  check("unknown category is 400", catBad.status === 400);
+  const rm = await post(`/api/facts/${added.id}/remove`);
+  check("remove 200", rm.status === 200);
+  const again = await post(`/api/facts/${added.id}/confirm`);
+  check("a removed fact cannot be changed (409)", again.status === 409);
+  const tl2 = await (await fetch(`${BASE}/api/records/${recordId}/facts`, { headers: H })).json();
+  check("removed fact is gone from the timeline", !(tl2.facts as { id: string }[]).some((f) => f.id === added.id));
+  const dispAi = await post(`/api/facts/${(tl.facts as { id: string; origin: string }[]).find((f) => f.origin === "ai_read")!.id}/dispute`, { note: "x" });
+  check("dispute on an AI-read fact is refused (403)", dispAi.status === 403);
+
+  // Provider-entered fact (inserted directly: the feed arrives in P10).
+  const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1 });
+  try {
+    const [pf] = await sql`insert into fact (record_id, origin, state, kind, label_as_printed, value_as_printed, facility_name) values (${recordId}, 'provider_entered', 'confirmed', 'lab', 'SMOKE-TEST Creatinine', '88', 'Demo General Hospital (SIMULATED)') returning id`;
+    const pc = await post(`/api/facts/${pf.id}/correct`, { value_as_printed: "99" });
+    check("correct on a provider-entered fact is 403 provider_entered_immutable (NFR-24)", pc.status === 403 && (await pc.json()).error.code === "provider_entered_immutable");
+    const pr = await post(`/api/facts/${pf.id}/remove`);
+    check("remove on a provider-entered fact is 403", pr.status === 403);
+    const d1 = await post(`/api/facts/${pf.id}/dispute`, { note: "This is not my result" });
+    check("dispute provider-entered fact: state disputed", d1.status === 200 && (await d1.json()).fact.state === "disputed");
+    const [row] = await sql`select value_as_printed from fact where id = ${pf.id}`;
+    check("the hospital value is untouched after the dispute", row.value_as_printed === "88");
+    const [ev] = await sql`select note from fact_event where fact_id = ${pf.id} and event = 'disputed'`;
+    check("the patient note is stored beside the fact, not in place of it", ev?.note === "This is not my result");
+    const d2 = await post(`/api/facts/${pf.id}/dispute`, undefined, "DELETE");
+    check("withdraw dispute: back to confirmed", d2.status === 200 && (await d2.json()).fact.state === "confirmed");
+    const other = await fetch(`${BASE}/api/facts/${pf.id}/confirm`, { method: "POST", headers: { authorization: "Bearer nope" } });
+    check("bad token on a fact route is 401", other.status === 401);
+  } finally {
+    await sql.end({ timeout: 5 });
+  }
 }
 
 main()

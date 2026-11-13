@@ -8,7 +8,8 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { newHospitalKey, sha256Hex } from "../crypto";
 import { closeDb, getDb } from "./client";
-import { drug_allergy_rule, facility, glossary, hospital, hospital_credential } from "./schema";
+import { normaliseKey } from "../glossary";
+import { drug_allergy_alias, drug_allergy_rule, facility, glossary, glossary_alias, glossary_question, hospital, hospital_credential } from "./schema";
 import { DRUG_ALLERGY_RULES, FACILITIES, GLOSSARY, SIMULATED_HOSPITAL } from "./seed-data";
 
 async function main() {
@@ -53,26 +54,36 @@ async function main() {
     console.log(`hospital: "${h.name}" has an active key (not rotated; pass --rotate-key to replace it)`);
   }
 
-  for (const g of GLOSSARY) {
-    await db
-      .insert(glossary)
-      .values({ ...g, reviewed_by: null })
-      .onConflictDoUpdate({
-        target: glossary.test_key,
-        set: { display_name: g.display_name, aliases: g.aliases, description: g.description, questions: g.questions },
-      });
-  }
+  // Reference data is rewritten in one transaction so a half-loaded glossary can never be seen.
+  await db.transaction(async (tx) => {
+    for (const g of GLOSSARY) {
+      await tx
+        .insert(glossary)
+        .values({ test_key: g.test_key, display_name: g.display_name, description: g.description, reviewed_by: null })
+        .onConflictDoUpdate({ target: glossary.test_key, set: { display_name: g.display_name, description: g.description } });
+      await tx.delete(glossary_alias).where(eq(glossary_alias.test_key, g.test_key));
+      await tx.delete(glossary_question).where(eq(glossary_question.test_key, g.test_key));
+      const aliases = [...new Set([g.test_key, g.display_name, ...g.aliases])];
+      await tx.insert(glossary_alias).values(aliases.map((alias) => ({ test_key: g.test_key, alias, alias_key: normaliseKey(alias) })));
+      await tx.insert(glossary_question).values(g.questions.map((question, position) => ({ test_key: g.test_key, position, question })));
+    }
+  });
   console.log(`glossary: ${GLOSSARY.length} rows`);
 
-  for (const r of DRUG_ALLERGY_RULES) {
-    await db
-      .insert(drug_allergy_rule)
-      .values({ ...r, reviewed_by: null })
-      .onConflictDoUpdate({
-        target: drug_allergy_rule.rule_key,
-        set: { allergy_aliases: r.allergy_aliases, medicine_aliases: r.medicine_aliases, note: r.note },
-      });
-  }
+  await db.transaction(async (tx) => {
+    for (const r of DRUG_ALLERGY_RULES) {
+      const [rule] = await tx
+        .insert(drug_allergy_rule)
+        .values({ rule_key: r.rule_key, note: r.note, reviewed_by: null })
+        .onConflictDoUpdate({ target: drug_allergy_rule.rule_key, set: { note: r.note } })
+        .returning({ id: drug_allergy_rule.id });
+      await tx.delete(drug_allergy_alias).where(eq(drug_allergy_alias.rule_id, rule.id));
+      await tx.insert(drug_allergy_alias).values([
+        ...[...new Set(r.allergy_aliases)].map((alias) => ({ rule_id: rule.id, role: "allergy", alias })),
+        ...[...new Set(r.medicine_aliases)].map((alias) => ({ rule_id: rule.id, role: "medicine", alias })),
+      ]);
+    }
+  });
   console.log(`drug_allergy_rule: ${DRUG_ALLERGY_RULES.length} rows`);
 }
 

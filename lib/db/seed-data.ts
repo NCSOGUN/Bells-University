@@ -75,7 +75,7 @@ export const GLOSSARY: GlossarySeed[] = [
     test_key: "hba1c",
     display_name: "HbA1c",
     aliases: ["HbA1c", "HBA1C", "Hb A1c", "A1c", "Glycated haemoglobin", "Glycated hemoglobin", "Glycosylated haemoglobin"],
-    description: "HbA1c measures how much sugar is attached to the haemoglobin in your red blood cells, which reflects your average blood sugar over the past few months.",
+    description: "This test measures how much sugar is attached to the haemoglobin in your red blood cells, which reflects your average blood sugar over the past few months.",
     questions: [ASK_MEANING, ASK_REPEAT, ASK_TOGETHER],
   },
   {

@@ -10,7 +10,7 @@ Source of truth: `lib/db/schema.ts`. Postgres on Supabase (London). Row level se
 | `document` | An uploaded photo or PDF | `record_id`, `client_upload_id` (unique, makes uploads idempotent), `status` uploaded/extracting/extracted/failed, `error_code`, `doc_type`, `facility_as_printed`, `document_date_as_printed`, `uploaded_at` |
 | `fact` | One medical fact | see below |
 | `fact_event` | Append-only history of a fact | `fact_id`, `event`, `actor_type` system/patient/partner, `before`, `after`, `note` (dispute note) |
-| `share` | A share code (only its hash is stored) | `record_id`, `purpose` general/referral, `hidden_categories`, `hidden_document_ids`, `expires_at`, `revoked_at`, `referral_id` |
+| `share` | A share code (only its hash is stored) | `record_id`, `purpose` general/referral, `expires_at`, `revoked_at`, `referral_id` |
 | `viewer_session` | A clinician who opened a code | `share_id`, `viewer_name`, `practice_no` (unverified), `expires_at` |
 | `access_log` | Append-only "who saw what" (FR-13) | `record_id`, `at`, `actor_type`, `actor_label`, `action`, `outcome` allowed/refused, `reason` |
 | `code_attempt` | Rate limit on code guesses | `ip_hash` (never the raw IP), `at`, `success` |
@@ -41,3 +41,8 @@ Display rules that come from the data: show `unverified` and `disputed` as word 
 
 ## Demo data
 `npm run db:seed:demo` creates `demo@itan.example` (password in `DEMO_PASSWORD`) with one record "Demo Patient (SYNTHETIC)": haemoglobin, two HbA1c values on two dates (for FR-24), fasting glucose, a penicillin allergy, amoxicillin (for FR-17), type 2 diabetes, and an anxiety diagnosis tagged `mental_health` (for the hidden-category demo). All invented.
+
+## Normalisation and integrity (D-014)
+Lists are child tables, never array columns: `share_hidden_category (share_id, category)`, `share_hidden_document (share_id, document_id)`, `glossary_alias`, `glossary_question`, `drug_allergy_alias`. Strings that record what a source said (`fact.facility_name`, `referral.*_as_written`, `access_log.actor_label`) are deliberate snapshots, not duplicates.
+
+Database-level guarantees (migration 0003): `access_log` and `fact_event` cannot be updated, deleted or truncated; a hospital-sent fact cannot be edited, only disputed or tagged; patient-added and hospital-sent facts can never be stored `unverified`. Because audit rows cannot be deleted, tests and scripts must write to a throwaway record, never the demo record.

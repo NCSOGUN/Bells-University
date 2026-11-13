@@ -15,6 +15,20 @@
       "when": 1794525608824,
       "tag": "0001_rls_deny_all",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794526987090,
+      "tag": "0002_normalise_lists",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794527017681,
+      "tag": "0003_integrity_triggers",
+      "breakpoints": true
     }
   ]
 }

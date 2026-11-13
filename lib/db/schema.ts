@@ -186,8 +186,6 @@ export const share = pgTable(
     /** HMAC-SHA256(SHARE_PEPPER, code). The code itself is never stored (hard rule 5). */
     code_hash: text("code_hash").notNull(),
     purpose: text("purpose").notNull().default("general"),
-    hidden_categories: text("hidden_categories").array().notNull().default(sql`'{}'::text[]`),
-    hidden_document_ids: uuid("hidden_document_ids").array().notNull().default(sql`'{}'::uuid[]`),
     referral_id: uuid("referral_id").references(() => referral.id),
     expires_at: ts("expires_at").notNull(),
     revoked_at: ts("revoked_at"),
@@ -198,6 +196,29 @@ export const share = pgTable(
     check("share_purpose_chk", oneOf(t.purpose, ["general", "referral"])),
     index("share_record_idx").on(t.record_id),
   ],
+);
+
+/** Categories the patient hid from one share (FR-15). One row per (share, category): first normal form. */
+export const share_hidden_category = pgTable(
+  "share_hidden_category",
+  {
+    share_id: uuid("share_id").notNull().references(() => share.id),
+    category: text("category").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.share_id, t.category] }),
+    check("share_hidden_category_chk", oneOf(t.category, SENSITIVE_CATEGORIES)),
+  ],
+);
+
+/** Documents the patient hid from one share (FR-15). */
+export const share_hidden_document = pgTable(
+  "share_hidden_document",
+  {
+    share_id: uuid("share_id").notNull().references(() => share.id),
+    document_id: uuid("document_id").notNull().references(() => document.id),
+  },
+  (t) => [primaryKey({ columns: [t.share_id, t.document_id] })],
 );
 
 export const viewer_session = pgTable(
@@ -371,11 +392,31 @@ export const feed_receipt = pgTable(
 export const glossary = pgTable("glossary", {
   test_key: text("test_key").primaryKey(),
   display_name: text("display_name").notNull(),
-  aliases: text("aliases").array().notNull(),
   description: text("description").notNull(),
-  questions: text("questions").array().notNull(),
   reviewed_by: text("reviewed_by"),
 });
+
+/** Printed variants of a test name ("Hb", "HGB"). `alias_key` is the normalised form used for lookup. */
+export const glossary_alias = pgTable(
+  "glossary_alias",
+  {
+    test_key: text("test_key").notNull().references(() => glossary.test_key),
+    alias: text("alias").notNull(),
+    alias_key: text("alias_key").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.test_key, t.alias] }), index("glossary_alias_key_idx").on(t.alias_key)],
+);
+
+/** Fixed neutral questions to ask a doctor, in display order. */
+export const glossary_question = pgTable(
+  "glossary_question",
+  {
+    test_key: text("test_key").notNull().references(() => glossary.test_key),
+    position: integer("position").notNull(),
+    question: text("question").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.test_key, t.position] })],
+);
 
 /** Hand-built, NOT clinically validated (FR-17, NFR-21). */
 export const drug_allergy_rule = pgTable(
@@ -383,12 +424,21 @@ export const drug_allergy_rule = pgTable(
   {
     id: id(),
     rule_key: text("rule_key").notNull(),
-    allergy_aliases: text("allergy_aliases").array().notNull(),
-    medicine_aliases: text("medicine_aliases").array().notNull(),
     note: text("note").notNull(),
     reviewed_by: text("reviewed_by"),
   },
   (t) => [unique("drug_allergy_rule_key_uq").on(t.rule_key)],
+);
+
+/** Names that trigger a rule. `role` says whether the alias matches the recorded allergy or the medicine. */
+export const drug_allergy_alias = pgTable(
+  "drug_allergy_alias",
+  {
+    rule_id: uuid("rule_id").notNull().references(() => drug_allergy_rule.id),
+    role: text("role").notNull(),
+    alias: text("alias").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.rule_id, t.role, t.alias] }), check("drug_allergy_alias_role_chk", oneOf(t.role, ["allergy", "medicine"]))],
 );
 
 export type FactRow = typeof fact.$inferSelect;

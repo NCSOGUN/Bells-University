@@ -34,7 +34,10 @@ export class ExtractionError extends Error {
   }
 }
 
-const ATTEMPT_TIMEOUT_MS = 60_000; // abort one call after 60 s
+// Typical calls take 3 to 6 s but a call occasionally stalls for a minute or more (measured 13 Nov, docs/DEVIATIONS.md D-013).
+// So: abort one attempt after 25 s and try once more, rather than wait 60 s for a call that is probably stuck.
+const ATTEMPT_TIMEOUT_MS = 25_000;
+const MAX_TIMEOUT_RETRIES = 1;
 const MAX_RETRIES = 3; // after the first try, on 429 or 5xx
 const BACKOFF_MS = [1000, 2000, 4000];
 const TOTAL_BUDGET_MS = 100_000; // never start a retry that cannot finish inside the route's maxDuration (120 s)
@@ -95,6 +98,7 @@ export async function extractDocument(input: ExtractInput, deps: AdapterDeps = {
   const now = deps.now ?? Date.now;
   const started = now();
 
+  let timeouts = 0;
   for (let attempt = 0; ; attempt++) {
     try {
       const text = await generate(input, GEMINI_MODEL, GEMINI_API_KEY);
@@ -107,11 +111,12 @@ export async function extractDocument(input: ExtractInput, deps: AdapterDeps = {
       return { raw, model: GEMINI_MODEL, ms: now() - started };
     } catch (err) {
       if (err instanceof ExtractionError) throw err;
-      if (isTimeout(err)) throw new ExtractionError("model_timeout");
+      const timedOut = isTimeout(err);
+      if (timedOut && ++timeouts > MAX_TIMEOUT_RETRIES) throw new ExtractionError("model_timeout");
       const status = err instanceof ApiError ? err.status : undefined;
       const delay = BACKOFF_MS[attempt];
-      const canRetry = retryable(err) && attempt < MAX_RETRIES && now() - started + delay < TOTAL_BUDGET_MS;
-      if (!canRetry) throw new ExtractionError("model_unavailable", status);
+      const canRetry = (timedOut || retryable(err)) && attempt < MAX_RETRIES && now() - started + delay < TOTAL_BUDGET_MS;
+      if (!canRetry) throw new ExtractionError(timedOut ? "model_timeout" : "model_unavailable", status);
       await sleep(delay);
     }
   }

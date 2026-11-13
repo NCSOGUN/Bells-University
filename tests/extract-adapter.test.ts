@@ -64,10 +64,16 @@ describe("extractDocument adapter", () => {
     expect(h.calls()).toBe(1);
   });
 
-  it("maps a timeout to model_timeout without retrying", async () => {
+  it("retries a timeout once, then succeeds", async () => {
+    const h = harness([new DOMException("timed out", "TimeoutError"), good]);
+    await extractDocument(input, h.deps);
+    expect(h.calls()).toBe(2);
+  });
+
+  it("two timeouts in a row give model_timeout (no endless waiting)", async () => {
     const h = harness([new DOMException("timed out", "TimeoutError")]);
     await expect(extractDocument(input, h.deps)).rejects.toMatchObject({ code: "model_timeout" });
-    expect(h.calls()).toBe(1);
+    expect(h.calls()).toBe(2);
   });
 
   it("maps non-JSON text to model_output_invalid", async () => {
