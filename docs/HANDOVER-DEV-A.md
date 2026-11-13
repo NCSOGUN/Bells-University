@@ -108,4 +108,4 @@ The wording is checked by tests for advice language, and rewording can turn a st
 - Never call an AI model from the browser, and never write medical wording of your own.
 
 ## 6. Where to look
-`lib/api-types.ts` (every request, response and error code as TypeScript types; `import type` only, safe in client components), `docs/api.md` (every route), `docs/design-lab.html` (screens and flows), `docs/DEVIATIONS.md` (judgement calls, especially D-017 to D-021), `docs/progress/P*.md` (what each piece does), `docs/limitations.md` (what to say about accuracy).
+`lib/api-types.ts` (every request, response and error code as TypeScript types; `import type` only, safe in client components), `docs/api.md` (every route), `docs/design-lab.html` (screens and flows), `docs/LOCKED-DECISIONS.md` (L1 to L32, cited in code comments), `docs/DEVIATIONS.md` (judgement calls, especially D-017 to D-022), `docs/progress/P*.md` (what each piece does), `docs/limitations.md` (what to say about accuracy).

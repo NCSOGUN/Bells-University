@@ -23,3 +23,6 @@ npm-debug.log*
 
 # local experiments
 /scratch/
+
+# Dev B work plan: finished, kept locally only (decisions live in docs/LOCKED-DECISIONS.md)
+docs/DEV-B-PROMPTS.md

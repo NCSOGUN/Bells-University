@@ -2,7 +2,7 @@
 
 A patient-held medical record. Patients photograph their own lab reports, prescriptions and letters; an AI service **only reads** them; the patient confirms each fact; a doctor sees a one-screen summary through a short share code; a (SIMULATED) partner hospital can push results through a write-only FHIR R4-aligned feed.
 
-Built for the NCS Ogun State IT Development Contest (healthcare theme). **All data is synthetic.** Read `docs/SYSTEM-DESIGN.md` for the design.
+Built for the NCS Ogun State IT Development Contest (healthcare theme). **All data is synthetic.** Read `docs/SYSTEM-DESIGN.md` for the design and `docs/LOCKED-DECISIONS.md` for the decisions (L1 to L32) the code cites.
 
 ## Quick start
 
