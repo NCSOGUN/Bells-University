@@ -445,3 +445,23 @@ Always show the disclaimer with the label. Errors: 400, 403 (no cookie, expired 
   "disclaimer": "This is not a statement that a bed is available.",
   "expires_at": "…" }
 ```
+
+---
+
+## GET /api/records/{id}/advisories
+
+Patient. Non-blocking drug-allergy flags (FR-17). It reads only and never stops any other action. It uses a short hand-built list that **has not been clinically validated**, so `validated` is always `false` and the message says so. Show the `message` exactly; add no severity, colour-coded danger, "avoid" or alternatives.
+
+```json
+200
+{
+  "advisories": [
+    { "allergy_fact_id": "…", "medicine_fact_id": "…",
+      "allergy_label": "Penicillin", "medicine_label": "Amoxicillin 500 mg",
+      "rule_id": "penicillins", "note": "These medicines belong to the penicillin group.",
+      "message": "Your record lists an allergy to Penicillin and a medicine called Amoxicillin 500 mg. Itan cannot tell whether this is a problem. Please check with a doctor or pharmacist. This check uses a short list that has not been clinically validated. This is not medical advice." }
+  ],
+  "validated": false
+}
+```
+A pair matches when the allergy and the medicine are both in one rule's group (penicillins, cephalosporins related to penicillins, sulfonamides, NSAIDs, macrolides), or when the allergy word appears in the medicine's name. Unreadable and superseded facts are ignored. The same advisories appear in `packet.advisories` on a referral, computed only from facts the viewer can see (a hidden allergy never leaks). Errors: 401, 404.

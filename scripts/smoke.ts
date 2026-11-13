@@ -42,6 +42,9 @@ async function main() {
   const demoId: string | undefined = recs.records?.find((r: { display_name: string }) => r.display_name === "Demo Patient (SYNTHETIC)")?.id;
   check("demo record listed", !!demoId);
   if (!demoId) throw new Error("no demo record");
+  const adv = await (await fetch(`${BASE}/api/records/${demoId}/advisories`, { headers: H })).json();
+  check("demo record returns exactly one advisory (penicillin + amoxicillin), validated:false", adv.advisories?.length === 1 && adv.validated === false && adv.advisories[0].medicine_label === "Amoxicillin 500 mg");
+  check("advisories need sign-in (401)", (await fetch(`${BASE}/api/records/${demoId}/advisories`)).status === 401);
   // Everything that writes uses a separate throwaway record, so the demo record stays clean
   // (audit tables are append-only, so test rows cannot be deleted afterwards).
   let recordId: string | undefined = recs.records?.find((r: { display_name: string }) => r.display_name === SMOKE_RECORD)?.id;

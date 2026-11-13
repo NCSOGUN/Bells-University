@@ -4,6 +4,7 @@
 // THE RULE: reason and urgency come ONLY from the referral's source fact (kind "referral", state "confirmed") and are
 // copied verbatim, with where they came from. If there is no such source they are MISSING. Nothing here generates,
 // infers, ranks or rewrites them (hard rule 7, NFR-19).
+import { findAdvisories, type AdvisoryRule } from "@/lib/advisory/rules";
 import type { Advisory } from "@/lib/advisory/types";
 import { attachPrevious, latestPerTestKey, type FactWithPrevious } from "@/lib/facts/compare";
 import type { FactDTO } from "@/lib/facts/dto";
@@ -44,7 +45,8 @@ export interface PacketInput {
   facts: FactDTO[];
   /** Present when the packet is built for a clinician: hidden items are removed first. */
   share?: ShareHides;
-  advisories?: Advisory[];
+  /** The drug-allergy rules. The advisory is computed from the facts THIS viewer can see, so a hidden allergy never leaks. */
+  advisoryRules?: AdvisoryRule[];
 }
 
 const missing = (note: string = MISSING): PacketField => ({ status: "missing", note });
@@ -115,7 +117,7 @@ export function buildPacket(input: PacketInput): Packet {
     results: list(labs, NONE_RECORDED),
     medicines: list(meds, NONE_RECORDED),
     allergies: list(allergies, NONE_RECORDED),
-    advisories: input.advisories ?? [],
+    advisories: findAdvisories(visibleFacts, input.advisoryRules ?? []),
     documents,
   };
 }

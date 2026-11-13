@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { writeAccessLog } from "@/lib/audit";
 import { getDb, withTransaction, type Db } from "@/lib/db/client";
+import { loadRules } from "@/lib/advisory/queries";
 import { toFactDTO } from "@/lib/facts/dto";
 import { listActiveFacts } from "@/lib/facts/queries";
 import { can } from "@/lib/policy";
@@ -70,10 +71,11 @@ export async function createReferral(accountId: string, input: z.infer<typeof cr
 async function packetFor(referralRow: q.ReferralRow, share: ViewerContext["share"] | undefined, db: Db): Promise<Packet | null> {
   const record = await loadRecordHeader(referralRow.record_id, db);
   if (!record) return null;
-  const [facts, sourceRow, destinationName] = await Promise.all([
+  const [facts, sourceRow, destinationName, advisoryRules] = await Promise.all([
     listActiveFacts(referralRow.record_id, db),
     q.getFactById(referralRow.source_fact_id, db),
     q.facilityName(referralRow.destination_facility_id, db),
+    loadRules(db),
   ]);
   return buildPacket({
     record,
@@ -81,6 +83,7 @@ async function packetFor(referralRow: q.ReferralRow, share: ViewerContext["share
     destinationName,
     sourceFact: sourceRow && sourceRow.record_id === referralRow.record_id ? toFactDTO(sourceRow) : null,
     facts,
+    advisoryRules,
     share: share ? { hiddenCategories: share.hiddenCategories, hiddenDocumentIds: share.hiddenDocumentIds } : undefined,
   });
 }
