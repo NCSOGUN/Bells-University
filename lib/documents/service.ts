@@ -1,6 +1,6 @@
 // Document upload, claim and extraction (C06 server side; FR-02 to FR-05, NFR-03, NFR-12).
 // Plain functions with injected dependencies; the route files are thin wrappers.
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { MAX_IMAGE_BYTES, MAX_PDF_BYTES } from "@/lib/config";
 import { getDb, withTransaction, type Db } from "@/lib/db/client";
 import { document, fact, fact_event, type DocumentRow } from "@/lib/db/schema";
@@ -8,9 +8,10 @@ import { ExtractionError, extractDocument, type ExtractMime, type ExtractResult 
 import { applyGuards, type GuardedOutput } from "@/lib/extract/guards";
 import { PROMPT_VERSION } from "@/lib/extract/prompt";
 import { parseModelOutput } from "@/lib/extract/schema";
-import { toFactDTO, type FactDTO } from "@/lib/facts/dto";
+import type { FactDTO } from "@/lib/facts/dto";
 import { lookupTestKey } from "@/lib/glossary";
 import { AI_NOTICE_PATIENT } from "@/lib/notices";
+import { listDocumentFacts } from "./queries";
 import { storagePath, supabaseStorage, type DocumentStorage } from "@/lib/storage";
 import { logEvent } from "@/lib/log";
 import { sniffMime } from "./sniff";
@@ -74,36 +75,8 @@ export async function uploadDocument(
 }
 
 // ---------------------------------------------------------------- read
-
-export async function getDocumentForRecord(documentId: string, recordIds: string[], db: Db = getDb()): Promise<DocumentRow | null> {
-  const [row] = await db.select().from(document).where(eq(document.id, documentId));
-  return row && recordIds.includes(row.record_id) ? row : null;
-}
-
-export async function listDocumentFacts(documentId: string, db: Db = getDb()): Promise<FactDTO[]> {
-  const rows = await db
-    .select()
-    .from(fact)
-    .where(and(eq(fact.document_id, documentId), isNull(fact.removed_at)))
-    .orderBy(fact.source_page, fact.created_at);
-  return rows.map(toFactDTO);
-}
-
-export function documentView(d: DocumentRow, facts: FactDTO[]) {
-  return {
-    document_id: d.id,
-    status: d.status,
-    error_code: d.error_code,
-    doc_type: d.doc_type,
-    mime: d.mime,
-    uploaded_at: d.uploaded_at,
-    extracted_at: d.extracted_at,
-    facility_as_printed: d.facility_as_printed,
-    document_date_as_printed: d.document_date_as_printed,
-    facts,
-    ai_notice: AI_NOTICE_PATIENT, // NFR-13
-  };
-}
+// The read helpers live in ./queries so read-only routes do not load the Gemini SDK (R1 N-03).
+export { documentView, getDocumentForRecord, listDocumentFacts } from "./queries";
 
 // ---------------------------------------------------------------- extraction
 

@@ -115,6 +115,14 @@ describe("NFR-13 disclosures travel with AI-read content", () => {
       expect(read(f), f).toMatch(/ai_notice:\s*AI_NOTICE_(PATIENT|CLINICIAN)/);
     }
   });
+
+  it("both referral builders carry ai_notice: the patient preview and the clinician packet (R1 S-07)", () => {
+    const src = read("lib/referral/service.ts");
+    for (const fn of ["getReferralForHolder", "getReferralPacketForViewer"]) {
+      const body = src.slice(src.indexOf(`export async function ${fn}`)).split(/\nexport /)[0];
+      expect(body, fn).toMatch(/ai_notice:\s*AI_NOTICE_(PATIENT|CLINICIAN)/);
+    }
+  });
 });
 
 describe("(d) no secret is exposed to the browser (NFR-01, D-021)", () => {

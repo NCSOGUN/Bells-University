@@ -1,6 +1,6 @@
 // GET /api/documents/{id}: status and facts (FR-03). What the app polls after a dropped connection.
 import { getHolderActor } from "@/lib/auth";
-import { documentView, getDocumentForRecord, listDocumentFacts } from "@/lib/documents/service";
+import { documentView, getDocumentForRecord, listDocumentFacts } from "@/lib/documents/queries";
 import { denied, isUuid, json, notFound, unauthenticated, withErrors, type RouteCtx } from "@/lib/http";
 import { can } from "@/lib/policy";
 

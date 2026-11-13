@@ -1,6 +1,6 @@
 // GET /api/documents/{id}/image: 302 to a 60-second signed URL of the private file (FR-05, L14).
 import { getHolderActor } from "@/lib/auth";
-import { getDocumentForRecord } from "@/lib/documents/service";
+import { getDocumentForRecord } from "@/lib/documents/queries";
 import { denied, isUuid, notFound, unauthenticated, withErrors, type RouteCtx } from "@/lib/http";
 import { can } from "@/lib/policy";
 import { supabaseStorage } from "@/lib/storage";

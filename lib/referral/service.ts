@@ -9,7 +9,7 @@ import { toFactDTO } from "@/lib/facts/dto";
 import { listActiveFacts } from "@/lib/facts/queries";
 import { can } from "@/lib/policy";
 import { loadRecordHeader } from "@/lib/share/queries";
-import { AI_NOTICE_CLINICIAN } from "@/lib/notices";
+import { AI_NOTICE_CLINICIAN, AI_NOTICE_PATIENT } from "@/lib/notices";
 import { PARTIAL_NOTICE, RECORDED_NOTICE } from "@/lib/share/summary";
 import type { ViewerContext } from "@/lib/share/session";
 import { buildPacket, type Packet } from "./packet";
@@ -112,6 +112,8 @@ export async function getReferralForHolder(id: string, recordIds: string[], db: 
     packet,
     acknowledgements: acks.map((a) => ({ status: a.status, label: ackLabel(a.status as AckStatus), at: a.at, viewer_name: a.viewer_name })),
     disclaimer: ACK_DISCLAIMER,
+    // NFR-13: the packet carries facts that may be AI-read (R1 S-07; additive field).
+    ai_notice: AI_NOTICE_PATIENT,
   };
 }
 
