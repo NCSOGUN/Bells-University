@@ -116,6 +116,13 @@ Every place the build differs from the design, or where the design was silent. F
 - **All ten fixtures were built**, not the seven-document cut. Dates: dd/mm/yyyy in eight, ISO in one, none in the blurred sheet.
 - **Not real photographs.** These have a printed-photo look made by code. Two should still be printed and photographed with a real phone (README).
 
+## D-020 Prep B first results and a scorer change (13 Nov)
+- **Result:** NFR-15 FAIL, 2 critical errors, both the same finding (below). Everything else matched exactly. Details in `tools/prepb-report.md`.
+- **Finding: unit glyph variant.** On `lab-chem-photo` the model returned `μmol/L` (U+03BC, Greek mu) where the page prints `µmol/L` (U+00B5, micro sign). They are NFKC-equal and NFC-different, and identical on screen. The scorer flags it because rule 1 says characters are copied exactly. It is not a wrong value, medicine, dose or allergy.
+- **Not changed, owner decision needed:** (a) keep the scorer strict and accept FAIL; (b) treat NFKC-equal units as a non-critical "glyph variant" in the scorer, reported on its own line; (c) also normalise µ/μ when comparing units. Option (c) is a real product fix: `lib/facts/compare.ts` line 30 compares units with `!==`, so a previous value would silently vanish between two facts whose mu differs. It would still never convert a unit (NFR-18) and would leave the stored text as printed. Recommended: (b) and (c), with the report stating the variant count openly.
+- **Scorer change (additive, `tools/extract-score.ts`):** each score now carries `referral: {reason, urgency} | null` (were the letter's exact words returned?), and the verdict is **INCOMPLETE** rather than PASS when any document failed to extract, because an unscored document proves nothing. Before this, a referral letter could score PASS with an empty result, and a run with a failed document still printed PASS. Tests added in `tests/extract-score.test.ts`.
+- **Provider failures:** 2 of 30 calls failed (`model_unavailable`) after retries, on different documents each time. Latency: median 11.2 s, slowest 37.9 s unthrottled (D-013's retry-after-25 s policy shows up as the 27 to 38 s calls).
+
 ## D-018 P12 hardening changes and judgement calls (13 Nov)
 - **Auth outage is 503, not 401 (lib/auth.ts, lib/http.ts; P4 code changed).**
   - **Found live:** Supabase Auth `getUser` stalled for 10 to 45 s from Nigeria, and `getAccountId` returned null, so signed-in calls got 401. In the app that would look like being signed out.

@@ -102,7 +102,7 @@ async function main(): Promise<number> {
   writeFileSync("tools/prepb-report.md", renderReport({ scores, failed, model, promptVersion: PROMPT_VERSION, date, runs }));
   writeFileSync("tools/prepb-results.json", JSON.stringify({ model, prompt_version: PROMPT_VERSION, date, runs, scores, failed }, null, 2) + "\n");
 
-  const verdict = nfr15(scores);
+  const verdict = nfr15(scores, failed.length);
   console.log(verdict.line);
   return verdict.pass ? 0 : 1;
 }

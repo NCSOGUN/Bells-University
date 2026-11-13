@@ -3,18 +3,19 @@
 Status: draft written 13 Nov 2026 by Dev B. Lines marked **TEAM** must be completed by a person before publishing. Nothing here is an estimate presented as a measurement.
 
 ## 1. Documents tested and measured accuracy
-- **Prep B (the extraction test) has not been run on a test set yet.** No answer-keyed fixtures exist (DEVIATIONS D-007), so `tools/prepb-results.json` does not exist and **accuracy is unmeasured**. NFR-15 (zero confident critical errors) is **not run**.
-- What has been run: single synthetic one-page lab PDFs, several times, with `gemini-3.6-flash` and then `gemini-3.5-flash-lite`. Every value, unit, range and date was read correctly, and a blank result was left empty. That is a smoke check, not an accuracy figure.
-- **TEAM:** after P1 and Prep B, replace this section with the real table: document types, number of documents, items read, errors, critical errors, model name and date.
+- **Test set:** 10 SYNTHETIC documents with answer keys (`tools/fixtures`): two printed lab photos, one more lab photo with a blank range column, a heavily blurred lab photo, a printed prescription (3 medicines, 1 allergy), a printed referral letter, and four lab PDFs (including one in g/L and one two-page PDF). They are clean, computer-made layouts with a printed-photo look, **not real phone photographs, and no handwriting**. They do not prove real-world accuracy.
+- **Run:** 13 Nov 2026, model `gemini-3.5-flash-lite`, prompt v1, 2 runs per document (20 calls; 1 failed with a provider error and was not scored). An earlier single run (10 calls, 1 provider failure) gave the same results.
+- **Read correctly:** every test name, result, range and date; every medicine name and dose; the penicillin allergy; the referral reason and urgency in the letter's exact words with no diagnosis invented; the blank range column left empty; nothing invented on any page; the blurred sheet returned no results (3 of 3 handled as unreadable).
+- **NFR-15 (zero confident critical errors): FAIL, 2 critical errors.** Both are one finding, reproduced twice: the model returned the Greek mu (U+03BC) for the micro sign (U+00B5) in `µmol/L`. It looks identical and is not a wrong value, medicine, dose or allergy, but it is not "character for character". See DEVIATIONS D-020. **TEAM:** decide how this is treated before the freeze.
+- **TEAM:** after the two real phone photographs are scored, add them here.
 
 ## 2. Failure modes seen so far
-- **Slow or failed model calls.**
-  - `gemini-3.6-flash` failed 2 of 6 calls and stalled for 24 to 79 s on some others (D-013, D-015).
-  - `gemini-3.5-flash-lite` completed 12 of 12 calls in 1.9 to 3.1 s through the harness.
-  - Through the full upload-and-extract path from Nigeria, one-page extractions took 8.5 to 16.7 s.
-  - A timed-out extraction fails cleanly: nothing is written, the patient can retry.
+- **Provider errors.** About 2 of 30 calls to `gemini-3.5-flash-lite` failed (`model_unavailable`) after our retries. A failed extraction writes nothing and the patient can retry. `gemini-3.6-flash` was worse (D-013, D-015).
+- **Slow tail.** Unthrottled server-side extraction took a median of 11.2 s but up to **37.9 s** (4 of 20 calls took 27 to 38 s), above the 30 s target (NFR-10) before any 3G delay. Not yet measured on throttled 3G.
+- **Unit glyph variant.** The same-looking unit can come back as a different character. Previous-value comparison (FR-24) compares units exactly, so two such results would silently show no previous value (D-020).
+- **A clinician line can swallow the next line.** On the referral letter the referring clinician came back as "Dr Demo Physician (SYNTHETIC)" plus the following line "Medical Officer". The scorer does not compare this field, so it is unmeasured.
 - **Slow sign-in checks.** Calls from Nigeria to Supabase Auth in London sometimes stalled for 10 to 45 s. These used to look like "signed out" (401); they now return 503 "try again" after 8 s (P12).
-- **Not yet known:** behaviour on phone photos, blur, prescriptions and referral letters. The P1 fixtures and two real phone photographs are needed.
+- **Not yet known:** behaviour on real phone photos, real prescriptions and referral letters, and handwriting.
 
 ## 3. What Itan does NOT do
 - **No clinical judgement of its own:**

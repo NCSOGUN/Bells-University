@@ -1,0 +1,785 @@
+{
+  "model": "gemini-3.5-flash-lite",
+  "prompt_version": "v1",
+  "date": "2026-11-13",
+  "runs": 2,
+  "scores": [
+    {
+      "id": "lab-blurred-photo",
+      "latency_ms": 6990,
+      "items_expected": 3,
+      "items_found": 0,
+      "items_matched": 0,
+      "missed": [
+        "Fasting Glucose",
+        "Creatinine",
+        "Urea"
+      ],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 0,
+          "total": 3
+        },
+        "value": {
+          "hit": 0,
+          "total": 0
+        },
+        "unit": {
+          "hit": 0,
+          "total": 0
+        },
+        "range": {
+          "hit": 0,
+          "total": 0
+        }
+      },
+      "unreadable": {
+        "total": 3,
+        "handled": 3
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": null,
+        "date": null
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-blurred-photo",
+      "latency_ms": 6859,
+      "items_expected": 3,
+      "items_found": 0,
+      "items_matched": 0,
+      "missed": [
+        "Fasting Glucose",
+        "Creatinine",
+        "Urea"
+      ],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 0,
+          "total": 3
+        },
+        "value": {
+          "hit": 0,
+          "total": 0
+        },
+        "unit": {
+          "hit": 0,
+          "total": 0
+        },
+        "range": {
+          "hit": 0,
+          "total": 0
+        }
+      },
+      "unreadable": {
+        "total": 3,
+        "handled": 3
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": null,
+        "date": null
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-chem-photo",
+      "latency_ms": 23523,
+      "items_expected": 5,
+      "items_found": 5,
+      "items_matched": 5,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 5,
+          "total": 5
+        },
+        "value": {
+          "hit": 5,
+          "total": 5
+        },
+        "unit": {
+          "hit": 4,
+          "total": 5
+        },
+        "range": {
+          "hit": 5,
+          "total": 5
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": [
+        {
+          "document": "lab-chem-photo",
+          "item": "Creatinine",
+          "reason": "unit differs from key",
+          "expected": "µmol/L",
+          "actual": "μmol/L"
+        }
+      ]
+    },
+    {
+      "id": "lab-chem-photo",
+      "latency_ms": 27424,
+      "items_expected": 5,
+      "items_found": 5,
+      "items_matched": 5,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 5,
+          "total": 5
+        },
+        "value": {
+          "hit": 5,
+          "total": 5
+        },
+        "unit": {
+          "hit": 4,
+          "total": 5
+        },
+        "range": {
+          "hit": 5,
+          "total": 5
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": [
+        {
+          "document": "lab-chem-photo",
+          "item": "Creatinine",
+          "reason": "unit differs from key",
+          "expected": "µmol/L",
+          "actual": "μmol/L"
+        }
+      ]
+    },
+    {
+      "id": "lab-fbc-photo",
+      "latency_ms": 12358,
+      "items_expected": 4,
+      "items_found": 4,
+      "items_matched": 4,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 4,
+          "total": 4
+        },
+        "value": {
+          "hit": 4,
+          "total": 4
+        },
+        "unit": {
+          "hit": 4,
+          "total": 4
+        },
+        "range": {
+          "hit": 4,
+          "total": 4
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-fbc-photo",
+      "latency_ms": 11248,
+      "items_expected": 4,
+      "items_found": 4,
+      "items_matched": 4,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 4,
+          "total": 4
+        },
+        "value": {
+          "hit": 4,
+          "total": 4
+        },
+        "unit": {
+          "hit": 4,
+          "total": 4
+        },
+        "range": {
+          "hit": 4,
+          "total": 4
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-hba1c-2025-pdf",
+      "latency_ms": 6960,
+      "items_expected": 1,
+      "items_found": 1,
+      "items_matched": 1,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 1,
+          "total": 1
+        },
+        "value": {
+          "hit": 1,
+          "total": 1
+        },
+        "unit": {
+          "hit": 1,
+          "total": 1
+        },
+        "range": {
+          "hit": 1,
+          "total": 1
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-hba1c-2025-pdf",
+      "latency_ms": 35089,
+      "items_expected": 1,
+      "items_found": 1,
+      "items_matched": 1,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 1,
+          "total": 1
+        },
+        "value": {
+          "hit": 1,
+          "total": 1
+        },
+        "unit": {
+          "hit": 1,
+          "total": 1
+        },
+        "range": {
+          "hit": 1,
+          "total": 1
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-hba1c-2026-pdf",
+      "latency_ms": 10928,
+      "items_expected": 1,
+      "items_found": 1,
+      "items_matched": 1,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 1,
+          "total": 1
+        },
+        "value": {
+          "hit": 1,
+          "total": 1
+        },
+        "unit": {
+          "hit": 1,
+          "total": 1
+        },
+        "range": {
+          "hit": 1,
+          "total": 1
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-hba1c-2026-pdf",
+      "latency_ms": 11227,
+      "items_expected": 1,
+      "items_found": 1,
+      "items_matched": 1,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 1,
+          "total": 1
+        },
+        "value": {
+          "hit": 1,
+          "total": 1
+        },
+        "unit": {
+          "hit": 1,
+          "total": 1
+        },
+        "range": {
+          "hit": 1,
+          "total": 1
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-mixed-pdf",
+      "latency_ms": 9788,
+      "items_expected": 6,
+      "items_found": 6,
+      "items_matched": 6,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 6,
+          "total": 6
+        },
+        "value": {
+          "hit": 6,
+          "total": 6
+        },
+        "unit": {
+          "hit": 6,
+          "total": 6
+        },
+        "range": {
+          "hit": 6,
+          "total": 6
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-mixed-pdf",
+      "latency_ms": 37863,
+      "items_expected": 6,
+      "items_found": 6,
+      "items_matched": 6,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 6,
+          "total": 6
+        },
+        "value": {
+          "hit": 6,
+          "total": 6
+        },
+        "unit": {
+          "hit": 6,
+          "total": 6
+        },
+        "range": {
+          "hit": 6,
+          "total": 6
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-no-range-photo",
+      "latency_ms": 10956,
+      "items_expected": 3,
+      "items_found": 3,
+      "items_matched": 3,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 3,
+          "total": 3
+        },
+        "value": {
+          "hit": 3,
+          "total": 3
+        },
+        "unit": {
+          "hit": 3,
+          "total": 3
+        },
+        "range": {
+          "hit": 0,
+          "total": 0
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-unusual-units-pdf",
+      "latency_ms": 11756,
+      "items_expected": 2,
+      "items_found": 2,
+      "items_matched": 2,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 2,
+          "total": 2
+        },
+        "value": {
+          "hit": 2,
+          "total": 2
+        },
+        "unit": {
+          "hit": 2,
+          "total": 2
+        },
+        "range": {
+          "hit": 2,
+          "total": 2
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "lab-unusual-units-pdf",
+      "latency_ms": 8681,
+      "items_expected": 2,
+      "items_found": 2,
+      "items_matched": 2,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 2,
+          "total": 2
+        },
+        "value": {
+          "hit": 2,
+          "total": 2
+        },
+        "unit": {
+          "hit": 2,
+          "total": 2
+        },
+        "range": {
+          "hit": 2,
+          "total": 2
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "referral-letter-photo",
+      "latency_ms": 19016,
+      "items_expected": 0,
+      "items_found": 0,
+      "items_matched": 0,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 0,
+          "total": 0
+        },
+        "value": {
+          "hit": 0,
+          "total": 0
+        },
+        "unit": {
+          "hit": 0,
+          "total": 0
+        },
+        "range": {
+          "hit": 0,
+          "total": 0
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": {
+        "reason": true,
+        "urgency": true
+      },
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "referral-letter-photo",
+      "latency_ms": 29736,
+      "items_expected": 0,
+      "items_found": 0,
+      "items_matched": 0,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 0,
+          "total": 0
+        },
+        "value": {
+          "hit": 0,
+          "total": 0
+        },
+        "unit": {
+          "hit": 0,
+          "total": 0
+        },
+        "range": {
+          "hit": 0,
+          "total": 0
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": {
+        "reason": true,
+        "urgency": true
+      },
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "rx-printed-photo",
+      "latency_ms": 12316,
+      "items_expected": 4,
+      "items_found": 4,
+      "items_matched": 4,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 4,
+          "total": 4
+        },
+        "value": {
+          "hit": 3,
+          "total": 3
+        },
+        "unit": {
+          "hit": 0,
+          "total": 0
+        },
+        "range": {
+          "hit": 0,
+          "total": 0
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    },
+    {
+      "id": "rx-printed-photo",
+      "latency_ms": 8266,
+      "items_expected": 4,
+      "items_found": 4,
+      "items_matched": 4,
+      "missed": [],
+      "hallucinated": [],
+      "rates": {
+        "label": {
+          "hit": 4,
+          "total": 4
+        },
+        "value": {
+          "hit": 3,
+          "total": 3
+        },
+        "unit": {
+          "hit": 0,
+          "total": 0
+        },
+        "range": {
+          "hit": 0,
+          "total": 0
+        }
+      },
+      "unreadable": {
+        "total": 0,
+        "handled": 0
+      },
+      "meta": {
+        "doc_type": true,
+        "facility": true,
+        "date": true
+      },
+      "referral": null,
+      "guard_notes": 0,
+      "critical": []
+    }
+  ],
+  "failed": [
+    {
+      "id": "lab-no-range-photo",
+      "code": "model_unavailable"
+    }
+  ]
+}

@@ -39,6 +39,8 @@ export interface DocScore {
   rates: { label: FieldRate; value: FieldRate; unit: FieldRate; range: FieldRate };
   unreadable: { total: number; handled: number };
   meta: { doc_type: boolean; facility: boolean | null; date: boolean | null };
+  /** Referral letters only: were the reason and the urgency returned in the letter's exact words? null = not a referral key. */
+  referral: { reason: boolean; urgency: boolean } | null;
   guard_notes: number;
   critical: CriticalError[];
 }
@@ -127,6 +129,12 @@ export function scoreDocument(key: FixtureKey, out: GuardedOutput, latencyMs: nu
       facility: key.facility === null ? null : sameText(out.facility_as_printed, key.facility),
       date: key.document_date === null ? null : sameText(out.document_date_as_printed, key.document_date),
     },
+    referral: want
+      ? {
+          reason: !!got?.reason_as_written && sameText(got.reason_as_written.text, want.reason),
+          urgency: !!got?.urgency_as_written && sameText(got.urgency_as_written.text, want.urgency),
+        }
+      : null,
     guard_notes: out.notes.length,
     critical,
   };
@@ -136,12 +144,15 @@ export function pct(r: FieldRate): string {
   return r.total === 0 ? "n/a" : `${Math.round((100 * r.hit) / r.total)}% (${r.hit}/${r.total})`;
 }
 
-export function nfr15(scores: DocScore[]): { pass: boolean; critical: number; line: string } {
+/** `failedToExtract` = documents that never produced output (provider errors). They are not scored, so a clean
+ *  result with failures is INCOMPLETE, not PASS: an unscored document proves nothing. */
+export function nfr15(scores: DocScore[], failedToExtract = 0): { pass: boolean; critical: number; line: string } {
   const critical = scores.reduce((n, s) => n + s.critical.length, 0);
   if (scores.length === 0) return { pass: false, critical: 0, line: "NFR-15: NOT RUN (no documents were scored)" };
-  return critical === 0
-    ? { pass: true, critical, line: "NFR-15: PASS" }
-    : { pass: false, critical, line: `NFR-15: FAIL (${critical} critical errors)` };
+  if (critical > 0) return { pass: false, critical, line: `NFR-15: FAIL (${critical} critical errors)` };
+  return failedToExtract > 0
+    ? { pass: false, critical, line: `NFR-15: INCOMPLETE (0 critical errors in ${scores.length} scored; ${failedToExtract} failed to extract and were not scored)` }
+    : { pass: true, critical, line: "NFR-15: PASS" };
 }
 
 export function renderReport(args: {
@@ -154,7 +165,7 @@ export function renderReport(args: {
 }): string {
   const { scores, failed, model, promptVersion, date, runs } = args;
   const lat = scores.map((s) => s.latency_ms).sort((a, b) => a - b);
-  const verdict = nfr15(scores);
+  const verdict = nfr15(scores, failed.length);
   const L: string[] = [
     "# Prep B extraction test report",
     "",
@@ -185,6 +196,11 @@ export function renderReport(args: {
   else {
     L.push("| Document | Item | Reason | Expected | Actual |", "|---|---|---|---|---|");
     for (const c of crits) L.push(`| ${c.document} | ${c.item} | ${c.reason} | ${c.expected} | ${c.actual} |`);
+  }
+  const refs = scores.filter((s) => s.referral);
+  if (refs.length) {
+    L.push("", "## Referral letters (reason and urgency must be the letter's exact words)", "");
+    for (const s of refs) L.push(`- ${s.id}: reason ${s.referral!.reason ? "exact" : "NOT returned exactly"}; urgency ${s.referral!.urgency ? "exact" : "NOT returned exactly"}`);
   }
   const missed = scores.filter((s) => s.missed.length);
   if (missed.length) {

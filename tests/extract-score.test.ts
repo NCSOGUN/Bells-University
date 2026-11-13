@@ -87,6 +87,25 @@ describe("Prep B scoring", () => {
     expect(s.critical[0].reason).toBe("urgency is not the letter's words");
   });
 
+  it("a referral letter reports whether reason and urgency came back in the letter's exact words", () => {
+    const w = (text: string) => ({ text, source_quote: text, source_box: null, source_page: 1 });
+    const k = key([], { doc_type: "referral_letter", referral: { reason: "Query anaemia", urgency: "See within 2 weeks", clinician: "Dr X" } });
+    const none = { reason_as_written: null, urgency_as_written: null, referring_clinician_as_written: null, referral_date_as_written: null };
+    expect(score(k, [], none).referral).toEqual({ reason: false, urgency: false }); // returning nothing is not a pass
+    const exact = { ...none, reason_as_written: w("Query anaemia"), urgency_as_written: w("See within 2 weeks") };
+    expect(score(k, [], exact).referral).toEqual({ reason: true, urgency: true });
+    const half = { ...none, reason_as_written: w("Query anaemia"), urgency_as_written: w("See within 2 weeks please") };
+    expect(score(k, [], half).referral).toEqual({ reason: true, urgency: false });
+    expect(score(key([kItem()]), [mItem()]).referral).toBeNull();
+  });
+
+  it("documents that failed to extract make the verdict INCOMPLETE, not PASS", () => {
+    const ok = score(key([kItem()]), [mItem()]);
+    expect(nfr15([ok], 1)).toMatchObject({ pass: false, critical: 0 });
+    expect(nfr15([ok], 1).line).toMatch(/^NFR-15: INCOMPLETE .*1 failed to extract/);
+    expect(nfr15([ok], 0).pass).toBe(true);
+  });
+
   it("NFR-15 verdict lines", () => {
     expect(nfr15([]).line).toBe("NFR-15: NOT RUN (no documents were scored)");
     expect(nfr15([score(key([kItem()]), [mItem()])]).line).toBe("NFR-15: PASS");
