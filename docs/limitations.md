@@ -11,11 +11,12 @@ Status: draft written 13 Nov 2026 by Dev B. Lines marked **TEAM** must be comple
   - Verdict line as saved: `NFR-15: INCOMPLETE (0 critical errors in 19 scored; 2 glyph variants, reclassified, see D-020; 1 failed to extract, not scored)`. It is INCOMPLETE, not PASS, because one call in that run failed with a provider error; all 10 documents still have a scored run.
   - The difference: the model returned the Greek mu (U+03BC) for the micro sign (U+00B5) in `µmol/L`. They look identical. It is not a wrong value, medicine, dose or allergy. Itan now compares units after Unicode NFKC folding, for comparison only, so a previous value is not lost; it stores the text the model returned and does not claim it matches the printed character.
   - **TEAM:** if a judge asks: the rule was refined after the first run, because of this finding, and both numbers are reported.
+- **Later run, 13 Nov (evening), same model and prompt:** 10 calls (one per document), all 10 scored, none failed, **0 critical errors, `NFR-15: PASS`**. This run returned the micro sign correctly, so it had no glyph variants. It is **one run per document**, not two, and the same 10 synthetic documents, so it does not show real-world accuracy and does not cancel the earlier INCOMPLETE run: the model does vary between runs (a glyph variant on one run, none on the next). Calls over all runs so far: 40, 2 provider failures. The earlier report is in git history (commit `89b6e91`).
 - **TEAM:** after the two real phone photographs are scored, add them here.
 
 ## 2. Failure modes seen so far
 - **Provider errors.** 2 of 30 calls to `gemini-3.5-flash-lite` failed (`model_unavailable`) after our retries. A failed extraction writes nothing and the patient can retry. `gemini-3.6-flash` was worse (D-013, D-015).
-- **Slow tail.** Unthrottled server-side extraction over the 19 scored calls: median 11.2 s, p90 35.1 s, p95 and max 37.9 s (n=19, so p95 is the maximum); 4 calls took over 25 s and 2 over 30 s. That is above the 30 s target (NFR-10) **before** any 3G transfer time, which has not been measured. NFR-10 is at risk.
+- **Slow tail, and it varies.** Earlier run, unthrottled server-side extraction over 19 scored calls: median 11.2 s, p90 35.1 s, p95 and max 37.9 s (n=19, so p95 is the maximum); 4 calls took over 25 s and 2 over 30 s. A later run the same day, 10 calls: median 4.8 s, max 8.1 s, none over 25 s. We do not know why they differ (provider load is the likely cause, not measured), so **do not quote the faster run alone**: the 38 s call happened. With the browser on a Fast 3G approximation against the deployed site (`docs/evidence/throttle.md`, 13 Nov), the slowest of five documents took 6.2 s end to end. Only the browser link was throttled, it was one run, and it happened while the provider was fast.
 - **Unit glyph variant.** The same-looking unit can come back as a different character (see NFR-15 above). NFKC folding also folds superscript digits, so `10⁹/L` compares equal to `109/L`; this is accepted.
 - **A clinician line can swallow the next line.** On the referral letter the referring clinician came back as "Dr Demo Physician (SYNTHETIC)" plus the following line "Medical Officer". That field is not scored, so it is unmeasured.
 - **Slow sign-in checks.** Calls from Nigeria to Supabase Auth in London sometimes stalled for 10 to 45 s. These used to look like "signed out" (401); they now return 503 "try again" after 8 s (P12).
@@ -47,7 +48,7 @@ Status: draft written 13 Nov 2026 by Dev B. Lines marked **TEAM** must be comple
 - Drug-allergy list (FR-17, NFR-21): **TEAM:** same line. Its rows are stored with `reviewed_by = null` until then.
 
 ## 6. Where data is
-- **At rest:** all patient data is in the United Kingdom (Supabase London, eu-west-2). Functions are configured for Vercel London (`lhr1`). The region is **not yet confirmed** on the deployed URL.
+- **At rest:** all patient data is in the United Kingdom (Supabase London, eu-west-2). Functions run in Vercel London: the deployed `/api/health` reported `lhr1` on 13 Nov (`BASE_URL=https://itan-five.vercel.app npm run smoke`).
 - **During extraction:** the image goes to the Google Gemini API, which may cache or process it **in any country** where Google has facilities.
 - **The feed:** SIMULATED hospital bundles travel from a team laptop to London.
 
