@@ -227,3 +227,46 @@ Hospital-sent facts only. `POST { "note": "This is not my result" }` (1 to 500 c
 
 ## POST /api/facts/{id}/category
 The patient's privacy tag, allowed on any origin (it is not an edit of clinical content). `{ "sensitive_category": "mental_health" }` or `null` to clear. Values: `sexual_reproductive`, `mental_health`, `infectious_disease`, `substance_use`, `other_sensitive`. `200 { "fact": FactDTO }`. Errors: 400, 401, 404, 409.
+
+---
+
+## GET /api/facts/{id}/explanation
+
+Patient. Deterministic plain-language explanation of one **lab** fact (FR-09). No AI model is involved: every sentence is a fixed template or a glossary row, and the comparison uses only the range printed on the same document (NFR-17). Units are repeated as printed, never converted.
+
+Real output for the demo record's Haemoglobin 9.8 g/dL (range printed `12.0 - 16.0`):
+
+```json
+200
+{
+  "status": "below",
+  "sentences": [
+    "Your Haemoglobin was 9.8 g/dL. The range printed on this report is 12.0 - 16.0. Your result is below that printed range.",
+    "Haemoglobin is the protein in red blood cells that carries oxygen around the body, and this test measures how much of it is in your blood."
+  ],
+  "glossary": {
+    "description": "Haemoglobin is the protein in red blood cells that carries oxygen around the body, and this test measures how much of it is in your blood.",
+    "questions": ["What does this result mean for me?", "Will this test be repeated, and when?", "How does this result fit with my other results?"]
+  },
+  "questions": ["What does this result mean for me?", "Will this test be repeated, and when?", "How does this result fit with my other results?"],
+  "notices": [
+    "Explained by Itan using only the range printed on your own report. This is not medical advice. Please discuss it with your doctor.",
+    "Read by AI from your document. It may contain errors."
+  ]
+}
+```
+
+`status` is one of `below | within | above | no_range | not_comparable | unreadable | not_a_lab`.
+
+| Status | When | First sentence |
+|---|---|---|
+| `below` / `within` / `above` | numeric value and a printed range (two-sided ranges are inclusive; `< n` holds values under n; `> n` holds values over n) | "Your {label} was {value} {unit}. The range printed on this report is {range}. Your result is {below\|within\|above} that printed range." |
+| `no_range` | numeric value, no printed range | "…This report does not print a range for this test, so Itan cannot compare it." |
+| `not_comparable` | value is not a plain number (e.g. "Positive", "<0.5") | "…Itan only compares numeric results with a printed range, so it cannot compare this one." |
+| `unreadable` | the fact is unreadable or has no value | "Itan could not read this result, so it cannot explain it. Please check the original document." |
+
+An `unverified` fact gets "You have not confirmed this value yet." first; a `check_carefully` fact gets "Please check this value against your document." A test with no glossary row gets "Itan has no description of this test yet." and the two generic questions, and `glossary` is null.
+
+**Show every string in `notices` on the screen** (NFR-13): the second one appears for AI-read facts. Never add your own wording about what a result means.
+
+Errors: 400 `not_explainable` (not a lab), 401, 404.
