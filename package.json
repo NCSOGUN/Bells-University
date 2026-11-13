@@ -17,7 +17,8 @@
     "smoke": "tsx scripts/smoke.ts",
     "extract-test": "tsx tools/extract-test.ts",
     "sim": "tsx tools/sim-hospital/cli.ts",
-    "fixtures": "tsx tools/make-fixtures.ts"
+    "fixtures": "tsx tools/make-fixtures.ts",
+    "throttle": "tsx scripts/throttle.ts"
   },
   "dependencies": {
     "@google/genai": "3.3.0",
