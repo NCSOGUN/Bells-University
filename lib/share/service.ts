@@ -96,6 +96,11 @@ export async function createShare(
   return { ok: true, status: 201, data: { share_id: shareId, code: display, url, qr_svg, expires_at: expiresAt.toISOString() } };
 }
 
+/** The record a share belongs to, for the policy check in the revoke route. */
+export async function shareRecordId(shareId: string, db: Db = getDb()): Promise<string | null> {
+  return (await q.findShareById(shareId, db))?.record_id ?? null;
+}
+
 export async function revokeShare(shareId: string, recordIds: string[], db: Db = getDb()): Promise<Result<{ revoked: true }>> {
   const s = await q.findShareById(shareId, db);
   if (!s || !recordIds.includes(s.record_id)) return fail(404, "not_found", "Not found.");

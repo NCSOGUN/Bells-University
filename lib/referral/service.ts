@@ -89,6 +89,11 @@ async function packetFor(referralRow: q.ReferralRow, share: ViewerContext["share
   });
 }
 
+/** The record a referral belongs to, for the policy check in the preview route. */
+export async function referralRecordId(id: string, db: Db = getDb()): Promise<string | null> {
+  return (await q.getReferral(id, db))?.record_id ?? null;
+}
+
 export async function getReferralForHolder(id: string, recordIds: string[], db: Db = getDb()) {
   const row = await q.getReferral(id, db);
   if (!row || !recordIds.includes(row.record_id)) return null;

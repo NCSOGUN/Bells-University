@@ -49,6 +49,19 @@ describe("separation of concerns", () => {
     for (const f of pure) expect(imports(read(f)).filter((i) => bad.test(i)), f).toEqual([]);
   });
 
+  it("every route that loads a holder decides through can() (hard rule 3)", () => {
+    // A route that builds a holder actor must call can() itself or go through loadFactForAction, which does.
+    // Routes that only need "signed in" (records list/create, consent, facilities, hospitals) use getAccountId.
+    const routes = walk("app").filter((f) => f.endsWith("route.ts"));
+    const offenders = routes.filter((f) => {
+      const src = read(f);
+      const loadsHolder = /\b(getHolderActor|requireHolder)\(/.test(src);
+      return loadsHolder && !/\bcan\(/.test(src);
+    });
+    expect(routes.length).toBeGreaterThan(30);
+    expect(offenders).toEqual([]);
+  });
+
   it("library code never imports from app/ (dependencies point one way)", () => {
     const offenders = walk("lib").filter((f) => imports(read(f)).some((i) => /^(@\/)?app\//.test(i) || i.startsWith("../app")));
     expect(offenders).toEqual([]);
