@@ -5,7 +5,7 @@ Status: draft written 13 Nov 2026 by Dev B. Lines marked **TEAM** must be comple
 ## 1. Documents tested and measured accuracy
 - **Test set:** 10 SYNTHETIC documents with answer keys (`tools/fixtures`): two printed lab photos, one more lab photo with a blank range column, a heavily blurred lab photo, a printed prescription (3 medicines, 1 allergy), a printed referral letter, and four lab PDFs (including one in g/L and one two-page PDF). They are clean, computer-made layouts with a printed-photo look, **not real phone photographs, and no handwriting**. They do not prove real-world accuracy.
 - **Model:** `gemini-3.5-flash-lite`, prompt v1. **The demo must run on exactly this model;** if it changes, Prep B must be re-run first.
-- **Calls:** the first run was 10 calls (9 scored, 1 provider failure). The reported run was 20 calls = 10 documents x 2 runs (19 scored, 1 provider failure). 30 calls in total, 2 failures. The report covers the second run.
+- **Calls:** the first run was 10 calls (9 scored, 1 provider failure). The second run was 20 calls = 10 documents x 2 runs (19 scored, 1 provider failure). A third run, the evening of 13 Nov, was 10 calls (10 scored, no failure). 40 calls in total, 2 failures. `tools/prepb-report.md` now holds the **third** run; the second run's report is in git history (commit `89b6e91`).
 - **Read correctly:** every test name, result, range and date; every medicine name and dose; the penicillin allergy; the referral reason and urgency in the letter's exact words with no diagnosis invented; the blank range column left empty; nothing invented on any page; the blurred sheet returned no results (3 of 3 handled as unreadable).
 - **NFR-15 (zero confident critical errors):** Scored strictly the first time, this run had 2 critical errors; D-020 reclassified them as 2 glyph variants in 1 document (the unit rule was refined after seeing this result, see D-020).
   - Verdict line as saved: `NFR-15: INCOMPLETE (0 critical errors in 19 scored; 2 glyph variants, reclassified, see D-020; 1 failed to extract, not scored)`. It is INCOMPLETE, not PASS, because one call in that run failed with a provider error; all 10 documents still have a scored run.
@@ -30,6 +30,7 @@ Status: draft written 13 Nov 2026 by Dev B. Lines marked **TEAM** must be comple
   - no reference-range table: explanations compare only against the range printed on the patient's own report
   - no unit conversion: results are compared only when the printed units are identical
 - **No AI-written medical text.** AI only reads documents; every explanation is fixed text written by the team.
+- **Hiding by category does not hide the page image (R1 B-02, open).** If a hidden-category fact is printed on the same page as a shared fact, a clinician who opens that shared fact's source image sees the whole page, including the hidden item. Only hiding the whole document keeps the page from the clinician. **TEAM:** decide the fix before the demo (docs/BACKEND-REVIEW.md B-02); until then, hide the document, not only the category.
 - **Clinicians:** no clinician accounts. A clinician's name and practice number are recorded but **not verified** against any register.
 - **Hospitals:** no hospital screens inside Itan. The partner hospital is **SIMULATED** (a script), not a real system.
 - **Data and input:**
