@@ -1,8 +1,9 @@
 // Last-value comparison (FR-24, Locked decision L20, NFR-18). PURE over already-loaded facts.
 // Per record and test_key, among facts that are not removed, not superseded, not unreadable and have value_num.
 // Latest = newest fact_date (then created_at). Previous = the next older one on a DIFFERENT date, and only when
-// unit_as_printed is identical after trimming. Never convert units. Output carries no direction word and no delta.
+// the units are equal under units.ts (NFKC, trim, collapse whitespace; D-020). Never convert units. Output carries no direction word and no delta.
 import type { FactDTO } from "./dto";
+import { unitsEqual } from "./units";
 
 export interface PreviousValue {
   value_as_printed: string | null;
@@ -20,14 +21,15 @@ const newestFirst = (a: FactDTO, b: FactDTO) =>
 
 export function getPreviousValue(facts: FactDTO[], fact: FactDTO): PreviousValue | null {
   if (!comparable(fact)) return null;
-  const unit = (fact.unit_as_printed ?? "").trim();
   const older = facts
     .filter((f) => f.id !== fact.id && f.record_id === fact.record_id && f.test_key === fact.test_key && comparable(f))
     .filter((f) => (f.fact_date as string) < (fact.fact_date as string))
     .sort(newestFirst);
   const prev = older[0];
   if (!prev) return null;
-  if ((prev.unit_as_printed ?? "").trim() !== unit) return null;
+  // The one shared unit comparison (units.ts, D-020). It folds look-alike characters such as the micro sign and the
+  // Greek mu for comparison only: each fact keeps, and the result returns, the unit text exactly as stored.
+  if (!unitsEqual(prev.unit_as_printed, fact.unit_as_printed)) return null;
   return { value_as_printed: prev.value_as_printed, unit_as_printed: prev.unit_as_printed, fact_date: prev.fact_date, fact_id: prev.id };
 }
 

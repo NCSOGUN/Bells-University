@@ -10,7 +10,7 @@ import { applyGuards } from "../lib/extract/guards";
 import { PROMPT_VERSION } from "../lib/extract/prompt";
 import { parseModelOutput } from "../lib/extract/schema";
 import { fixtureKeySchema, type FixtureKey } from "./fixtures/key-schema";
-import { nfr15, renderReport, scoreDocument, type DocScore } from "./extract-score";
+import { nfr15, reclassifyGlyphVariants, renderReport, scoreDocument, type DocScore } from "./extract-score";
 
 config({ path: ".env.local", quiet: true });
 
@@ -28,7 +28,35 @@ function arg(name: string, fallback?: string): string | undefined {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** `--rescore`: re-apply the scoring rules to the SAVED results in tools/prepb-results.json. No model call, no network,
+ *  no API key needed. Only the D-020 unit rule is applied; the saved numbers are otherwise untouched. */
+function rescoreSaved(): number {
+  const file = "tools/prepb-results.json";
+  const saved = JSON.parse(readFileSync(file, "utf8")) as { model: string; prompt_version: string; date: string; runs: number; scores: DocScore[]; failed: { id: string; code: string }[]; rescored?: unknown };
+  const strictBefore = nfr15(saved.scores, saved.failed.length);
+  const scores = saved.scores.map(reclassifyGlyphVariants);
+  const verdict = nfr15(scores, saved.failed.length);
+  const docsWithVariants = new Set(scores.filter((s) => s.glyph_variants.length).map((s) => s.id)).size;
+  const rescored = {
+    rule: "D-020",
+    on: new Date().toISOString().slice(0, 10),
+    model_calls: 0,
+    scored_strictly_before: { critical: strictBefore.critical + strictBefore.variants },
+    reclassified_as_glyph_variants: verdict.variants,
+    documents_with_variants: docsWithVariants,
+  };
+  const notes = [
+    `Rescored from the saved results under the D-020 rule on ${rescored.on}, with no model calls. Scored strictly the first time this run had ${rescored.scored_strictly_before.critical} critical errors; D-020 reclassified them as ${verdict.variants} glyph variants in ${docsWithVariants} document${docsWithVariants === 1 ? "" : "s"} (the unit rule was refined after seeing this result, see D-020).`,
+  ];
+  writeFileSync("tools/prepb-report.md", renderReport({ scores, failed: saved.failed, model: saved.model, promptVersion: saved.prompt_version, date: saved.date, runs: saved.runs, notes }));
+  writeFileSync(file, JSON.stringify({ ...saved, scores, rescored }, null, 2) + "\n");
+  console.log(verdict.line);
+  console.log(`strict first-run count ${rescored.scored_strictly_before.critical}; reclassified ${verdict.variants} in ${docsWithVariants} document(s); model calls: 0`);
+  return verdict.pass ? 0 : 1;
+}
+
 async function main(): Promise<number> {
+  if (process.argv.includes("--rescore")) return rescoreSaved();
   let model: string;
   try {
     model = geminiEnv().GEMINI_MODEL;

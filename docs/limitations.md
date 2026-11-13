@@ -4,16 +4,20 @@ Status: draft written 13 Nov 2026 by Dev B. Lines marked **TEAM** must be comple
 
 ## 1. Documents tested and measured accuracy
 - **Test set:** 10 SYNTHETIC documents with answer keys (`tools/fixtures`): two printed lab photos, one more lab photo with a blank range column, a heavily blurred lab photo, a printed prescription (3 medicines, 1 allergy), a printed referral letter, and four lab PDFs (including one in g/L and one two-page PDF). They are clean, computer-made layouts with a printed-photo look, **not real phone photographs, and no handwriting**. They do not prove real-world accuracy.
-- **Run:** 13 Nov 2026, model `gemini-3.5-flash-lite`, prompt v1, 2 runs per document (20 calls; 1 failed with a provider error and was not scored). An earlier single run (10 calls, 1 provider failure) gave the same results.
+- **Model:** `gemini-3.5-flash-lite`, prompt v1. **The demo must run on exactly this model;** if it changes, Prep B must be re-run first.
+- **Calls:** the first run was 10 calls (9 scored, 1 provider failure). The reported run was 20 calls = 10 documents x 2 runs (19 scored, 1 provider failure). 30 calls in total, 2 failures. The report covers the second run.
 - **Read correctly:** every test name, result, range and date; every medicine name and dose; the penicillin allergy; the referral reason and urgency in the letter's exact words with no diagnosis invented; the blank range column left empty; nothing invented on any page; the blurred sheet returned no results (3 of 3 handled as unreadable).
-- **NFR-15 (zero confident critical errors): FAIL, 2 critical errors.** Both are one finding, reproduced twice: the model returned the Greek mu (U+03BC) for the micro sign (U+00B5) in `µmol/L`. It looks identical and is not a wrong value, medicine, dose or allergy, but it is not "character for character". See DEVIATIONS D-020. **TEAM:** decide how this is treated before the freeze.
+- **NFR-15 (zero confident critical errors):** Scored strictly the first time, this run had 2 critical errors; D-020 reclassified them as 2 glyph variants in 1 document (the unit rule was refined after seeing this result, see D-020).
+  - Verdict line as saved: `NFR-15: INCOMPLETE (0 critical errors in 19 scored; 2 glyph variants, reclassified, see D-020; 1 failed to extract, not scored)`. It is INCOMPLETE, not PASS, because one call in that run failed with a provider error; all 10 documents still have a scored run.
+  - The difference: the model returned the Greek mu (U+03BC) for the micro sign (U+00B5) in `µmol/L`. They look identical. It is not a wrong value, medicine, dose or allergy. Itan now compares units after Unicode NFKC folding, for comparison only, so a previous value is not lost; it stores the text the model returned and does not claim it matches the printed character.
+  - **TEAM:** if a judge asks: the rule was refined after the first run, because of this finding, and both numbers are reported.
 - **TEAM:** after the two real phone photographs are scored, add them here.
 
 ## 2. Failure modes seen so far
-- **Provider errors.** About 2 of 30 calls to `gemini-3.5-flash-lite` failed (`model_unavailable`) after our retries. A failed extraction writes nothing and the patient can retry. `gemini-3.6-flash` was worse (D-013, D-015).
-- **Slow tail.** Unthrottled server-side extraction took a median of 11.2 s but up to **37.9 s** (4 of 20 calls took 27 to 38 s), above the 30 s target (NFR-10) before any 3G delay. Not yet measured on throttled 3G.
-- **Unit glyph variant.** The same-looking unit can come back as a different character. Previous-value comparison (FR-24) compares units exactly, so two such results would silently show no previous value (D-020).
-- **A clinician line can swallow the next line.** On the referral letter the referring clinician came back as "Dr Demo Physician (SYNTHETIC)" plus the following line "Medical Officer". The scorer does not compare this field, so it is unmeasured.
+- **Provider errors.** 2 of 30 calls to `gemini-3.5-flash-lite` failed (`model_unavailable`) after our retries. A failed extraction writes nothing and the patient can retry. `gemini-3.6-flash` was worse (D-013, D-015).
+- **Slow tail.** Unthrottled server-side extraction over the 19 scored calls: median 11.2 s, p90 35.1 s, p95 and max 37.9 s (n=19, so p95 is the maximum); 4 calls took over 25 s and 2 over 30 s. That is above the 30 s target (NFR-10) **before** any 3G transfer time, which has not been measured. NFR-10 is at risk.
+- **Unit glyph variant.** The same-looking unit can come back as a different character (see NFR-15 above). NFKC folding also folds superscript digits, so `10⁹/L` compares equal to `109/L`; this is accepted.
+- **A clinician line can swallow the next line.** On the referral letter the referring clinician came back as "Dr Demo Physician (SYNTHETIC)" plus the following line "Medical Officer". That field is not scored, so it is unmeasured.
 - **Slow sign-in checks.** Calls from Nigeria to Supabase Auth in London sometimes stalled for 10 to 45 s. These used to look like "signed out" (401); they now return 503 "try again" after 8 s (P12).
 - **Not yet known:** behaviour on real phone photos, real prescriptions and referral letters, and handwriting.
 

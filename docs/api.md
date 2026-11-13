@@ -202,7 +202,7 @@ Patient. The timeline: active facts (not removed, not superseded), newest `fact_
   ]
 }
 ```
-`previous` appears only when: same test (`test_key`), both numeric, an earlier date, and the **same printed unit**. Units are never converted. Errors: 401, 404.
+`previous` appears only when: same test (`test_key`), both numeric, an earlier date, and the **same unit**. Two units count as the same when they are equal after Unicode NFKC folding, whitespace collapsing and trimming (so `µmol/L` and `μmol/L`, which look identical but use different characters, match); nothing else is folded: case and every other difference still count. The stored text of each fact is shown as supplied, not rewritten. Units are never converted. Errors: 401, 404.
 
 ## POST /api/facts
 

@@ -4,9 +4,11 @@
 - Prompt version: `v1`
 - Date: 2026-11-13
 - Runs per document: 2
-- Documents scored: 19; failed to extract: 1
-- Latency (ms): median 11248, slowest 37863 (NFR-10 target is 30 s on throttled 3G; this is unthrottled server-side time)
-- **NFR-15: FAIL (2 critical errors)**
+- Calls in this report: 20 (19 scored, 1 failed to extract and not scored) over 10 documents, 2 run(s) each
+- Latency of the 19 scored calls (ms): median 11248, p90 35089, p95 37863 (nearest rank; with n=19 this is the maximum), max 37863; over 25 s: 4; over 30 s: 2. Failed calls have no recorded time. NFR-10 is 30 s on throttled 3G; this is unthrottled server-side time, so 3G transfer is not included
+- Rescored from the saved results under the D-020 rule on 2026-11-13, with no model calls. Scored strictly the first time this run had 2 critical errors; D-020 reclassified them as 2 glyph variants in 1 document (the unit rule was refined after seeing this result, see D-020).
+- **NFR-15: INCOMPLETE (0 critical errors in 19 scored; 2 glyph variants, reclassified, see D-020; 1 failed to extract, not scored)**
+- Critical errors: 0 as reported; 2 if unit glyph variants were counted as critical (the strict count)
 
 Synthetic documents only. Accuracy here does not prove real-world accuracy.
 
@@ -14,8 +16,8 @@ Synthetic documents only. Accuracy here does not prove real-world accuracy.
 |---|---|---|---|---|---|---|---|---|---|
 | lab-blurred-photo | 6990 | 0/3 | 0% (0/3) | n/a | n/a | n/a | 3/3 | 0 | 0 |
 | lab-blurred-photo | 6859 | 0/3 | 0% (0/3) | n/a | n/a | n/a | 3/3 | 0 | 0 |
-| lab-chem-photo | 23523 | 5/5 | 100% (5/5) | 100% (5/5) | 80% (4/5) | 100% (5/5) | n/a | 0 | 1 |
-| lab-chem-photo | 27424 | 5/5 | 100% (5/5) | 100% (5/5) | 80% (4/5) | 100% (5/5) | n/a | 0 | 1 |
+| lab-chem-photo | 23523 | 5/5 | 100% (5/5) | 100% (5/5) | 80% (4/5) | 100% (5/5) | n/a | 0 | 0 |
+| lab-chem-photo | 27424 | 5/5 | 100% (5/5) | 100% (5/5) | 80% (4/5) | 100% (5/5) | n/a | 0 | 0 |
 | lab-fbc-photo | 12358 | 4/4 | 100% (4/4) | 100% (4/4) | 100% (4/4) | 100% (4/4) | n/a | 0 | 0 |
 | lab-fbc-photo | 11248 | 4/4 | 100% (4/4) | 100% (4/4) | 100% (4/4) | 100% (4/4) | n/a | 0 | 0 |
 | lab-hba1c-2025-pdf | 6960 | 1/1 | 100% (1/1) | 100% (1/1) | 100% (1/1) | 100% (1/1) | n/a | 0 | 0 |
@@ -38,10 +40,16 @@ Synthetic documents only. Accuracy here does not prove real-world accuracy.
 
 ## Critical errors
 
-| Document | Item | Reason | Expected | Actual |
-|---|---|---|---|---|
-| lab-chem-photo | Creatinine | unit differs from key | µmol/L | μmol/L |
-| lab-chem-photo | Creatinine | unit differs from key | µmol/L | μmol/L |
+None.
+
+## Unit glyph variants (reported separately, not counted as critical; D-020)
+
+Same letter to a reader, different character: the micro sign U+00B5 versus the Greek mu U+03BC. The strict unit hit-rate above still counts each as a miss.
+
+| Document | Item | Printed (key) | Returned | Printed code point | Returned code point |
+|---|---|---|---|---|---|
+| lab-chem-photo | Creatinine | µmol/L | μmol/L | U+00B5 | U+03BC |
+| lab-chem-photo | Creatinine | µmol/L | μmol/L | U+00B5 | U+03BC |
 
 ## Referral letters (reason and urgency must be the letter's exact words)
 

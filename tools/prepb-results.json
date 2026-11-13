@@ -45,7 +45,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-blurred-photo",
@@ -88,7 +89,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-chem-photo",
@@ -127,11 +129,11 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": [
+      "critical": [],
+      "glyph_variants": [
         {
           "document": "lab-chem-photo",
           "item": "Creatinine",
-          "reason": "unit differs from key",
           "expected": "µmol/L",
           "actual": "μmol/L"
         }
@@ -174,11 +176,11 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": [
+      "critical": [],
+      "glyph_variants": [
         {
           "document": "lab-chem-photo",
           "item": "Creatinine",
-          "reason": "unit differs from key",
           "expected": "µmol/L",
           "actual": "μmol/L"
         }
@@ -221,7 +223,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-fbc-photo",
@@ -260,7 +263,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-hba1c-2025-pdf",
@@ -299,7 +303,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-hba1c-2025-pdf",
@@ -338,7 +343,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-hba1c-2026-pdf",
@@ -377,7 +383,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-hba1c-2026-pdf",
@@ -416,7 +423,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-mixed-pdf",
@@ -455,7 +463,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-mixed-pdf",
@@ -494,7 +503,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-no-range-photo",
@@ -533,7 +543,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-unusual-units-pdf",
@@ -572,7 +583,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "lab-unusual-units-pdf",
@@ -611,7 +623,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "referral-letter-photo",
@@ -653,7 +666,8 @@
         "urgency": true
       },
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "referral-letter-photo",
@@ -695,7 +709,8 @@
         "urgency": true
       },
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "rx-printed-photo",
@@ -734,7 +749,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     },
     {
       "id": "rx-printed-photo",
@@ -773,7 +789,8 @@
       },
       "referral": null,
       "guard_notes": 0,
-      "critical": []
+      "critical": [],
+      "glyph_variants": []
     }
   ],
   "failed": [
@@ -781,5 +798,15 @@
       "id": "lab-no-range-photo",
       "code": "model_unavailable"
     }
-  ]
+  ],
+  "rescored": {
+    "rule": "D-020",
+    "on": "2026-11-13",
+    "model_calls": 0,
+    "scored_strictly_before": {
+      "critical": 2
+    },
+    "reclassified_as_glyph_variants": 2,
+    "documents_with_variants": 1
+  }
 }
