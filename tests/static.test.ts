@@ -116,10 +116,64 @@ describe("NFR-13 disclosures travel with AI-read content", () => {
   });
 });
 
-describe("(d) no secret is exposed to the browser (NFR-01)", () => {
-  it("no NEXT_PUBLIC_ variable is named like a secret", () => {
-    const files = [...SERVER_CODE, ...walk("components"), "next.config.ts"].filter(existsSync);
-    for (const f of files) expect(read(f), f).not.toMatch(/NEXT_PUBLIC_\w*(SECRET|KEY|PEPPER|TOKEN|PASSWORD|SERVICE_ROLE)/);
+describe("(d) no secret is exposed to the browser (NFR-01, D-021)", () => {
+  // D-021: the browser signs in against Supabase directly, so exactly these two names may be public. The anon
+  // (publishable) key is public by design and RLS is deny-all. Anything else with NEXT_PUBLIC_ fails.
+  const PUBLIC_ALLOWLIST = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"];
+  const FORBIDDEN_IN_PUBLIC_NAME = /SERVICE_ROLE|PEPPER|GEMINI|HOSPITAL|SECRET|TOKEN/;
+  const publicNamesIn = (src: string) => [...src.matchAll(/NEXT_PUBLIC_\w+/g)].map((m) => m[0]);
+  // Limit: this reads names written as source text. A name built at runtime would not be seen; Next.js only
+  // inlines literal `process.env.NEXT_PUBLIC_X` reads anyway.
+  const files = [...SERVER_CODE, ...walk("components"), ...walk("scripts"), "next.config.ts", "vercel.json", ".env.example"].filter(existsSync);
+
+  it("every NEXT_PUBLIC_ name in the repo is on the two-name allowlist", () => {
+    for (const f of files) {
+      const bad = publicNamesIn(read(f)).filter((n) => !PUBLIC_ALLOWLIST.includes(n));
+      expect(bad, f).toEqual([]);
+    }
+  });
+
+  it("no NEXT_PUBLIC_ name contains SERVICE_ROLE, PEPPER, GEMINI, HOSPITAL, SECRET or TOKEN", () => {
+    for (const f of files) expect(publicNamesIn(read(f)).filter((n) => FORBIDDEN_IN_PUBLIC_NAME.test(n)), f).toEqual([]);
+    expect(PUBLIC_ALLOWLIST.filter((n) => FORBIDDEN_IN_PUBLIC_NAME.test(n))).toEqual([]); // the allowlist itself
+  });
+
+  it("negative control: secret-looking and unlisted names are flagged", () => {
+    // Negative control: the checker must flag these, so a silent regex mistake cannot make the test vacuous.
+    for (const n of ["NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY", "NEXT_PUBLIC_SHARE_PEPPER", "NEXT_PUBLIC_GEMINI_API_KEY", "NEXT_PUBLIC_HOSPITAL_KEY", "NEXT_PUBLIC_API_SECRET", "NEXT_PUBLIC_ACCESS_TOKEN", "NEXT_PUBLIC_ANYTHING"]) {
+      expect(publicNamesIn(`const x = process.env.${n};`).filter((x) => !PUBLIC_ALLOWLIST.includes(x)), n).toEqual([n]);
+    }
+    expect(publicNamesIn("process.env.NEXT_PUBLIC_SUPABASE_URL + process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY").every((n) => PUBLIC_ALLOWLIST.includes(n))).toBe(true);
+  });
+
+  it(".env.example lists both public names and nothing else public", () => {
+    expect(publicNamesIn(read(".env.example")).filter((n, i, a) => a.indexOf(n) === i).sort()).toEqual([...PUBLIC_ALLOWLIST].sort());
+  });
+});
+
+describe("(f) the browser Supabase client is for auth only (NFR-01, D-021)", () => {
+  // Client code = a file that starts with "use client", anything under components/, and any file that creates
+  // the browser client. Server components and route handlers legitimately use serviceClient().from/.storage.
+  const USE_CLIENT = /^(?:\s|\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)*["']use client["']/;
+  const BROWSER_CLIENT = /\bcreateBrowserClient\b/;
+  const isClientFile = (f: string, src: string) => rel(f).startsWith("components/") || USE_CLIENT.test(src) || BROWSER_CLIENT.test(src);
+  // `.from(` as data access, not Array.from / Buffer.from / Object.from-style helpers.
+  const DATA_ACCESS = /(?<!\b(?:Array|Buffer|Uint8Array|Uint16Array|Uint32Array|Int8Array|Float32Array|Float64Array|Object|Date|String|Set|Map|Promise)\s*)\.from\s*\(|(?<!\bnavigator)\.storage\b|\.rpc\s*\(/;
+
+  const clientFiles = [...walk("app"), ...walk("components"), ...walk("lib")].filter((f) => isClientFile(f, read(f)));
+
+  it("no client file calls supabase .from(, .rpc( or .storage (all data goes through /api/*)", () => {
+    for (const f of clientFiles) expect(read(f), f).not.toMatch(DATA_ACCESS);
+  });
+
+  it("the detector recognises client files and data access (negative control)", () => {
+    expect(isClientFile("app/x.tsx", '"use client";\nimport x from "y";')).toBe(true);
+    expect(isClientFile("app/x.tsx", "// header\n'use client'\nexport {}")).toBe(true);
+    expect(isClientFile("lib/b.ts", 'import { createBrowserClient } from "@supabase/ssr";')).toBe(true);
+    expect(isClientFile("components/a.tsx", "export {}")).toBe(true);
+    expect(isClientFile("app/page.tsx", "export default function P() {}")).toBe(false);
+    for (const s of ["supabase.from('fact').select()", "sb\n  .from(\"x\")", "supabase.storage.from('documents')", "client.rpc('f')"]) expect(s, s).toMatch(DATA_ACCESS);
+    for (const s of ["navigator.storage.estimate()", "Array.from(x)", "Buffer.from(b)", "Uint8Array.from(a)", "Object.fromEntries(e)"]) expect(s, s).not.toMatch(DATA_ACCESS);
   });
 });
 

@@ -6,6 +6,8 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import postgres from "postgres";
+import { createServerClient } from "@supabase/ssr";
+import { rlsChecks } from "./rls-check";
 import { getViewerFromRequest, getViewerSummary } from "../lib/share/service";
 import { getReferralPacketForViewer } from "../lib/referral/service";
 
@@ -38,8 +40,12 @@ async function main() {
   const anon = await fetch(`${BASE}/api/records`);
   check("GET /api/records without auth is 401", anon.status === 401);
 
+  await rlsAndBucketChecks();
+
   const token = await signIn();
   const H = { authorization: `Bearer ${token}` };
+  await cookieSessionChecks();
+  if (process.env.SMOKE_ONLY === "auth") return; // `SMOKE_ONLY=auth npm run smoke`: just the sign-in and RLS checks, no uploads or model calls
   const recs = await fetch(`${BASE}/api/records`, { headers: H }).then((r) => r.json());
   const demoId: string | undefined = recs.records?.find((r: { display_name: string }) => r.display_name === "Demo Patient (SYNTHETIC)")?.id;
   check("demo record listed", !!demoId);
@@ -178,6 +184,35 @@ main()
     console.error("smoke aborted:", (e as Error).message);
     process.exit(1);
   });
+
+// ---- D-021: the browser holds the public anon key, so RLS and the private bucket are the backstop (NFR-01)
+async function rlsAndBucketChecks() {
+  const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1 });
+  try {
+    for (const r of await rlsChecks(sql)) check(r.name, r.ok, r.detail);
+  } finally {
+    await sql.end({ timeout: 5 });
+  }
+}
+
+// ---- D-021: the session the browser client (createBrowserClient) stores is accepted from the Cookie header.
+// A real sign-in through @supabase/ssr produces the real cookie names, base64 values and chunking.
+async function cookieSessionChecks() {
+  const { SUPABASE_URL, SUPABASE_ANON_KEY, DEMO_PASSWORD } = process.env;
+  const jar = new Map<string, string>();
+  const sb = createServerClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+    cookies: { getAll: () => [...jar].map(([name, value]) => ({ name, value })), setAll: (cs) => cs.forEach((c) => jar.set(c.name, c.value)) },
+  });
+  const { error } = await sb.auth.signInWithPassword({ email: "demo@itan.example", password: DEMO_PASSWORD! });
+  check("cookie session: sign-in through @supabase/ssr stores an sb-*-auth-token cookie", !error && [...jar.keys()].some((n) => /^sb-.+-auth-token/.test(n)), error ? error.message : `${jar.size} cookie(s)`);
+  const header = [...jar].map(([n, v]) => `${n}=${encodeURIComponent(v)}`).join("; ");
+  const ok = await fetch(`${BASE}/api/records`, { headers: { cookie: header } });
+  check("GET /api/records with only the Supabase session cookie is 200", ok.status === 200);
+  const bearerWins = await fetch(`${BASE}/api/records`, { headers: { cookie: header, authorization: "Bearer nope" } });
+  check("a bad Bearer header is 401 even with a valid cookie (Bearer takes precedence)", bearerWins.status === 401);
+  const tampered = header.replace(/(auth-token[^=]*=)[^;]*/, "$1garbage");
+  check("a tampered session cookie is 401", (await fetch(`${BASE}/api/records`, { headers: { cookie: tampered } })).status === 401);
+}
 
 // ---- P12: region, security headers, cross-account isolation (NFR-01, NFR-02, NFR-06)
 async function securityChecks(health: { region?: string }, demoId: string) {

@@ -2,20 +2,47 @@
 
 Everything Dev B owns is built and committed: all API routes, the library code under `lib/`, the partner feed and the SIMULATED hospital. This note is the short version of what you need to build the screens against it. The exact request and response shapes are in `docs/api.md`; this note says what to do with them and what you must not change.
 
-**Not built, so you will not find it:** pages (`app/page.tsx` is a placeholder), components, the service worker, the device-side upload queue, and any sign-in or sign-up route.
+**Not built, so you will not find it:** pages (`app/page.tsx` is a placeholder), components, the service worker, the device-side upload queue, and the browser sign-in screens (section 0).
 
-## 0. Open decision first: how the browser signs in
+## 0. Browser sign-in (decided: D-021, option 1)
 
-The design has the browser sign up and sign in directly against Supabase Auth (email and password, minimum 8 characters, NFR-04). That needs the Supabase URL and the **public (anon) key** in the browser. Today that is blocked on purpose:
-- The working rules say never prefix Supabase keys with `NEXT_PUBLIC_`.
-- `tests/static.test.ts` check (d) fails any `NEXT_PUBLIC_` name containing KEY, TOKEN and so on.
-- There are no `/api/auth/*` routes.
+The browser signs up and signs in **directly against Supabase Auth** (email and password, minimum 8 characters, NFR-04). To allow that, exactly two public variables exist: `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (same values as `SUPABASE_URL` and `SUPABASE_ANON_KEY`; see `.env.example`). The anon key is public by design and RLS is deny-all, so it grants nothing by itself. **No other `NEXT_PUBLIC_` variable is allowed**, and `tests/static.test.ts` fails the build if one appears. Never put the service-role key, the pepper or the Gemini key under a public name. In Vercel, add both in Project Settings, Environment Variables, then **redeploy** (they are inlined at build time).
 
-The two ways out (**the owner decides; nothing here is changed yet**):
-1. **Allow two public variables**, `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The anon key is public by design and RLS is deny-all, so it grants nothing. Needs a one-line change to rule 9 and an explicit two-name allowlist in the static test. Smallest change, and the browser client refreshes sessions itself. **Recommended.**
-2. **Server-side sign-in routes** (Dev B builds `POST /api/auth/signup` and `/signin`, setting the session cookie). No public key, but more work, and session refresh has to be handled by hand.
+**The browser client is for auth only. All data goes through `/api/*`.** Do not call `.from(`, `.rpc(` or `.storage` on it. `tests/static.test.ts` check (f) fails any client file (a file that starts with `"use client"`, anything under `components/`, any file that calls `createBrowserClient`) that does.
 
-Until it is decided you can develop against the demo login (section 1) with a Bearer token.
+Create the client once, in a client-side file you own (for example `lib/supabase-browser.ts`):
+
+```ts
+import { createBrowserClient } from "@supabase/ssr";
+
+// Write the two process.env reads out literally: Next.js only inlines literal NEXT_PUBLIC_ reads.
+export const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
+```
+
+Use `createBrowserClient` from `@supabase/ssr` (not `createClient` from `@supabase/supabase-js`): it stores the session in a cookie, which is what lets the server see who is calling.
+
+```ts
+// Sign up (min 8 characters). With "Confirm email" off this returns a session at once.
+const { data, error } = await supabase.auth.signUp({ email, password });
+// data.session is null if email confirmation is on: show "check your email" (see D-021 before the demo).
+
+// Sign in
+const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+// Sign out (clears the cookie)
+await supabase.auth.signOut();
+```
+
+Then call the API with a plain same-origin `fetch("/api/records")`. The browser sends the session cookie by itself and the server (`getAccountId` in `lib/auth.ts`) reads it and **verifies it with Supabase on every request**. You do not need to add an `Authorization` header. The `Authorization: Bearer <access_token>` header is still accepted and wins over the cookie (the smoke script and the demo login use it).
+
+Things to handle:
+- **401 `unauthenticated`:** the access token may simply have expired and the browser client has not refreshed it yet. Call `await supabase.auth.refreshSession()` and retry **once**. Still 401: send the user to sign-in. There is no middleware, so the server never refreshes the cookie; the browser client does it.
+- **503 `service_unavailable`:** Supabase Auth was slow or unreachable. **Do not sign the user out.** Retry after `Retry-After`.
+- Sign-in and sign-up errors come from Supabase (`error.message`, `error.status`). Show a plain message; do not show the raw text if it names the project.
+- The session cookie is readable by page JavaScript (that is how `createBrowserClient` works). Do not add third-party scripts, and do not log or send `supabase.auth.getSession()` output anywhere.
 
 ## 1. Run it
 - Copy `.env.example` to `.env.local` and fill it in (never commit it). `npm run dev`. Seed: `npm run db:seed` then `npm run db:seed:demo`.
@@ -81,4 +108,4 @@ The wording is checked by tests for advice language, and rewording can turn a st
 - Never call an AI model from the browser, and never write medical wording of your own.
 
 ## 6. Where to look
-`docs/api.md` (every route), `docs/design-lab.html` (screens and flows), `docs/DEVIATIONS.md` (judgement calls, especially D-017 to D-020), `docs/progress/P*.md` (what each piece does), `docs/limitations.md` (what to say about accuracy).
+`docs/api.md` (every route), `docs/design-lab.html` (screens and flows), `docs/DEVIATIONS.md` (judgement calls, especially D-017 to D-021), `docs/progress/P*.md` (what each piece does), `docs/limitations.md` (what to say about accuracy).

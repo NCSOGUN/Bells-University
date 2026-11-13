@@ -15,6 +15,7 @@
     "db:seed:demo": "tsx scripts/seed-demo.ts",
     "storage:init": "tsx scripts/storage-init.ts",
     "smoke": "tsx scripts/smoke.ts",
+    "rls:check": "tsx scripts/rls-check.ts",
     "extract-test": "tsx tools/extract-test.ts",
     "sim": "tsx tools/sim-hospital/cli.ts",
     "fixtures": "tsx tools/make-fixtures.ts",
