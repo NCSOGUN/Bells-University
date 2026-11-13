@@ -1,0 +1,27 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "meta": { "tag": [{ "display": "SIMULATED - synthetic test data, not a real patient" }] },
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "identifier": [
+          { "system": "urn:itan:link", "value": "{{LINK_REF}}" },
+          { "system": "urn:demo-general-hospital:mrn", "value": "{{MRN}}" }
+        ]
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "ServiceRequest",
+        "status": "active",
+        "intent": "order",
+        "identifier": [{ "system": "urn:demo-general-hospital:referral", "value": "REF-2026-0042" }],
+        "reasonCode": [{ "text": "Persistent anaemia, needs specialist review" }],
+        "priority": "urgent",
+        "requester": { "display": "Dr Demo Physician (SIMULATED)" }
+      }
+    }
+  ]
+}

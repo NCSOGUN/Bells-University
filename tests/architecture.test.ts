@@ -41,6 +41,8 @@ describe("separation of concerns", () => {
       "lib/share/codes.ts", "lib/share/evaluate.ts", "lib/share/ratelimit.ts", "lib/share/filter.ts", "lib/share/session.ts",
       "lib/share/summary.ts", "lib/audit-labels.ts", "lib/explain/engine.ts", "lib/explain/lint.ts",
       "lib/referral/packet.ts", "lib/referral/wording.ts", "lib/advisory/types.ts",
+      // Feed: the intake takes its database through injected deps, so it stays testable without one.
+      "lib/feed/fhir-subset.ts", "lib/feed/map.ts", "lib/feed/intake.ts",
     ];
     // @/lib/config is allowed here: these files read constants (limits, lifetimes) from it, never secrets.
     const bad = /(^|\/)db\/(client|schema)$|drizzle-orm|^postgres$|supabase|@google\/genai|\/storage$|\/audit$|\.\/queries$|\.\/service$/;

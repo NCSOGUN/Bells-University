@@ -91,3 +91,18 @@ Every place the build differs from the design, or where the design was silent. F
 - **Refused-open log entries carry the typed name and practice number** so the patient can see who tried an expired or revoked code. An unknown code is recorded only in `code_attempt` (L10).
 - **Cookie `Secure`:** set when `NODE_ENV === "production"`, not on local http development (browsers would refuse to store it there).
 - **The `/c` page is Dev A's.** It must read the code from `location.hash` and POST it to `/api/view/open`; the server never sees the fragment.
+
+## D-017 P10 feed and link judgement calls (13 Nov)
+- **415 for a wrong Content-Type.** L29 names the accepted types but the check order (L26) has no step for it. Placed after the size check and before JSON as 415 `unsupported_media_type` (refused receipt written). Alternative: fold it into 422.
+- **Unit with `valueString`.** FHIR `valueString` has no unit, but L28 says the simulated hospital sends "valueString plus a unit". The unit is taken from `referenceRange[0].low.unit` or `high.unit` (valid FHIR SimpleQuantity). Alternative: a custom extension, which is less standard.
+- **A different hospital patient number gets the same 403** as unknown, revoked and other-hospital links (L25 says it is refused; the identical-body rule then applies). The link is re-checked under a row lock (`SELECT … FOR UPDATE`) inside the write transaction, so a revoke that lands mid-request wins.
+- **Idempotency-Key must be a UUID** (the contract says `<uuid>`); anything else is 400 `idempotency_key_required`.
+- **A bundle needs at least one Observation or ServiceRequest.** A Patient-only bundle is 422, since it would write nothing.
+- **Partial FHIR dates** (`2026`, `2026-11`) are 422: `fact_date` needs a full date and guessing a day is not allowed.
+- **Feed referral facts** have `label_as_printed = "Referral"` and `fact_date = null` (the subset carries no `authoredOn`).
+- **The catch-all is `app/api/feed/[[...path]]`** (optional catch-all), so `/api/feed` itself is also 405. The specific `v1/bundles` route takes precedence.
+- **A patient may create several links to the same hospital.** Nothing in the design limits it; each is listed and revocable.
+- **Refusal logging is best effort.** If writing the refused receipt fails, the refusal is still returned, and `console.error` logs the reason code only.
+- **Known cost:** every unauthenticated 405 or 401 writes one `feed_receipt` row, so a flood would grow the table. Acceptable for the contest. Rate limiting the feed is future work, alongside signed requests (design section 14).
+- **The simulated hospital CLI uses `process.exitCode`**, not `process.exit()`. The latter crashed Node on Windows (`UV_HANDLE_CLOSING` assertion) while fetch sockets were closing.
+- **Superseding is verified live, not by a unit test.** It is SQL inside the transaction, and L30 leaves no in-memory Postgres here. Live run on 13 Nov: three haemoglobin deliveries left two superseded rows kept and one current; the provider-fact trigger allowed only the `superseded_by` change. P12's smoke should repeat it.

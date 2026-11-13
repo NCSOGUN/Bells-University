@@ -26,6 +26,8 @@ Routes marked **(added)** are not in the design table; they were added so Dev A'
 | POST /api/referrals, GET /api/referrals/{id} | Patient | Build and preview a packet | FR-14 |
 | GET /api/facilities | Patient | Short static list | FR-20 |
 | POST /api/links, POST /api/links/{id}/revoke | Patient | Link and unlink a partner hospital | FR-25 |
+| GET /api/hospitals **(added)** | Patient | Hospitals that can be linked | FR-25 |
+| GET /api/records/{id}/links **(added)** | Patient | The record's links and their deliveries | FR-25, NFR-23 |
 | POST /api/view/open | Clinician | Code + name + practice number opens a viewer session | FR-10, FR-12 |
 | GET /v, GET /v/referral | Clinician | Server-rendered summary and packet | FR-12, FR-14, FR-24 |
 | GET /v/facts/{id}/image | Clinician | 302 to a signed URL; logged | FR-05, NFR-16 |
@@ -465,3 +467,113 @@ Patient. Non-blocking drug-allergy flags (FR-17). It reads only and never stops 
 }
 ```
 A pair matches when the allergy and the medicine are both in one rule's group (penicillins, cephalosporins related to penicillins, sulfonamides, NSAIDs, macrolides), or when the allergy word appears in the medicine's name. Unreadable and superseded facts are ignored. The same advisories appear in `packet.advisories` on a referral, computed only from facts the viewer can see (a hidden allergy never leaks). Errors: 401, 404.
+
+---
+
+## Hospital links (C14, FR-25)
+
+A patient links **one chosen hospital** to a record and gets a **link reference** (`ITN-LNK-` plus 8 Crockford base32 characters) to hand to that hospital's records officer once, as text or QR. The link stays valid until the patient revokes it. The hospital's first accepted delivery records its own patient number on the link; a later delivery with a different number is refused. Every link, unlink and delivery (accepted or refused) appears in the access log.
+
+### GET /api/hospitals (added)
+
+Signed-in. `200 { "hospitals": [ { "id": "…", "name": "Demo General Hospital (SIMULATED)", "simulated": true } ] }`. Errors: 401.
+
+### POST /api/links
+
+Patient (holder of the record).
+```json
+{ "record_id": "…", "hospital_id": "…" }
+```
+```json
+201
+{ "link_id": "…", "link_ref": "ITN-LNK-7K2Q9MWD",
+  "hospital": { "id": "…", "name": "Demo General Hospital (SIMULATED)", "simulated": true },
+  "qr_svg": "<svg …>…</svg>", "created_at": "2026-11-13T08:13:49.780Z" }
+```
+`qr_svg` encodes the link reference as plain text. Access log: `link_created`. Errors: 400 `invalid_request` / `hospital_not_found`, 401, 404 (not your record).
+
+### POST /api/links/{id}/revoke
+
+Patient. Revokes now; idempotent. The hospital's next delivery gets 403 `link_not_active` and the patient sees the refused delivery in the access log. `200 { "revoked": true }`. Access log: `link_revoked` (once). Errors: 401, 404 (not your link).
+
+### GET /api/records/{id}/links (added)
+
+Patient.
+```json
+200
+{ "links": [ { "id": "…", "link_ref": "ITN-LNK-7K2Q9MWD",
+               "hospital": { "id": "…", "name": "Demo General Hospital (SIMULATED)", "simulated": true },
+               "created_at": "…", "revoked_at": null, "status": "active",
+               "deliveries_accepted": 2, "deliveries_refused": 0, "last_delivery_at": "…" } ] }
+```
+`status` is `active | revoked`. Errors: 401, 404.
+
+---
+
+## POST /api/feed/v1/bundles (partner, C15; FR-26, FR-27, NFR-22 to NFR-24)
+
+**Write-only.** A partner hospital system pushes results and referrals. There is **no read route**: no method or path under `/api/feed` returns anything from a record. This is a **FHIR R4 subset, not a FHIR server**: Itan is FHIR R4-aligned at this partner interface only, and its internal model is its own relational schema. It does not claim FHIR compliance.
+
+**Request headers**
+
+| Header | Value |
+| --- | --- |
+| `Authorization` | `Bearer <hospital key>` (`itnk_…`; stored only as SHA-256; revocable) |
+| `Idempotency-Key` | a UUID, new for each delivery; re-sending the same one is safe |
+| `Content-Type` | `application/fhir+json` or `application/json` |
+
+**Body:** a `Bundle` of `type: "collection"`, at most 50 entries, with **exactly one** `Patient` carrying two identifiers: system `urn:itan:link` with the link reference, and the hospital's own patient number (any other system). Then one or more of:
+
+| Resource | Fields read (everything else is ignored) | Becomes |
+| --- | --- | --- |
+| `Observation` | `identifier[0]`, `code.text`, exactly one of `valueString` / `valueQuantity {value, unit}`, `referenceRange[0] {text, low, high}`, `effectiveDateTime` (full date, optional time) | a `lab` fact |
+| `ServiceRequest` | `identifier[0]`, `reasonCode[].text`, `priority` (`routine`, `urgent`, `asap`, `stat`), `requester.display` | a `referral` fact; reason (texts joined with `; `), urgency and requester carried **exactly as sent** |
+
+Any other resource type is 422. Facts are `origin: provider_entered`, `state: confirmed`, with the hospital's name as `facility_name`. The patient can dispute them but never edit them. `fact_date` is the date part of `effectiveDateTime` with no timezone shifting.
+
+**A corrected result** arrives as a new `Observation` with the **same identifier** (system and value): the new fact supersedes the old one (`superseded_by`), the old one is kept in the history and hidden from summaries.
+
+**Limitation (L28).** `valueQuantity.value` is a JSON number, so `12.0` arrives as `12` and the printed trailing zero is lost. Send `valueString` when exact text matters; the unit is then taken from `referenceRange[0].low.unit` (or `high.unit`), because FHIR's `valueString` has no unit. Numbers (`value_num`, range bounds) are always derived by Itan's own parser from the text.
+
+**Example bundle** (SIMULATED, synthetic):
+```json
+{ "resourceType": "Bundle", "type": "collection",
+  "entry": [
+    { "resource": { "resourceType": "Patient", "identifier": [
+        { "system": "urn:itan:link", "value": "ITN-LNK-7K2Q9MWD" },
+        { "system": "urn:demo-general-hospital:mrn", "value": "DEMO-00123" } ] } },
+    { "resource": { "resourceType": "Observation",
+        "identifier": [ { "system": "urn:demo-general-hospital:lab", "value": "LAB-20261110-HB" } ],
+        "code": { "text": "Haemoglobin" }, "valueString": "11.2",
+        "referenceRange": [ { "text": "12.0 - 16.0", "low": { "value": 12.0, "unit": "g/dL" }, "high": { "value": 16.0, "unit": "g/dL" } } ],
+        "effectiveDateTime": "2026-11-10T09:30:00+01:00" } },
+    { "resource": { "resourceType": "ServiceRequest",
+        "reasonCode": [ { "text": "Persistent anaemia, needs specialist review" } ],
+        "priority": "urgent", "requester": { "display": "Dr Demo Physician (SIMULATED)" } } } ] }
+```
+
+**Example call**
+```bash
+curl -i -X POST "$BASE_URL/api/feed/v1/bundles" \
+  -H "Authorization: Bearer $HOSPITAL_KEY" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -H "Content-Type: application/fhir+json" \
+  --data @tools/sim-hospital/fixtures/results.json   # after filling {{LINK_REF}} and {{MRN}}
+```
+Or use the simulated hospital: `npm run sim -- send-results --link ITN-LNK-… --mrn DEMO-00123`.
+
+**Responses.** Checks run in this order and stop at the first refusal (L26):
+
+| Status | `error.code` | When | Logged |
+| --- | --- | --- | --- |
+| 405 + `Allow: POST` | `method_not_allowed` | any method other than POST, on any path under `/api/feed` (checked before the key) | `feed_receipt` refused, hospital unknown |
+| 401 | `unauthenticated` | missing, wrong or revoked key | `feed_receipt` refused, hospital unknown |
+| 400 | `idempotency_key_required` | missing or not a UUID | `feed_receipt` refused |
+| 413 | `payload_too_large` | body over 1 MB (1,048,576 bytes) | `feed_receipt` refused |
+| 415 | `unsupported_media_type` | another `Content-Type` | `feed_receipt` refused |
+| 422 | `bundle_invalid` | not JSON, or outside the subset. `error.issues: [{path, message}]` gives paths and messages only, never your values. **Nothing is written.** | `feed_receipt` refused |
+| 403 | `link_not_active` | unknown link reference, revoked link, a link belonging to another hospital, or a different hospital patient number. **The body is identical in all four cases**, so a hospital cannot probe which patients exist. | `feed_receipt` refused; if the link exists, `feed_delivery_refused` in that patient's access log |
+| 200 | — | the same `Idempotency-Key` again (from the same hospital): `{ "receipt_id": "…", "facts_created": 3, "replayed": true }`, nothing written | — |
+| 202 | — | accepted: `{ "receipt_id": "…", "facts_created": 3 }` | `feed_receipt` accepted, one `fact_event` per fact, `feed_delivery_accepted` in the access log, all in one transaction |
+
+Refused receipts never store the idempotency key, so a corrected retry with the same key still goes through. Every response has `Cache-Control: no-store`. No refusal body contains record content.
