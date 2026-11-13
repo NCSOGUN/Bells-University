@@ -1,0 +1,37 @@
+{
+  "id": "lab-blurred-photo",
+  "file": "lab-blurred-photo.jpg",
+  "doc_type": "lab_report",
+  "facility": null,
+  "document_date": null,
+  "items": [
+    {
+      "kind": "lab",
+      "label": "Fasting Glucose",
+      "value": null,
+      "unit": null,
+      "range": null,
+      "readable": false,
+      "critical": true
+    },
+    {
+      "kind": "lab",
+      "label": "Creatinine",
+      "value": null,
+      "unit": null,
+      "range": null,
+      "readable": false,
+      "critical": true
+    },
+    {
+      "kind": "lab",
+      "label": "Urea",
+      "value": null,
+      "unit": null,
+      "range": null,
+      "readable": false,
+      "critical": true
+    }
+  ],
+  "referral": null
+}

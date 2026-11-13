@@ -1,0 +1,55 @@
+{
+  "id": "lab-chem-photo",
+  "file": "lab-chem-photo.jpg",
+  "doc_type": "lab_report",
+  "facility": "Sample Diagnostics Laboratory",
+  "document_date": "09/11/2026",
+  "items": [
+    {
+      "kind": "lab",
+      "label": "Fasting Glucose",
+      "value": "5.2",
+      "unit": "mmol/L",
+      "range": "3.9 - 5.5",
+      "readable": true,
+      "critical": true
+    },
+    {
+      "kind": "lab",
+      "label": "Creatinine",
+      "value": "88",
+      "unit": "µmol/L",
+      "range": "45 - 90",
+      "readable": true,
+      "critical": true
+    },
+    {
+      "kind": "lab",
+      "label": "Urea",
+      "value": "4.8",
+      "unit": "mmol/L",
+      "range": "2.5 - 7.1",
+      "readable": true,
+      "critical": true
+    },
+    {
+      "kind": "lab",
+      "label": "Sodium",
+      "value": "139",
+      "unit": "mmol/L",
+      "range": "135 - 145",
+      "readable": true,
+      "critical": true
+    },
+    {
+      "kind": "lab",
+      "label": "Potassium",
+      "value": "4.1",
+      "unit": "mmol/L",
+      "range": "3.5 - 5.1",
+      "readable": true,
+      "critical": true
+    }
+  ],
+  "referral": null
+}

@@ -107,6 +107,15 @@ Every place the build differs from the design, or where the design was silent. F
 - **The simulated hospital CLI uses `process.exitCode`**, not `process.exit()`. The latter crashed Node on Windows (`UV_HANDLE_CLOSING` assertion) while fetch sockets were closing.
 - **Superseding was verified live, not by a unit test** (P12's smoke now repeats it on every run). It is SQL inside the transaction, and L30 leaves no in-memory Postgres here. Live run on 13 Nov: three haemoglobin deliveries left two superseded rows kept and one current; the provider-fact trigger allowed only the `superseded_by` change. P12's smoke should repeat it.
 
+## D-019 P1 fixtures: judgement calls (13 Nov, supersedes D-007)
+- **Photo fixtures are JPEG, not PNG.** The prompt said PNG at 500 KB or less. A phone photo is a JPEG and the app's device-side re-encoding sends JPEG, so the "photo" fixtures are `.jpg` (26 to 99 KB). The size and long-edge limits are enforced in `tests/fixtures.test.ts`. PDFs are PDFs.
+- **Installed Chrome, no browser download.** Playwright 1.65 and sharp 0.35 are dev-only, installed with `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`. `npm run fixtures` launches the installed Chrome (or Edge). If neither exists it prints `npx playwright install chromium` and exits 1. Only the npm packages (about 35 MB) were downloaded.
+- **One spec generates both document and key** (`tools/fixtures/specs.ts`), so a key cannot drift from its page. The test checks every readable key string appears in the HTML verbatim.
+- **Keys use the page's exact words**, because the scorer compares text exactly (whitespace collapsed). The referral reason and urgency have no trailing full stop on the page, so a model that adds one is not unfairly marked wrong or right on punctuation.
+- **The referral letter prints no diagnosis**, so a diagnosis the model reports from it is a "not in key" item. That is deliberate: a reason for referral is not a diagnosis.
+- **All ten fixtures were built**, not the seven-document cut. Dates: dd/mm/yyyy in eight, ISO in one, none in the blurred sheet.
+- **Not real photographs.** These have a printed-photo look made by code. Two should still be printed and photographed with a real phone (README).
+
 ## D-018 P12 hardening changes and judgement calls (13 Nov)
 - **Auth outage is 503, not 401 (lib/auth.ts, lib/http.ts; P4 code changed).**
   - **Found live:** Supabase Auth `getUser` stalled for 10 to 45 s from Nigeria, and `getAccountId` returned null, so signed-in calls got 401. In the app that would look like being signed out.

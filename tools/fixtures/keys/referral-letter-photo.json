@@ -1,0 +1,13 @@
+{
+  "id": "referral-letter-photo",
+  "file": "referral-letter-photo.jpg",
+  "doc_type": "referral_letter",
+  "facility": "Demo General Hospital (SIMULATED)",
+  "document_date": "12/11/2026",
+  "items": [],
+  "referral": {
+    "reason": "Rising creatinine over three months, for nephrology opinion",
+    "urgency": "Please see within 2 weeks",
+    "clinician": "Dr Demo Physician (SYNTHETIC)"
+  }
+}

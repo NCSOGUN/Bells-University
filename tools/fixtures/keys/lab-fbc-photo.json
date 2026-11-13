@@ -1,0 +1,46 @@
+{
+  "id": "lab-fbc-photo",
+  "file": "lab-fbc-photo.jpg",
+  "doc_type": "lab_report",
+  "facility": "Sample Diagnostics Laboratory",
+  "document_date": "10/11/2026",
+  "items": [
+    {
+      "kind": "lab",
+      "label": "Haemoglobin",
+      "value": "9.8",
+      "unit": "g/dL",
+      "range": "12.0 - 16.0",
+      "readable": true,
+      "critical": true
+    },
+    {
+      "kind": "lab",
+      "label": "White Blood Cell Count",
+      "value": "6.2",
+      "unit": "10^9/L",
+      "range": "4.0 - 11.0",
+      "readable": true,
+      "critical": true
+    },
+    {
+      "kind": "lab",
+      "label": "Platelets",
+      "value": "245",
+      "unit": "10^9/L",
+      "range": "150 - 400",
+      "readable": true,
+      "critical": true
+    },
+    {
+      "kind": "lab",
+      "label": "PCV",
+      "value": "30",
+      "unit": "%",
+      "range": "36 - 46",
+      "readable": true,
+      "critical": true
+    }
+  ],
+  "referral": null
+}
