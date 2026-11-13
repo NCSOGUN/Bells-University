@@ -87,6 +87,29 @@ describe("(c) every route in docs/api.md has a handler (freeze item 9)", () => {
     expect(missing).toEqual([]);
   });
 
+  it("every route.ts and every method it exports is in the table (the reverse direction, R1 S-13)", () => {
+    const walkRoutes = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((d) => {
+        const p = path.join(dir, d.name);
+        return d.isDirectory() ? walkRoutes(p) : d.name === "route.ts" ? [p] : [];
+      });
+    const documented = new Set(routes.map((r) => `${r.method} ${toDir(r.route)}`));
+    const undocumented: string[] = [];
+    for (const file of walkRoutes("app")) {
+      const dir = path.dirname(file);
+      // The feed catch-all answers 405 to every method by design; it is documented under POST /api/feed/v1/bundles.
+      if (dir.includes("[[...path]]")) continue;
+      const src = read(file);
+      for (const m of ["GET", "POST", "PUT", "PATCH", "DELETE"]) {
+        if (!exportsMethod(src, m)) continue;
+        // The feed route's other methods are the documented 405s, not routes of their own.
+        if (dir.endsWith(path.join("feed", "v1", "bundles")) && m !== "POST") continue;
+        if (!documented.has(`${m} ${dir}`)) undocumented.push(`${m} ${dir}`);
+      }
+    }
+    expect(undocumented).toEqual([]);
+  });
+
   // The /v and /v/referral PAGES belong to Dev A. Until they exist this reports them as skipped, by name,
   // instead of failing the Dev B suite. It becomes a real assertion the moment either page file exists.
   const pages = routes.filter((x) => x.method === "GET" && /^\/v(\/referral)?$/.test(x.route));

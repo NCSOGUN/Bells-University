@@ -19,9 +19,12 @@ Routes marked **(added)** are not in the design table; they were added so Dev A'
 | POST /api/facts/{id}/correct | Patient | Change fields; event keeps the original | FR-07 |
 | POST /api/facts/{id}/remove | Patient | Hide a wrong AI fact; event kept | FR-07 |
 | POST /api/facts/{id}/dispute, DELETE the same | Patient | Dispute or withdraw, provider\_entered only | FR-27 |
+| POST /api/facts/{id}/category **(added)** | Patient | Tag or clear a fact's sensitive category | FR-15 |
 | GET /api/facts/{id}/explanation | Patient | Deterministic explanation | FR-09 |
+| GET /api/records/{id}/advisories **(added)** | Patient | Drug-allergy flags, never blocking | FR-17 |
 | POST /api/shares | Patient | Create a code (expiry, hidden categories, purpose) | FR-10, FR-15 |
 | POST /api/shares/{id}/revoke | Patient | Revoke now | FR-11 |
+| GET /api/records/{id}/shares **(added)** | Patient | The record's shares and their state | FR-10, FR-11 |
 | GET /api/records/{id}/access-log | Patient | Who saw what, and refusals | FR-13 |
 | POST /api/referrals, GET /api/referrals/{id} | Patient | Build and preview a packet | FR-14 |
 | GET /api/facilities | Patient | Short static list | FR-20 |
@@ -33,8 +36,11 @@ Routes marked **(added)** are not in the design table; they were added so Dev A'
 | GET /v/facts/{id}/image | Clinician | 302 to a signed URL; logged | FR-05, NFR-16 |
 | POST /api/view/ack | Clinician | Referral acknowledgement | FR-19 |
 | POST /api/feed/v1/bundles | Partner system | Write-only intake | FR-26, FR-27 |
+| GET /api/health **(added)** | Anyone | Region and Node version, no database | freeze item 3 |
 
-No endpoint takes a record ID without also checking, through `can()`, that the caller holds that record (NFR-06).
+No endpoint takes a record ID without also checking, through `can()`, that the caller holds that record (NFR-06). `tests/static.test.ts` checks this table both ways: every row has a route file, and every route file and method has a row.
+
+**Types.** `lib/api-types.ts` has every request body, response and error code below as TypeScript types. It is type-only, so client components can `import type { … } from "@/lib/api-types"` without pulling server code into the bundle.
 
 ## Conventions
 
@@ -50,12 +56,15 @@ No endpoint takes a record ID without also checking, through `can()`, that the c
 |---|---|---|
 | 400 | `invalid_request` (or a specific code) | Bad JSON or fields. The message lists field paths, never values. |
 | 401 | `unauthenticated` | No valid identity. |
-| 403 | `forbidden`, `consent_required`, `provider_entered_immutable`, `code_not_valid`, `link_not_active`, ... | Known caller, not allowed. |
+| 403 | `forbidden`, `consent_required`, `provider_entered_immutable`, `dispute_provider_only`, `code_not_valid`, `link_not_active` | Known caller, not allowed. |
+| 403 | `no_cookie`, `session_expired`, `share_expired`, `share_revoked` | Clinician routes only: the viewer session can no longer be used. Show "This access is no longer valid." and the code entry. |
 | 404 | `not_found` | Does not exist **or** the caller does not hold it. The two look the same on purpose (NFR-06). |
-| 409 | e.g. `extraction_in_progress`, `client_upload_id_conflict` | Conflict with current state. |
-| 413 | `file_too_large` | Upload over the limit. |
+| 409 | `extraction_in_progress`, `client_upload_id_conflict`, `invalid_transition`, `already_removed` | Conflict with current state. |
+| 413 | `file_too_large` (uploads), `payload_too_large` (feed) | Over the limit. |
+| 415 | `unsupported_media_type` | Feed only: wrong `Content-Type`. |
 | 429 | `too_many_attempts` | Rate limited; see `Retry-After`. |
 | 500 | `internal_error` | Unexpected; no detail is returned. |
+| 502 | `extraction_failed`, `storage_failed` | The model or Storage failed. Nothing half-written; the same call can be retried (uploads with the same `client_upload_id`). |
 | 503 | `service_unavailable` | Sign-in could not be checked (Supabase Auth unreachable, or no answer within 8 s). Has `Retry-After: 5`. **The caller is not signed out:** keep the session, show "Please try again", and retry. A 401 is the only "sign in again" signal. |
 
 **`ai_notice` (NFR-13).** Every response that carries facts also carries an `ai_notice` string: `GET /api/records/{id}/facts`, `GET /api/documents/{id}`, `POST /api/documents/{id}/extract` (patient wording), and `getViewerSummary` / `getReferralPacketForViewer` (clinician wording). Show it, as given, on every screen that shows those facts. It states that items were read by AI, may contain errors, and are not medical advice.
@@ -144,14 +153,14 @@ Patient. `multipart/form-data` with `record_id` (uuid), `client_upload_id` (uuid
 201  { "document_id": "3d0296b8-…", "status": "uploaded" }
 200  { "document_id": "3d0296b8-…", "status": "uploaded" }   ← same client_upload_id again (safe retry)
 ```
-Errors: 400 `invalid_request`, 400 `unsupported_type`, 401, 404 (not your record), 409 `client_upload_id_conflict`, 413 `file_too_large`, 502 `storage_failed` (retry with the same id).
+The server checks the file's first bytes: a file whose contents are not the JPEG, PNG or PDF it claims to be is 400 `unsupported_type`. Errors: 400 `invalid_request`, 400 `unsupported_type`, 401, 404 (not your record), 409 `client_upload_id_conflict`, 413 `file_too_large`, 502 `storage_failed` (retry with the same id).
 
 ## POST /api/documents/{id}/extract
 
 Patient. No body. Reads the document with the AI, applies the guards, stores facts as `ai_read` + `unverified`. Takes 5 to 30 s; the app should show progress and may poll `GET /api/documents/{id}` if the connection drops. Calling it again after success returns the stored facts without calling the model.
 
 ```json
-200  { "document_id": "…", "status": "extracted", "facts": [ FactDTO, … ] }
+200  { "document_id": "…", "status": "extracted", "facts": [ FactDTO, … ], "ai_notice": "Items marked as read by AI were read from your documents by an AI service and may contain errors. …" }
 ```
 A document with nothing readable still returns 200 with `"facts": []` (show "no facts found, add them by hand").
 Errors: 401, 403 `consent_required` (POST /api/consent first), 404, 409 `extraction_in_progress` (another call is running; retry in a moment), 502 `extraction_failed` with message "Itan could not read this document. Try again or add the facts by hand." (document status becomes `failed`; the same route can be called again).
@@ -164,7 +173,7 @@ Patient.
 { "document_id": "…", "status": "uploaded | extracting | extracted | failed", "error_code": null,
   "doc_type": "lab_report", "mime": "application/pdf", "uploaded_at": "…", "extracted_at": "…",
   "facility_as_printed": "Sample Diagnostics Laboratory", "document_date_as_printed": "03/11/2026",
-  "facts": [ FactDTO, … ] }
+  "facts": [ FactDTO, … ], "ai_notice": "…" }
 ```
 Errors: 401, 404.
 
@@ -199,7 +208,8 @@ Patient. The timeline: active facts (not removed, not superseded), newest `fact_
   "documents": [
     { "id": "…", "doc_type": "lab_report", "status": "extracted", "uploaded_at": "…",
       "facility_as_printed": "Sample Diagnostics Laboratory", "document_date_as_printed": "03/11/2026" }
-  ]
+  ],
+  "ai_notice": "Items marked as read by AI were read from your documents by an AI service and may contain errors. …"
 }
 ```
 `previous` appears only when: same test (`test_key`), both numeric, an earlier date, and the **same unit**. Two units count as the same when they are equal after Unicode NFKC folding, whitespace collapsing and trimming (so `µmol/L` and `μmol/L`, which look identical but use different characters, match); nothing else is folded: case and every other difference still count. The stored text of each fact is shown as supplied, not rewritten. Units are never converted. Errors: 401, 404.
@@ -228,7 +238,7 @@ Strict body, any of `label_as_printed`, `value_as_printed`, `unit_as_printed`, `
 Soft delete. `200 { "removed": true, "fact_id": "…" }`. Errors: 401, 403 `provider_entered_immutable`, 404, 409.
 
 ## POST /api/facts/{id}/dispute  and  DELETE /api/facts/{id}/dispute
-Hospital-sent facts only. `POST { "note": "This is not my result" }` (1 to 500 characters) sets `state: "disputed"`; `DELETE` (no body) withdraws it back to `confirmed`. The hospital's content is untouched and the note is stored beside it. The disputed state shows on the clinician view. `200 { "fact": FactDTO }`. Errors: 400, 401, 403 (not a hospital-sent fact), 404, 409.
+Hospital-sent facts only. `POST { "note": "This is not my result" }` (1 to 500 characters) sets `state: "disputed"`; `DELETE` (no body) withdraws it back to `confirmed`. The hospital's content is untouched and the note is stored beside it. The disputed state shows on the clinician view. `200 { "fact": FactDTO }`. Errors: 400, 401, 403 `dispute_provider_only` (not a hospital-sent fact), 404, 409.
 
 ## POST /api/facts/{id}/category
 The patient's privacy tag, allowed on any origin (it is not an edit of clinical content). `{ "sensitive_category": "mental_health" }` or `null` to clear. Values: `sexual_reproductive`, `mental_health`, `infectious_disease`, `substance_use`, `other_sensitive`. `200 { "fact": FactDTO }`. Errors: 400, 401, 404, 409.
@@ -239,7 +249,7 @@ The patient's privacy tag, allowed on any origin (it is not an edit of clinical 
 
 Patient. Deterministic plain-language explanation of one **lab** fact (FR-09). No AI model is involved: every sentence is a fixed template or a glossary row, and the comparison uses only the range printed on the same document (NFR-17). Units are repeated as printed, never converted.
 
-Real output for the demo record's Haemoglobin 9.8 g/dL (range printed `12.0 - 16.0`):
+Real output for the **seeded** demo fact Haemoglobin 9.8 g/dL (AI-read, confirmed, range printed `12.0 - 16.0`). The demo record's newest Haemoglobin may be a later hospital-sent value; a `provider_entered` fact gets only the first notice.
 
 ```json
 200
@@ -356,6 +366,7 @@ Server components read the cookie with `cookies()` from `next/headers`; build a 
   "viewer": { "name": "Dr A", "practice_no": "MDCN 12345" },
   "recorded_notice": "Name and practice number were recorded but not verified.",
   "partial_notice": "The patient has chosen not to share some items. This record may be incomplete.",
+  "ai_notice": "Items marked as read by AI were read from the patient's documents by an AI service and may contain errors; …",
   "sections": {
     "medicines": [ FactDTO ], "allergies": [ FactDTO ], "diagnoses": [ FactDTO ],
     "recent_results": [ FactDTO & { "previous": { "value_as_printed": "8.1", "unit_as_printed": "%", "fact_date": "2026-05-14", "fact_id": "…" } } ]
@@ -414,7 +425,8 @@ Patient. Preview of exactly what a doctor will see, the acknowledgements, and th
     "documents": [ "…" ]
   },
   "acknowledgements": [ { "status": "service_offered", "label": "Received — service offered here", "at": "…", "viewer_name": "Dr Ack" } ],
-  "disclaimer": "This is not a statement that a bed is available."
+  "disclaimer": "This is not a statement that a bed is available.",
+  "ai_notice": "Items marked as read by AI were read from your documents by an AI service and may contain errors. …"
 }
 ```
 
@@ -445,6 +457,7 @@ Always show the disclaimer with the label. Errors: 400, 403 (no cookie, expired 
   "viewer": { "name": "Dr Ack", "practice_no": "MDCN 99999" },
   "recorded_notice": "Name and practice number were recorded but not verified.",
   "partial_notice": null,
+  "ai_notice": "Items marked as read by AI were read from the patient's documents by an AI service and may contain errors; …",
   "current_acknowledgement": null,
   "ack_labels": { "service_offered": "Received — service offered here", "service_not_offered": "Received — service not offered here" },
   "disclaimer": "This is not a statement that a bed is available.",
@@ -580,3 +593,13 @@ Or use the simulated hospital: `npm run sim -- send-results --link ITN-LNK-… -
 | 202 | — | accepted: `{ "receipt_id": "…", "facts_created": 3 }` | `feed_receipt` accepted, one `fact_event` per fact, `feed_delivery_accepted` in the access log, all in one transaction |
 
 Refused receipts never store the idempotency key, so a corrected retry with the same key still goes through. Every response has `Cache-Control: no-store`. No refusal body contains record content.
+
+---
+
+## GET /api/health (added)
+
+Anyone, no sign-in, no database access. Used to read the function region from a deployment (freeze item 3).
+```json
+200  { "ok": true, "region": "lhr1", "node": "v24.18.0" }
+```
+`region` is `"local"` outside Vercel.
