@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import postgres from "postgres";
 import { getViewerFromRequest, getViewerSummary } from "../lib/share/service";
+import { getReferralPacketForViewer } from "../lib/referral/service";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const SMOKE_RECORD = "SMOKE TEST (SYNTHETIC)";
@@ -98,6 +99,7 @@ async function main() {
   check("unknown document is 404", bogus.status === 404);
   await factChecks(H, demoId, rid);
   await shareChecks(H, rid);
+  await referralChecks(H, rid);
 }
 
 // ---- P6: fact lifecycle, timeline, previous value, provider-entered immutability
@@ -292,6 +294,94 @@ async function shareChecks(H: Record<string, string>, recordId: string) {
 
     check("bad body on open is 400", (await fetch(`${BASE}/api/view/open`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: "x" }) })).status === 400);
     check("unknown share id revoke is 404", (await post(`/api/shares/${crypto.randomUUID()}/revoke`)).status === 404);
+  } finally {
+    await sql.end({ timeout: 5 });
+  }
+}
+
+// ---- P9: facilities, referral packet (verbatim or missing), referral share, acknowledgement
+async function referralChecks(H: Record<string, string>, recordId: string) {
+  const J = { ...H, "content-type": "application/json" };
+  const post = (p: string, body?: unknown) => fetch(`${BASE}${p}`, { method: "POST", headers: J, body: body ? JSON.stringify(body) : undefined });
+  const get = (p: string) => fetch(`${BASE}${p}`, { headers: H });
+  const ipOf = () => `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}`;
+  const open = (code: string) =>
+    fetch(`${BASE}/api/view/open`, { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": ipOf() }, body: JSON.stringify({ code, name: "Dr Ack", practice_no: "MDCN 99999" }) });
+  const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1 });
+  try {
+    const fac = await get("/api/facilities");
+    const facj = await fac.json();
+    check("GET /api/facilities: six SIMULATED facilities", fac.status === 200 && facj.facilities.length >= 6 && facj.facilities.every((f: { name: string }) => f.name.includes("(SIMULATED)")));
+    check("facilities need sign-in (401)", (await fetch(`${BASE}/api/facilities`)).status === 401);
+
+    // Two source facts, inserted directly: a hospital ServiceRequest and an unconfirmed photographed letter.
+    const [hosp] = await sql`insert into fact (record_id, origin, state, kind, label_as_printed, facility_name, extra) values (${recordId}, 'provider_entered', 'confirmed', 'referral', 'Referral', 'Demo General Hospital (SIMULATED)', ${sql.json({ reason_as_written: "Persistent anaemia, needs specialist review", urgency_as_written: "urgent", urgency_code: "urgent", requester: "Dr Demo Physician (SIMULATED)" })}) returning id`;
+    const [letter] = await sql`insert into fact (record_id, origin, state, kind, label_as_printed, extra, check_carefully) values (${recordId}, 'ai_read', 'unverified', 'referral', 'Referral letter', ${sql.json({ reason_as_written: "Query diabetic nephropathy", urgency_as_written: "please see within 2 weeks", requester: "Dr Letter Writer" })}, true) returning id`;
+
+    // The patient cannot set reason or urgency.
+    for (const field of ["reason", "urgency", "urgency_as_written", "urgency_code"]) {
+      const r = await post("/api/referrals", { record_id: recordId, [field]: "x" });
+      check(`POST /api/referrals with "${field}" is 400 field_not_allowed`, r.status === 400 && (await r.json()).error.code === "field_not_allowed");
+    }
+    check("source from another record or a non-referral fact is 400", (await post("/api/referrals", { record_id: recordId, source_fact_id: crypto.randomUUID() })).status === 400);
+
+    // No source: reason and urgency are MISSING, all seven fields still present or missing.
+    const none = await (await post("/api/referrals", { record_id: recordId })).json();
+    const noneView = await (await get(`/api/referrals/${none.referral_id}`)).json();
+    check("no source: reason and urgency are 'Not stated by the referring clinician'", noneView.packet.reason_for_referral.status === "missing" && noneView.packet.urgency.note === "Not stated by the referring clinician" && noneView.packet.urgency.status === "missing");
+    check("packet always carries all seven fields", ["results", "urgency", "medicines", "allergies", "reason_for_referral", "referring_clinician", "date"].every((k) => noneView.packet[k]?.status));
+
+    // Unconfirmed letter: missing with the not-confirmed note; then confirmed: carried verbatim.
+    const fromLetter = await (await post("/api/referrals", { record_id: recordId, source_fact_id: letter.id })).json();
+    const before = await (await get(`/api/referrals/${fromLetter.referral_id}`)).json();
+    check("unconfirmed letter: urgency missing, 'not yet confirmed by the patient'", before.packet.urgency.status === "missing" && /not yet confirmed/.test(before.packet.urgency.note));
+    check("confirming the letter fact works", (await post(`/api/facts/${letter.id}/confirm`)).status === 200);
+    const after = await (await get(`/api/referrals/${fromLetter.referral_id}`)).json();
+    check("confirmed letter: urgency carried verbatim with the letter source", after.packet.urgency.value === "please see within 2 weeks" && /Read from the patient's referral letter/.test(after.packet.urgency.source) && after.packet.urgency.urgency_code === undefined);
+
+    // Hospital ServiceRequest: verbatim, with the sender and the FHIR priority word.
+    const facilityId = facj.facilities[0].id;
+    const fromHosp = await (await post("/api/referrals", { record_id: recordId, source_fact_id: hosp.id, destination_facility_id: facilityId })).json();
+    const hv = await (await get(`/api/referrals/${fromHosp.referral_id}`)).json();
+    check("hospital referral: reason verbatim, source 'Sent by Demo General Hospital (SIMULATED)'", hv.packet.reason_for_referral.value === "Persistent anaemia, needs specialist review" && hv.packet.reason_for_referral.source === "Sent by Demo General Hospital (SIMULATED)");
+    check("hospital referral: urgency 'urgent' with FHIR code 'urgent', clinician carried", hv.packet.urgency.value === "urgent" && hv.packet.urgency.urgency_code === "urgent" && hv.packet.referring_clinician.value === "Dr Demo Physician (SIMULATED)");
+    check("destination facility appears on the packet", typeof hv.packet.destination === "string" && hv.packet.destination.includes("(SIMULATED)"));
+    const [row] = await sql`select reason_as_written, urgency_as_written, urgency_code from referral where id = ${fromHosp.referral_id}`;
+    check("referral row holds exactly the source's words", row.reason_as_written === "Persistent anaemia, needs specialist review" && row.urgency_as_written === "urgent" && row.urgency_code === "urgent");
+
+    // Referral share -> clinician opens -> sees the packet -> acknowledges.
+    const sh = await (await post("/api/shares", { record_id: recordId, purpose: "referral", referral_id: fromHosp.referral_id, expires_in_minutes: 60 })).json();
+    const op = await open(sh.code);
+    const opj = await op.json();
+    check("referral share opens to /v/referral", op.status === 200 && opj.next === "/v/referral");
+    const cookie = (op.headers.get("set-cookie") ?? "").split(";")[0];
+    const viewer = await getViewerFromRequest(new Request("http://x/v/referral", { headers: { cookie } }));
+    check("viewer is on a referral share", viewer.ok && viewer.purpose === "referral");
+    if (viewer.ok) {
+      const pk = await getReferralPacketForViewer(viewer);
+      check("viewer packet: carried reason and the fixed acknowledgement labels", pk?.packet.reason_for_referral.value === "Persistent anaemia, needs specialist review" && pk.ack_labels.service_offered === "Received — service offered here");
+      check("viewer packet carries the disclaimer", pk?.disclaimer === "This is not a statement that a bed is available.");
+    }
+    const ack = async (cookieH: string | null, status: string) =>
+      fetch(`${BASE}/api/view/ack`, { method: "POST", headers: { "content-type": "application/json", ...(cookieH ? { cookie: cookieH } : {}) }, body: JSON.stringify({ status }) });
+    check("ack without a cookie is 403", (await ack(null, "service_offered")).status === 403);
+    check("ack with a bad status is 400", (await ack(cookie, "bed_available")).status === 400);
+    const ok = await ack(cookie, "service_offered");
+    const okj = await ok.json();
+    check("ack 200 returns the label and the no-bed disclaimer", ok.status === 200 && okj.label === "Received — service offered here" && okj.disclaimer === "This is not a statement that a bed is available.");
+    const owner = await (await get(`/api/referrals/${fromHosp.referral_id}`)).json();
+    check("patient sees the acknowledgement with the clinician's name", owner.acknowledgements.some((a: { label: string; viewer_name: string }) => a.label === "Received — service offered here" && a.viewer_name === "Dr Ack"));
+    const log = await (await get(`/api/records/${recordId}/access-log?limit=50`)).json();
+    check("access log has referral_acknowledged", (log.entries as { action: string }[]).some((e) => e.action === "referral_acknowledged"));
+
+    // A general share cannot acknowledge.
+    const gen = await (await post("/api/shares", { record_id: recordId, purpose: "general" })).json();
+    const gOpen = await open(gen.code);
+    const gCookie = (gOpen.headers.get("set-cookie") ?? "").split(";")[0];
+    check("ack on a general share is 403", (await ack(gCookie, "service_offered")).status === 403);
+    for (const s of [sh, gen]) await post(`/api/shares/${s.share_id}/revoke`);
+    check("after revoke, ack is refused 403", (await ack(cookie, "service_offered")).status === 403);
+    check("unknown referral id is 404", (await get(`/api/referrals/${crypto.randomUUID()}`)).status === 404);
   } finally {
     await sql.end({ timeout: 5 });
   }

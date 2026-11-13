@@ -40,6 +40,7 @@ describe("separation of concerns", () => {
     const pure = [
       "lib/share/codes.ts", "lib/share/evaluate.ts", "lib/share/ratelimit.ts", "lib/share/filter.ts", "lib/share/session.ts",
       "lib/share/summary.ts", "lib/audit-labels.ts", "lib/explain/engine.ts", "lib/explain/lint.ts",
+      "lib/referral/packet.ts", "lib/referral/wording.ts", "lib/advisory/types.ts",
     ];
     // @/lib/config is allowed here: these files read constants (limits, lifetimes) from it, never secrets.
     const bad = /(^|\/)db\/(client|schema)$|drizzle-orm|^postgres$|supabase|@google\/genai|\/storage$|\/audit$|\.\/queries$|\.\/service$/;
@@ -52,7 +53,7 @@ describe("separation of concerns", () => {
   });
 
   it("only lib/db, services, queries, audit and records talk to the database", () => {
-    const allowed = /^lib[\\/](db[\\/]|audit\.ts|records\.ts|auth\.ts|.*[\\/]service\.ts|.*[\\/]queries\.ts|share[\\/]|feed[\\/]|referral[\\/]|advisory[\\/])/;
+    const allowed = /^lib[\\/](db[\\/]|audit\.ts|records\.ts|auth\.ts|.*[\\/]service\.ts|.*[\\/]queries\.ts)/;
     const offenders = walk("lib")
       .filter((f) => imports(read(f)).some((i) => /(^|\/)db\/client$/.test(i)))
       .filter((f) => !allowed.test(f));

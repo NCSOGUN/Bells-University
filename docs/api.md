@@ -359,3 +359,89 @@ Server components read the cookie with `cookies()` from `next/headers`; build a 
 }
 ```
 `partial_notice` is null unless the patient hid something; it never says what. Show the **origin and state badges** on every fact (unverified, confirmed, disputed, "Sent by hospital") and make each fact with `has_image` open `/v/facts/{id}/image`. Recent results are the latest value per test, newest first, at most 12. Show the exact strings above; do not paraphrase.
+
+---
+
+## GET /api/facilities
+
+Any signed-in account. The short fictional list used to pick a referral destination (FR-20). Every name ends "(SIMULATED)".
+```json
+200  { "facilities": [ { "id": "…", "name": "Demo General Hospital (SIMULATED)", "city": "Abeokuta", "is_simulated": true } ] }
+```
+
+## POST /api/referrals
+
+Patient builds a referral from a **source**. Strict body.
+```json
+{ "record_id": "…", "source_fact_id": "…", "destination_facility_id": "…",
+  "referring_clinician_as_written": "Dr A", "referral_date_as_written": "05/11/2026" }
+```
+Only `record_id` is required. `source_fact_id` must be a fact of `kind: "referral"` in the same record: either one a partner hospital sent, or one read from a photographed referral letter (the extraction creates it). The clinician and date are copied from the source when you do not send them.
+
+**Reason and urgency can never be sent.** A body containing `reason`, `reason_as_written`, `urgency`, `urgency_as_written` or `urgency_code` is rejected:
+```json
+400  { "error": { "code": "field_not_allowed", "message": "Reason and urgency cannot be set here. They are carried from the referring clinician's own record or letter." } }
+```
+```json
+201  { "referral_id": "…" }
+```
+Errors: 400 `invalid_request` / `invalid_source` / `invalid_destination` / `field_not_allowed`, 401, 404 (not your record).
+
+## GET /api/referrals/{id}
+
+Patient. Preview of exactly what a doctor will see, the acknowledgements, and the disclaimer.
+```json
+200
+{
+  "referral": { "id": "…", "record_id": "…", "source_fact_id": "…", "destination_facility_id": "…",
+                "referring_clinician_as_written": "Dr Demo Physician (SIMULATED)", "referral_date_as_written": "10/11/2026", "created_at": "…" },
+  "packet": {
+    "patient": { "display_name": "Demo Patient (SYNTHETIC)", "birth_year": 1972 },
+    "destination": "Sample Teaching Hospital (SIMULATED)",
+    "urgency":              { "status": "present", "value": "urgent", "source": "Sent by Demo General Hospital (SIMULATED)", "urgency_code": "urgent" },
+    "reason_for_referral":  { "status": "present", "value": "Persistent anaemia, needs specialist review", "source": "Sent by Demo General Hospital (SIMULATED)" },
+    "referring_clinician":  { "status": "present", "value": "Dr Demo Physician (SIMULATED)", "source": "Sent by Demo General Hospital (SIMULATED)" },
+    "date":                 { "status": "present", "value": "10/11/2026", "source": "Sent by Demo General Hospital (SIMULATED)" },
+    "results":   { "status": "present", "value": [ FactDTO & { "previous": { … } } ] },
+    "medicines": { "status": "present", "value": [ FactDTO ] },
+    "allergies": { "status": "missing", "note": "None recorded in this record" },
+    "advisories": [],
+    "documents": [ "…" ]
+  },
+  "acknowledgements": [ { "status": "service_offered", "label": "Received — service offered here", "at": "…", "viewer_name": "Dr Ack" } ],
+  "disclaimer": "This is not a statement that a bed is available."
+}
+```
+
+**The seven fields** are always present as keys: `results, urgency, medicines, allergies, reason_for_referral, referring_clinician, date`. Each has `status: "present" | "missing"`. **A missing field is shown as missing, never hidden.** Use these fixed texts, copied exactly:
+
+| Situation | `note` |
+|---|---|
+| No source, or the source does not state it | `Not stated by the referring clinician` |
+| Source is a letter the patient has not confirmed | `Read from a letter but not yet confirmed by the patient` |
+| Hospital's referral that the patient has disputed (value still shown) | `The patient has marked this as disputed` |
+| No medicines, allergies or results recorded | `None recorded in this record` |
+
+`source` is one of `Sent by {hospital}`, `Read from the patient's referral letter and confirmed by the patient`, `Entered by the patient`. `urgency_code` (routine, urgent, asap, stat) appears only for hospital-sent referrals, beside the hospital's own words. Itan never maps urgency to anything of its own. Missing medicines/allergies do not mean "none"; the note says only that none are recorded. Errors: 401, 404.
+
+## POST /api/view/ack (clinician)
+
+Needs the `itan_v` cookie of a **referral** share. `{ "status": "service_offered" | "service_not_offered" }`.
+```json
+200  { "label": "Received — service offered here", "disclaimer": "This is not a statement that a bed is available." }
+```
+Always show the disclaimer with the label. Errors: 400, 403 (no cookie, expired or revoked share, or a general share). The patient's access log gets `referral_acknowledged`. Simulated in this version: label the screen so.
+
+## Library function for the referral page (Dev A)
+
+`getReferralPacketForViewer(ctx)` from `@/lib/referral/service`, after `getViewerFromRequest` returned `ok: true`. Returns null unless the share is a referral share.
+```json
+{ "packet": { …as above, with hidden items removed… },
+  "viewer": { "name": "Dr Ack", "practice_no": "MDCN 99999" },
+  "recorded_notice": "Name and practice number were recorded but not verified.",
+  "partial_notice": null,
+  "current_acknowledgement": null,
+  "ack_labels": { "service_offered": "Received — service offered here", "service_not_offered": "Received — service not offered here" },
+  "disclaimer": "This is not a statement that a bed is available.",
+  "expires_at": "…" }
+```
