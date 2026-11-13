@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { writeAccessLog } from "@/lib/audit";
 import { getDb, withTransaction, type Db } from "@/lib/db/client";
+import { fieldList } from "@/lib/http";
 import { loadRules } from "@/lib/advisory/queries";
 import { toFactDTO } from "@/lib/facts/dto";
 import { listActiveFacts } from "@/lib/facts/queries";
@@ -36,7 +37,7 @@ export function parseReferralBody(body: unknown): { ok: true; data: z.infer<type
     if (bad.length) return { ok: false, code: "field_not_allowed", message: "Reason and urgency cannot be set here. They are carried from the referring clinician's own record or letter." };
   }
   const r = createReferralSchema.safeParse(body);
-  if (!r.success) return { ok: false, code: "invalid_request", message: `Invalid or missing fields: ${[...new Set(r.error.issues.map((i) => i.path.join(".") || "(body)"))].join(", ")}` };
+  if (!r.success) return { ok: false, code: "invalid_request", message: `Invalid or missing fields: ${fieldList(r.error.issues)}` };
   return { ok: true, data: r.data };
 }
 

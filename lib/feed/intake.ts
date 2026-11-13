@@ -16,6 +16,8 @@
 // Never log or echo the key, the bundle or any value from it (L31).
 import { sha256Hex, safeEqualHex } from "@/lib/crypto";
 import { MAX_FEED_BYTES } from "@/lib/config";
+import { isUuid } from "@/lib/http";
+import { logEvent } from "@/lib/log";
 import { can } from "@/lib/policy";
 import { parseBundle, type Issue } from "./fhir-subset";
 import { observationToFact, serviceRequestToFact, type FeedFact } from "./map";
@@ -96,14 +98,13 @@ const err = (status: number, code: string, message: string, extra: Record<string
 /** The ONE 403 body: identical for unknown, revoked and other-hospital links (NFR-22). It never says why. */
 export const LINK_NOT_ACTIVE: FeedResult = err(403, "link_not_active", "This link is not active.");
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACCEPTED_TYPES = ["application/fhir+json", "application/json"];
 
 async function refuse(deps: FeedDeps, result: FeedResult, r: Refusal): Promise<FeedResult> {
   try {
     await deps.recordRefusal(r);
   } catch (e) {
-    console.error("feed refusal not recorded", r.reason, (e as { code?: string })?.code ?? "");
+    logEvent("error", "feed_refusal_not_recorded", { reason: r.reason, pg_code: (e as { code?: string })?.code ?? null });
   }
   return result;
 }
@@ -171,7 +172,7 @@ export async function processFeedRequest(request: Request, deps: FeedDeps, maxBy
 
   // 3. Idempotency-Key.
   const idem = request.headers.get("idempotency-key")?.trim() ?? "";
-  if (!UUID_RE.test(idem)) {
+  if (!isUuid(idem)) {
     return refuse(deps, err(400, "idempotency_key_required", "Send an Idempotency-Key header containing a UUID."), refusal("idempotency_key_missing"));
   }
 

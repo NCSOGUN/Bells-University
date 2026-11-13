@@ -16,7 +16,7 @@ const comparable = (f: FactDTO) =>
   f.kind === "lab" && !!f.test_key && !f.unreadable && f.value_num !== null && f.superseded_by === null && f.fact_date !== null;
 
 /** Newest first by fact_date, then created_at. */
-const newestFirst = (a: FactDTO, b: FactDTO) =>
+export const newestFirst = (a: FactDTO, b: FactDTO) =>
   (b.fact_date ?? "").localeCompare(a.fact_date ?? "") || b.created_at.localeCompare(a.created_at);
 
 export function getPreviousValue(facts: FactDTO[], fact: FactDTO): PreviousValue | null {

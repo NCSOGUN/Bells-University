@@ -47,8 +47,9 @@ describe("(b) logging never carries secrets or content (L31)", () => {
     const bare = /(?<![.\w"'`])(code|token|key|bundle|body|file)\b(?!\s*\??:)/;
     const bad: string[] = [];
     for (const f of SERVER_CODE) {
-      for (const m of read(f).matchAll(/console\.(error|warn)\s*\(([\s\S]*?)\);?\s*$/gm)) {
-        if (bare.test(m[2])) bad.push(`${rel(f)}: ${m[0].slice(0, 80)}`);
+      // logEvent (lib/log.ts, R1) is the structured wrapper around console: its call sites are held to the same rule.
+      for (const m of read(f).matchAll(/(?:console\.(?:error|warn)|logEvent)\s*\(([\s\S]*?)\);?\s*$/gm)) {
+        if (bare.test(m[1])) bad.push(`${rel(f)}: ${m[0].slice(0, 80)}`);
       }
     }
     expect(bad).toEqual([]);

@@ -19,7 +19,16 @@ export type Env = z.infer<typeof envSchema>;
 
 let cached: Env | undefined;
 
-/** Validated environment. Throws a message naming the bad variables (never their values). */
+/** A missing or invalid environment variable. The message names variables only, never values, so the route
+ *  error handler may log it (R1 S-08). */
+export class ConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConfigError";
+  }
+}
+
+/** Validated environment. Throws a ConfigError naming the bad variables (never their values). */
 export function env(): Env {
   if (cached) return cached;
   // Treat empty strings as unset so a blank line in .env.local reads as "missing".
@@ -29,7 +38,7 @@ export function env(): Env {
   const parsed = envSchema.safeParse(source);
   if (!parsed.success) {
     const names = [...new Set(parsed.error.issues.map((i) => String(i.path[0])))];
-    throw new Error(`Missing or invalid environment variables: ${names.join(", ")}`);
+    throw new ConfigError(`Missing or invalid environment variables: ${names.join(", ")}`);
   }
   cached = parsed.data;
   return cached;
@@ -45,7 +54,7 @@ export function geminiEnv(): z.infer<typeof geminiEnvSchema> {
   });
   if (!parsed.success) {
     const names = parsed.error.issues.map((i) => String(i.path[0]));
-    throw new Error(`Missing environment variables: ${names.join(", ")}`);
+    throw new ConfigError(`Missing environment variables: ${names.join(", ")}`);
   }
   return parsed.data;
 }

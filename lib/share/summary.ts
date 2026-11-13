@@ -3,7 +3,7 @@
 // Unverified and disputed facts ARE shown, flagged by their state fields: the clinician decides how far to trust them.
 import type { FactDTO } from "@/lib/facts/dto";
 import { AI_NOTICE_CLINICIAN } from "@/lib/notices";
-import { attachPrevious, latestPerTestKey, type FactWithPrevious } from "@/lib/facts/compare";
+import { attachPrevious, latestPerTestKey, newestFirst, type FactWithPrevious } from "@/lib/facts/compare";
 import { filterFactsForShare } from "./filter";
 import type { ViewerContext } from "./session";
 
@@ -27,7 +27,6 @@ export interface ViewerSummary {
   expires_at: string;
 }
 
-const newestFirst = (a: FactDTO, b: FactDTO) => (b.fact_date ?? "").localeCompare(a.fact_date ?? "") || b.created_at.localeCompare(a.created_at);
 
 export function buildSummary(
   ctx: Pick<ViewerContext, "viewer" | "share">,

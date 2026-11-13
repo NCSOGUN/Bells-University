@@ -12,6 +12,7 @@ import { toFactDTO, type FactDTO } from "@/lib/facts/dto";
 import { lookupTestKey } from "@/lib/glossary";
 import { AI_NOTICE_PATIENT } from "@/lib/notices";
 import { storagePath, supabaseStorage, type DocumentStorage } from "@/lib/storage";
+import { logEvent } from "@/lib/log";
 import { sniffMime } from "./sniff";
 
 export const ALLOWED_MIMES: ExtractMime[] = ["image/jpeg", "image/png", "application/pdf"];
@@ -134,8 +135,9 @@ export async function extractForDocument(
     return fail(409, "extraction_in_progress", "This document is already being read. Try again in a moment.");
   }
 
-  const markFailed = async (code: string) => {
-    await deps.db.update(document).set({ status: "failed", error_code: code }).where(eq(document.id, doc.id));
+  const markFailed = async (errorCode: string) => {
+    await deps.db.update(document).set({ status: "failed", error_code: errorCode }).where(eq(document.id, doc.id));
+    logEvent("warn", "extraction_failed", { document_id: doc.id, error_code: errorCode });
   };
 
   let guarded: GuardedOutput;
@@ -253,6 +255,6 @@ export async function extractForDocument(
   });
 
   // Content-free log line (L31): ids, counts and timing only.
-  console.warn("extraction", JSON.stringify({ document_id: doc.id, facts: facts.length, ms, notes: guarded.notes.length }));
+  logEvent("warn", "extraction", { document_id: doc.id, facts: facts.length, ms, notes: guarded.notes.length, model });
   return { ok: true, status: 200, data: { document_id: doc.id, status: "extracted", facts, ai_notice: AI_NOTICE_PATIENT, ms } };
 }

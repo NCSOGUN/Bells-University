@@ -48,7 +48,7 @@ export function applyCorrection(fact: Correctable, c: Correction) {
     range_low: low,
     range_high: high,
     test_key: fact.kind === "lab" ? lookupTestKey(label) : null,
-    unreadable: value === null && fact.kind === "lab" ? false : false, // a human has looked: never left as unreadable
+    unreadable: false, // a human has looked: never left as unreadable
     check_carefully: false,
     state: "confirmed" as const,
   };
