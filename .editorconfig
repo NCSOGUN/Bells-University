@@ -1,0 +1,13 @@
+# One formatting baseline for both developers (R1 N-12). Matches the existing code: 2-space indent, UTF-8.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false
