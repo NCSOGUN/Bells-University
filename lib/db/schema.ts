@@ -319,7 +319,11 @@ export const referral_ack = pgTable(
     status: text("status").notNull(),
     at: ts("at").notNull().defaultNow(),
   },
-  (t) => [check("referral_ack_status_chk", oneOf(t.status, ["service_offered", "service_not_offered"]))],
+  (t) => [
+    check("referral_ack_status_chk", oneOf(t.status, ["service_offered", "service_not_offered"])),
+    // listAcks (R1 N-05).
+    index("referral_ack_referral_idx").on(t.referral_id),
+  ],
 );
 
 // ---------------------------------------------------------------- partner hospitals and the feed
@@ -383,6 +387,8 @@ export const feed_receipt = pgTable(
     // NULLs are distinct in Postgres, so refused rows without a key never collide.
     unique("feed_receipt_hospital_idem_uq").on(t.hospital_id, t.idempotency_key),
     check("feed_receipt_status_chk", oneOf(t.status, ["accepted", "refused"])),
+    // Per-link delivery counts on GET /api/records/{id}/links (R1 N-05).
+    index("feed_receipt_link_idx").on(t.link_id),
   ],
 );
 
