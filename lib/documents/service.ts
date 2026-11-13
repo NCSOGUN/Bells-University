@@ -12,6 +12,7 @@ import { toFactDTO, type FactDTO } from "@/lib/facts/dto";
 import { lookupTestKey } from "@/lib/glossary";
 import { AI_NOTICE_PATIENT } from "@/lib/notices";
 import { storagePath, supabaseStorage, type DocumentStorage } from "@/lib/storage";
+import { sniffMime } from "./sniff";
 
 export const ALLOWED_MIMES: ExtractMime[] = ["image/jpeg", "image/png", "application/pdf"];
 
@@ -40,6 +41,8 @@ export async function uploadDocument(
     return fail(413, "file_too_large", `This file is over the ${mb} MB limit. Try a smaller photo or a lower-resolution scan.`);
   }
   if (bytes.byteLength === 0) return fail(400, "invalid_request", "The file is empty.");
+  // The declared type comes from the client; the bytes must agree (R1 S-02).
+  if (sniffMime(bytes) !== mime) return fail(400, "unsupported_type", "This file is not a readable JPEG, PNG or PDF.");
 
   // Idempotent retry (NFR-12): the same client_upload_id returns the same document.
   const [existing] = await deps.db.select().from(document).where(eq(document.client_upload_id, clientUploadId));

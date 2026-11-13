@@ -28,6 +28,7 @@ describe("separation of concerns", () => {
     const pure = [
       "lib/policy.ts", "lib/facts/lifecycle.ts", "lib/facts/correct.ts", "lib/facts/compare.ts", "lib/facts/units.ts", "lib/facts/dto.ts",
       "lib/glossary.ts", "lib/crypto.ts", "lib/extract/guards.ts", "lib/extract/numbers.ts", "lib/extract/dates.ts", "lib/extract/schema.ts",
+      "lib/documents/sniff.ts",
     ];
     const bad = /(^|\/)db\/(client|schema)$|drizzle-orm|^postgres$|supabase|@google\/genai|\/storage$|\/config$|\/audit$/;
     for (const f of pure) {
