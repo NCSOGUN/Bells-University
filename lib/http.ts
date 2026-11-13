@@ -49,12 +49,25 @@ export async function parseBody<S extends z.ZodType>(
 
 type Handler<C> = (request: Request, ctx: C) => Promise<Response>;
 
+/** A dependency we must check (Supabase Auth) could not be reached in time. Becomes 503, never 401:
+ *  a signed-in patient on a poor connection must not be told they are signed out. */
+export class ServiceUnavailableError extends Error {
+  constructor(public readonly dependency: string) {
+    super(`${dependency} unavailable`);
+    this.name = "ServiceUnavailableError";
+  }
+}
+
 /** Wrap a route handler: an unexpected throw becomes a 500 with no detail leaked. */
 export function withErrors<C>(handler: Handler<C>): Handler<C> {
   return async (request, ctx) => {
     try {
       return await handler(request, ctx);
     } catch (e) {
+      if (e instanceof ServiceUnavailableError) {
+        console.error("dependency unavailable", e.dependency);
+        return errorResponse("service_unavailable", "We could not check your sign-in just now. Please try again.", 503, { "Retry-After": "5" });
+      }
       // Name and Postgres code only (L31): no message, which could contain data.
       console.error("route error", (e as Error)?.name, (e as { code?: string })?.code ?? "");
       return errorResponse("internal_error", "Something went wrong. Please try again.", 500);

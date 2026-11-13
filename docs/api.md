@@ -56,6 +56,9 @@ No endpoint takes a record ID without also checking, through `can()`, that the c
 | 413 | `file_too_large` | Upload over the limit. |
 | 429 | `too_many_attempts` | Rate limited; see `Retry-After`. |
 | 500 | `internal_error` | Unexpected; no detail is returned. |
+| 503 | `service_unavailable` | Sign-in could not be checked (Supabase Auth unreachable, or no answer within 8 s). Has `Retry-After: 5`. **The caller is not signed out:** keep the session, show "Please try again", and retry. A 401 is the only "sign in again" signal. |
+
+**`ai_notice` (NFR-13).** Every response that carries facts also carries an `ai_notice` string: `GET /api/records/{id}/facts`, `GET /api/documents/{id}`, `POST /api/documents/{id}/extract` (patient wording), and `getViewerSummary` / `getReferralPacketForViewer` (clinician wording). Show it, as given, on every screen that shows those facts. It states that items were read by AI, may contain errors, and are not medical advice.
 
 All API responses carry `Cache-Control: no-store` and `Referrer-Policy: no-referrer`. Bodies are JSON. Unknown body fields are rejected with 400 on routes that say "strict".
 

@@ -8,6 +8,7 @@ import { toFactDTO } from "@/lib/facts/dto";
 import { listActiveFacts } from "@/lib/facts/queries";
 import { can } from "@/lib/policy";
 import { loadRecordHeader } from "@/lib/share/queries";
+import { AI_NOTICE_CLINICIAN } from "@/lib/notices";
 import { PARTIAL_NOTICE, RECORDED_NOTICE } from "@/lib/share/summary";
 import type { ViewerContext } from "@/lib/share/session";
 import { buildPacket, type Packet } from "./packet";
@@ -121,6 +122,7 @@ export async function getReferralPacketForViewer(ctx: ViewerContext, db: Db = ge
     viewer: { name: ctx.viewer.name, practice_no: ctx.viewer.practiceNo },
     recorded_notice: RECORDED_NOTICE,
     partial_notice: ctx.share.hiddenCategories.length || ctx.share.hiddenDocumentIds.length ? PARTIAL_NOTICE : null,
+    ai_notice: AI_NOTICE_CLINICIAN,
     current_acknowledgement: mine ? { status: mine.status, label: ackLabel(mine.status as AckStatus), at: mine.at } : null,
     ack_labels: { service_offered: ACK_OFFERED, service_not_offered: ACK_NOT_OFFERED },
     disclaimer: ACK_DISCLAIMER,

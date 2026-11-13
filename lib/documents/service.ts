@@ -10,6 +10,7 @@ import { PROMPT_VERSION } from "@/lib/extract/prompt";
 import { parseModelOutput } from "@/lib/extract/schema";
 import { toFactDTO, type FactDTO } from "@/lib/facts/dto";
 import { lookupTestKey } from "@/lib/glossary";
+import { AI_NOTICE_PATIENT } from "@/lib/notices";
 import { storagePath, supabaseStorage, type DocumentStorage } from "@/lib/storage";
 
 export const ALLOWED_MIMES: ExtractMime[] = ["image/jpeg", "image/png", "application/pdf"];
@@ -96,6 +97,7 @@ export function documentView(d: DocumentRow, facts: FactDTO[]) {
     facility_as_printed: d.facility_as_printed,
     document_date_as_printed: d.document_date_as_printed,
     facts,
+    ai_notice: AI_NOTICE_PATIENT, // NFR-13
   };
 }
 
@@ -119,12 +121,12 @@ async function claim(documentId: string, db: Db): Promise<DocumentRow | null> {
 export async function extractForDocument(
   doc: DocumentRow,
   deps: Deps = defaultDeps(),
-): Promise<ServiceResult<{ document_id: string; status: "extracted"; facts: FactDTO[]; ms?: number }>> {
+): Promise<ServiceResult<{ document_id: string; status: "extracted"; facts: FactDTO[]; ai_notice: string; ms?: number }>> {
   const claimed = await claim(doc.id, deps.db);
   if (!claimed) {
     const [fresh] = await deps.db.select().from(document).where(eq(document.id, doc.id));
     if (fresh?.status === "extracted") {
-      return { ok: true, status: 200, data: { document_id: doc.id, status: "extracted", facts: await listDocumentFacts(doc.id, deps.db) } };
+      return { ok: true, status: 200, data: { document_id: doc.id, status: "extracted", facts: await listDocumentFacts(doc.id, deps.db), ai_notice: AI_NOTICE_PATIENT } };
     }
     return fail(409, "extraction_in_progress", "This document is already being read. Try again in a moment.");
   }
@@ -249,5 +251,5 @@ export async function extractForDocument(
 
   // Content-free log line (L31): ids, counts and timing only.
   console.warn("extraction", JSON.stringify({ document_id: doc.id, facts: facts.length, ms, notes: guarded.notes.length }));
-  return { ok: true, status: 200, data: { document_id: doc.id, status: "extracted", facts, ms } };
+  return { ok: true, status: 200, data: { document_id: doc.id, status: "extracted", facts, ai_notice: AI_NOTICE_PATIENT, ms } };
 }

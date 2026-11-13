@@ -2,6 +2,7 @@
 // Groups: medicines, allergies, diagnoses, recent results. Hidden and removed facts never get in (filter.ts).
 // Unverified and disputed facts ARE shown, flagged by their state fields: the clinician decides how far to trust them.
 import type { FactDTO } from "@/lib/facts/dto";
+import { AI_NOTICE_CLINICIAN } from "@/lib/notices";
 import { attachPrevious, latestPerTestKey, type FactWithPrevious } from "@/lib/facts/compare";
 import { filterFactsForShare } from "./filter";
 import type { ViewerContext } from "./session";
@@ -15,6 +16,8 @@ export interface ViewerSummary {
   viewer: { name: string; practice_no: string };
   recorded_notice: string;
   partial_notice: string | null;
+  /** NFR-13. Always present: the summary can contain AI-read items. */
+  ai_notice: string;
   sections: {
     medicines: FactDTO[];
     allergies: FactDTO[];
@@ -44,6 +47,7 @@ export function buildSummary(
     viewer: { name: ctx.viewer.name, practice_no: ctx.viewer.practiceNo },
     recorded_notice: RECORDED_NOTICE,
     partial_notice: hiddenAny ? PARTIAL_NOTICE : null,
+    ai_notice: AI_NOTICE_CLINICIAN,
     sections: { medicines: ofKind("medication"), allergies: ofKind("allergy"), diagnoses: ofKind("diagnosis"), recent_results: recent },
     expires_at: ctx.share.expiresAt.toISOString(),
   };

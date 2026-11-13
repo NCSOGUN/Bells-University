@@ -3,6 +3,7 @@
 import { requireHolder } from "@/lib/auth";
 import { attachPrevious } from "@/lib/facts/compare";
 import { listActiveFacts, listRecordDocuments } from "@/lib/facts/queries";
+import { AI_NOTICE_PATIENT } from "@/lib/notices";
 import { can } from "@/lib/policy";
 import { denied, isUuid, json, notFound, withErrors, type RouteCtx } from "@/lib/http";
 
@@ -16,5 +17,5 @@ export const GET = withErrors(async (request: Request, ctx: RouteCtx<{ id: strin
   const d = can(holder.actor, "see_whole_record", { recordId: id });
   if (!d.allowed) return denied(d);
   const [facts, documents] = await Promise.all([listActiveFacts(id), listRecordDocuments(id)]);
-  return json({ facts: attachPrevious(facts), documents });
+  return json({ facts: attachPrevious(facts), documents, ai_notice: AI_NOTICE_PATIENT });
 });

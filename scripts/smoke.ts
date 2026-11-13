@@ -2,6 +2,7 @@
 // Signs in the demo user, uploads a synthetic document, extracts it and checks the facts. P8 and P12 extend it.
 // Needs .env.local and a seeded database. Never prints tokens, codes or document contents.
 import "./load-env";
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import postgres from "postgres";
@@ -9,6 +10,7 @@ import { getViewerFromRequest, getViewerSummary } from "../lib/share/service";
 import { getReferralPacketForViewer } from "../lib/referral/service";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
+const IS_HTTPS = BASE.startsWith("https://");
 const SMOKE_RECORD = "SMOKE TEST (SYNTHETIC)";
 let failures = 0;
 const check = (name: string, ok: boolean, detail = "") => {
@@ -59,6 +61,9 @@ async function main() {
   const consent = await fetch(`${BASE}/api/consent`, { method: "POST", headers: H });
   check("POST /api/consent", consent.status === 200);
 
+  await securityChecks(health, demoId);
+  await feedChecks(H, rid);
+
   const file = process.env.SMOKE_FILE ?? path.join("scratch", "tiny.pdf");
   let bytes: Buffer;
   try {
@@ -89,6 +94,7 @@ async function main() {
   check("POST extract 200", ex.status === 200, `${Date.now() - t0} ms, ${exj.facts?.length ?? 0} facts, status ${exj.status ?? exj.error?.code}`);
   const facts: { origin: string; state: string; has_image: boolean }[] = exj.facts ?? [];
   check("every fact is ai_read + unverified with an image", facts.length > 0 && facts.every((f) => f.origin === "ai_read" && f.state === "unverified" && f.has_image));
+  check("extraction response carries the AI notice (NFR-13)", /may contain errors/.test(exj.ai_notice ?? ""));
 
   const again = await fetch(`${BASE}/api/documents/${d1.document_id}/extract`, { method: "POST", headers: H });
   const againj = await again.json();
@@ -116,6 +122,7 @@ async function factChecks(H: Record<string, string>, demoId: string, recordId: s
   const older = hba.find((f) => f.value_as_printed === "8.1");
   check("timeline: latest HbA1c has previous 8.1, older has none (FR-24)", latest?.previous?.value_as_printed === "8.1" && !!older && !older.previous);
   check("timeline: no direction wording in previous", !JSON.stringify(latest?.previous ?? {}).match(/better|worse|improv|worsen/i));
+  check("timeline carries the AI notice (NFR-13)", typeof tl.ai_notice === "string" && /may contain errors/.test(tl.ai_notice) && /not medical advice/.test(tl.ai_notice));
 
   const add = await post("/api/facts", { record_id: recordId, kind: "lab", label_as_printed: "Hb", value_as_printed: "10.1", unit_as_printed: "g/dL", range_as_printed: "12.0 - 16.0", fact_date_as_printed: "01/11/2026" });
   const added = (await add.json()).fact;
@@ -172,6 +179,103 @@ main()
     process.exit(1);
   });
 
+// ---- P12: region, security headers, cross-account isolation (NFR-01, NFR-02, NFR-06)
+async function securityChecks(health: { region?: string }, demoId: string) {
+  if (IS_HTTPS && !/localhost|127\.0\.0\.1/.test(BASE)) {
+    check("deployed: function region is lhr1 (freeze item 3)", String(health.region).includes("lhr1"), `region ${health.region}`);
+  } else {
+    console.log(`SKIP  region lhr1 (local server reports "${health.region}"; run with BASE_URL set to the deployed URL)`);
+  }
+
+  const r = await fetch(`${BASE}/api/records`);
+  check("/api/* sends Referrer-Policy: no-referrer", r.headers.get("referrer-policy") === "no-referrer");
+  check("/api/* sends Cache-Control: no-store", (r.headers.get("cache-control") ?? "").includes("no-store"));
+  check("/api/* sends X-Content-Type-Options: nosniff", r.headers.get("x-content-type-options") === "nosniff");
+  check("record facts without credentials are 401", (await fetch(`${BASE}/api/records/${demoId}/facts`)).status === 401);
+
+  // Two throwaway accounts through the Supabase admin API. Neither holds the demo record.
+  const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY } = process.env;
+  const admin = { apikey: SUPABASE_SERVICE_ROLE_KEY!, authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "content-type": "application/json" };
+  const created: string[] = [];
+  try {
+    const tokens: string[] = [];
+    for (let i = 0; i < 2; i++) {
+      const email = `smoke-${crypto.randomUUID().slice(0, 8)}@itan.example`;
+      const password = `Smoke-${crypto.randomUUID()}`;
+      const u = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, { method: "POST", headers: admin, body: JSON.stringify({ email, password, email_confirm: true }) });
+      const uj = await u.json();
+      if (!u.ok || !uj.id) throw new Error(`could not create a throwaway account (${u.status})`);
+      created.push(uj.id);
+      const t = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: "POST", headers: { apikey: SUPABASE_ANON_KEY!, "content-type": "application/json" }, body: JSON.stringify({ email, password }) });
+      tokens.push((await t.json()).access_token);
+    }
+    for (const [i, tok] of tokens.entries()) {
+      const A = { authorization: `Bearer ${tok}` };
+      check(`throwaway account ${i + 1}: another account's record facts are 404 (NFR-06)`, (await fetch(`${BASE}/api/records/${demoId}/facts`, { headers: A })).status === 404);
+      check(`throwaway account ${i + 1}: another account's access log is 404`, (await fetch(`${BASE}/api/records/${demoId}/access-log`, { headers: A })).status === 404);
+      const list = await (await fetch(`${BASE}/api/records`, { headers: A })).json();
+      check(`throwaway account ${i + 1}: record list does not include the demo record`, Array.isArray(list.records) && !list.records.some((x: { id: string }) => x.id === demoId));
+    }
+    check("a random record id with a valid token is 404 (same as not yours)", (await fetch(`${BASE}/api/records/${crypto.randomUUID()}/facts`, { headers: { authorization: `Bearer ${tokens[0]}` } })).status === 404);
+  } finally {
+    // Clean up: the auth users, then any account rows the API created for them (nothing references those).
+    const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1 });
+    try {
+      for (const id of created) await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${id}`, { method: "DELETE", headers: admin });
+      if (created.length) await sql`delete from account where id = any(${created}::uuid[])`;
+      check("throwaway accounts deleted", true, `${created.length} removed`);
+    } finally {
+      await sql.end({ timeout: 5 });
+    }
+  }
+}
+
+// ---- P12: partner feed through the SIMULATED hospital CLI, as a separate process (NFR-22, NFR-24)
+async function feedChecks(H: Record<string, string>, recordId: string) {
+  const J = { ...H, "content-type": "application/json" };
+  const hs = await (await fetch(`${BASE}/api/hospitals`, { headers: H })).json();
+  const hospitalId: string | undefined = hs.hospitals?.[0]?.id;
+  check("GET /api/hospitals lists the SIMULATED hospital", !!hospitalId && hs.hospitals[0].simulated === true);
+  if (!hospitalId) return;
+  const mkLink = async () => (await fetch(`${BASE}/api/links`, { method: "POST", headers: J, body: JSON.stringify({ record_id: recordId, hospital_id: hospitalId }) })).json();
+  const live = await mkLink();
+  const dead = await mkLink();
+  check("POST /api/links returns an ITN-LNK reference", /^ITN-LNK-[0-9A-HJKMNP-TV-Z]{8}$/.test(live.link_ref ?? ""));
+  await fetch(`${BASE}/api/links/${dead.link_id}/revoke`, { method: "POST", headers: H });
+
+  const sim = (...args: string[]) =>
+    // node + tsx's own entry, no shell: arguments are passed as an array and never re-parsed (no DEP0190).
+    spawnSync(process.execPath, [path.join("node_modules", "tsx", "dist", "cli.mjs"), "tools/sim-hospital/cli.ts", ...args], { encoding: "utf8", env: { ...process.env, BASE_URL: BASE } });
+  const mrn = `SMOKE-${crypto.randomUUID().slice(0, 6)}`;
+  const suite = sim("refusals", "--link", live.link_ref, "--mrn", mrn, "--revoked-link", dead.link_ref);
+  check("feed refusal suite via the simulated hospital: ALL PASS", suite.status === 0 && /ALL PASS/.test(suite.stdout), suite.status === 0 ? "" : (suite.stdout + suite.stderr).split("\n").filter((l) => /FAIL|Error|failed/.test(l)).join(" | "));
+
+  // The suite's idempotency step delivered the results once. A corrected result must supersede, not duplicate.
+  const corr = sim("correct-result", "--link", live.link_ref, "--mrn", mrn, "--value", "11.6");
+  check("correct-result accepted (202)", corr.status === 0 && /HTTP 202/.test(corr.stdout));
+  const tl = await (await fetch(`${BASE}/api/records/${recordId}/facts`, { headers: H })).json();
+  const hosp = (tl.facts as { origin: string; state: string; label_as_printed: string; value_as_printed: string; facility_name: string }[]).filter((f) => f.origin === "provider_entered" && f.label_as_printed === "Haemoglobin");
+  check("hospital facts: provider_entered, confirmed, with the facility name", hosp.length > 0 && hosp.every((f) => f.state === "confirmed" && f.facility_name.includes("(SIMULATED)")));
+  check("superseding: exactly one current Haemoglobin from the hospital, value 11.6", hosp.length === 1 && hosp[0]?.value_as_printed === "11.6");
+  const sql = postgres(process.env.DATABASE_URL!, { prepare: false, max: 1 });
+  try {
+    const rows = await sql`select value_as_printed, superseded_by from fact where record_id = ${recordId} and origin = 'provider_entered' and label_as_printed = 'Haemoglobin' and source_identifier is not null`;
+    check("the superseded Haemoglobin row is kept, pointing at the new one", rows.some((r) => r.superseded_by !== null && r.value_as_printed === "11.2"));
+  } finally {
+    await sql.end({ timeout: 5 });
+  }
+
+  // Revoke, then a delivery is refused and the patient sees it.
+  await fetch(`${BASE}/api/links/${live.link_id}/revoke`, { method: "POST", headers: H });
+  const after = sim("send-results", "--link", live.link_ref, "--mrn", mrn);
+  check("after revoke, a delivery is 403 link_not_active", /HTTP 403/.test(after.stdout) && /link_not_active/.test(after.stdout));
+  const log = await (await fetch(`${BASE}/api/records/${recordId}/access-log?limit=50`, { headers: H })).json();
+  const acts = (log.entries as { action: string }[]).map((e) => e.action);
+  check("access log: link_created, feed_delivery_accepted, link_revoked, feed_delivery_refused", ["link_created", "feed_delivery_accepted", "link_revoked", "feed_delivery_refused"].every((a) => acts.includes(a)));
+  const links = await (await fetch(`${BASE}/api/records/${recordId}/links`, { headers: H })).json();
+  check("both smoke links are revoked (cleanup)", [live.link_id, dead.link_id].every((id) => links.links.some((l: { id: string; status: string }) => l.id === id && l.status === "revoked")));
+}
+
 // ---- P8: shares, viewer sessions, hidden items, rate limit, revoke, expiry, access log
 async function shareChecks(H: Record<string, string>, recordId: string) {
   const J = { ...H, "content-type": "application/json" };
@@ -226,6 +330,8 @@ async function shareChecks(H: Record<string, string>, recordId: string) {
     const cookie = ok.headers.get("set-cookie") ?? "";
     check("correct code (typed sloppily) opens: 200, next /v", ok.status === 200 && okBody.next === "/v");
     check("viewer cookie is HttpOnly, SameSite=Lax, Path=/", /itan_v=/.test(cookie) && /HttpOnly/i.test(cookie) && /SameSite=Lax/i.test(cookie) && /Path=\//.test(cookie));
+    if (IS_HTTPS) check("viewer cookie is Secure over https", /;\s*Secure/i.test(cookie));
+    else console.log("SKIP  viewer cookie Secure flag (only set over https; run against the deployed URL)");
     check("open response contains no record content", !/Haemoglobin|display_name|fact/i.test(JSON.stringify(okBody)));
     const cookieHeader = cookie.split(";")[0];
 
@@ -237,6 +343,7 @@ async function shareChecks(H: Record<string, string>, recordId: string) {
       const body = JSON.stringify(summary);
       check("summary: partial notice shown, hidden fact absent, visible fact present", !!summary?.partial_notice && !body.includes(hiddenFact.id) && body.includes(visibleFact.id));
       check("summary says name and practice number are unverified", !!summary?.recorded_notice);
+      check("summary carries the clinician AI notice (NFR-13)", /read .*by an AI service/.test(summary?.ai_notice ?? "") && /not medical advice/.test(summary?.ai_notice ?? ""));
     }
 
     // image route

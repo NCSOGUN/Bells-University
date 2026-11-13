@@ -105,4 +105,19 @@ Every place the build differs from the design, or where the design was silent. F
 - **Refusal logging is best effort.** If writing the refused receipt fails, the refusal is still returned, and `console.error` logs the reason code only.
 - **Known cost:** every unauthenticated 405 or 401 writes one `feed_receipt` row, so a flood would grow the table. Acceptable for the contest. Rate limiting the feed is future work, alongside signed requests (design section 14).
 - **The simulated hospital CLI uses `process.exitCode`**, not `process.exit()`. The latter crashed Node on Windows (`UV_HANDLE_CLOSING` assertion) while fetch sockets were closing.
-- **Superseding is verified live, not by a unit test.** It is SQL inside the transaction, and L30 leaves no in-memory Postgres here. Live run on 13 Nov: three haemoglobin deliveries left two superseded rows kept and one current; the provider-fact trigger allowed only the `superseded_by` change. P12's smoke should repeat it.
+- **Superseding was verified live, not by a unit test** (P12's smoke now repeats it on every run). It is SQL inside the transaction, and L30 leaves no in-memory Postgres here. Live run on 13 Nov: three haemoglobin deliveries left two superseded rows kept and one current; the provider-fact trigger allowed only the `superseded_by` change. P12's smoke should repeat it.
+
+## D-018 P12 hardening changes and judgement calls (13 Nov)
+- **Auth outage is 503, not 401 (lib/auth.ts, lib/http.ts; P4 code changed).**
+  - **Found live:** Supabase Auth `getUser` stalled for 10 to 45 s from Nigeria, and `getAccountId` returned null, so signed-in calls got 401. In the app that would look like being signed out.
+  - **Now:** a rejected token is still 401. A retryable Auth error (network failure or 5xx) or no answer within `AUTH_TIMEOUT_MS = 8000` throws `ServiceUnavailableError`, which `withErrors` turns into 503 `service_unavailable` with `Retry-After: 5`.
+  - The timeout races the auth call only, so slow Storage uploads through the same client are not cut off.
+  - **Alternative, not done:** verify the JWT locally (Supabase signing keys / `getClaims`) to remove the network round trip. That is faster, but it changes how identity is checked and needs the key setup confirmed.
+- **NFR-13 notice added to API responses (additive field `ai_notice`).**
+  - Only the per-fact explanation said "read by AI / may contain errors / not medical advice".
+  - The timeline, the document view, the extraction response, the clinician summary and the referral packet now carry `ai_notice`. The text is in `lib/notices.ts`, with patient and clinician wordings.
+  - This touches P5, P6, P8 and P9 response shapes, without breaking anything.
+- **Allowed `console.log`: `lib/db/seed.ts` only.** It is an operator CLI that prints a new hospital key once by design. The P12 static rule otherwise bans `console.log` in app/ and lib/.
+- **Dev A pages in the api.md check.** `/v` and `/v/referral` are listed in `docs/api.md` but are Dev A's pages and not built. `tests/static.test.ts` (c) checks every `/api` route strictly. It reports the two pages as a named `todo`, and the check becomes a real assertion as soon as either page file exists. The test was not weakened: the Dev B part is strict.
+- **Smoke now covers:** region (deployed only), security headers, two throwaway accounts (created and deleted through the admin API, with their `account` rows deleted), the Secure cookie (https only), the feed suite as a child process (node plus tsx's entry, no shell), live superseding, and the AI notices.
+- **Throttle script (P12 item 3) not built.** It needs Playwright, a new dependency (working rule: do not change the stack without asking). It is waiting for the owner's approval, together with P1, which needs Playwright and sharp.

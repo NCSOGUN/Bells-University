@@ -2,20 +2,48 @@
 // `Authorization: Bearer <jwt>` header or the Supabase session cookie (@supabase/ssr), and is VERIFIED with
 // Supabase on every call (auth.getUser), never just decoded.
 import { createServerClient, parseCookieHeader } from "@supabase/ssr";
+import { isAuthRetryableFetchError, type User } from "@supabase/supabase-js";
 import { env } from "@/lib/config";
 import type { Actor } from "./policy";
 import { recordIdsForAccount } from "./records";
 import { serviceClient } from "./supabase";
-import { notFound, unauthenticated } from "./http";
+import { notFound, ServiceUnavailableError, unauthenticated } from "./http";
 
-/** The verified Supabase user id, or null. */
+/** How long we wait for Supabase Auth before answering 503 (seen live: 10 to 45 s stalls from Nigeria). */
+export const AUTH_TIMEOUT_MS = 8000;
+
+type GetUserResult = { data: { user: User | null }; error: unknown };
+
+/** Run a getUser call. A rejected token gives null (401); a network failure, a 5xx or no answer in time
+ *  throws ServiceUnavailableError (503), so a signed-in patient is never told they are signed out. */
+export async function verifiedUserId(call: () => Promise<GetUserResult>, timeoutMs = AUTH_TIMEOUT_MS): Promise<string | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new ServiceUnavailableError("auth")), timeoutMs);
+  });
+  let result: GetUserResult;
+  try {
+    result = await Promise.race([call(), timeout]);
+  } catch (e) {
+    if (e instanceof ServiceUnavailableError || isAuthRetryableFetchError(e)) throw new ServiceUnavailableError("auth");
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+  if (result.error) {
+    if (isAuthRetryableFetchError(result.error)) throw new ServiceUnavailableError("auth");
+    return null;
+  }
+  return result.data.user?.id ?? null;
+}
+
+/** The verified Supabase user id, or null. Throws ServiceUnavailableError when Auth cannot be reached. */
 export async function getAccountId(request: Request): Promise<string | null> {
   const header = request.headers.get("authorization");
   if (header?.toLowerCase().startsWith("bearer ")) {
     const jwt = header.slice(7).trim();
     if (!jwt) return null;
-    const { data, error } = await serviceClient().auth.getUser(jwt);
-    return error || !data.user ? null : data.user.id;
+    return verifiedUserId(() => serviceClient().auth.getUser(jwt));
   }
 
   const cookieHeader = request.headers.get("cookie");
@@ -28,8 +56,7 @@ export async function getAccountId(request: Request): Promise<string | null> {
       setAll: () => {},
     },
   });
-  const { data, error } = await sb.auth.getUser();
-  return error || !data.user ? null : data.user.id;
+  return verifiedUserId(() => sb.auth.getUser());
 }
 
 /** Build the holder Actor for can(). */
