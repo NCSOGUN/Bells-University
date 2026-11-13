@@ -2,6 +2,8 @@
 
 Everything Dev B owns is built and committed: all API routes, the library code under `lib/`, the partner feed and the SIMULATED hospital. This note is the short version of what you need to build the screens against it. The exact request and response shapes are in `docs/api.md`; this note says what to do with them and what you must not change.
 
+**Start here:** the README (setup, env vars, scripts), then the status block below, then `docs/api.md`.
+
 **Not built, so you will not find it:** pages (`app/page.tsx` is a placeholder), components, the service worker, the device-side upload queue, and the browser sign-in screens (section 0).
 
 ## 0. Browser sign-in (decided: D-021, option 1)
@@ -44,8 +46,24 @@ Things to handle:
 - Sign-in and sign-up errors come from Supabase (`error.message`, `error.status`). Show a plain message; do not show the raw text if it names the project.
 - The session cookie is readable by page JavaScript (that is how `createBrowserClient` works). Do not add third-party scripts, and do not log or send `supabase.auth.getSession()` output anywhere.
 
+## Status on 13 Nov evening (read this first)
+
+- **Dev B side is done and reviewed.** `docs/BACKEND-REVIEW.md` has the review; 18 findings were fixed, and the open ones are listed there. CI (`.github/workflows/ci.yml`) runs typecheck, lint, test and build on every push; keep it green.
+- **Still to do on Dev B's side (14 Nov):** score two real phone photographs (`docs/limitations.md` §1, TEAM lines). That may change accuracy notes, not the API.
+- **New for you since this note was first written:**
+  - `lib/api-types.ts`: every request body, response and error code as TypeScript types. `import type { … } from "@/lib/api-types"` is safe in client components (the file has no runtime code).
+  - Uploads are checked by their bytes: a file that is not really a JPEG, PNG or PDF gets 400 `unsupported_type`. Send what the device actually encoded.
+  - `GET /api/referrals/{id}` now also carries `ai_notice`; show it on the referral preview.
+  - Clinician routes answer 403 `no_cookie`, `session_expired`, `share_expired` or `share_revoked` when the viewer session is no longer usable (table below).
+  - Disputing a fact that is not hospital-sent is 403 `dispute_provider_only`: show the Dispute button on `provider_entered` facts only, and it never happens.
+- **Open items that touch your screens:**
+  - **B-02, privacy, decision pending.** Hiding a *category* does not hide the page image: a doctor opening another fact's source image sees the whole page. On the share screen, steer patients to hide the whole document when a sensitive item is on it. If the server fix lands, some "View source" links on `/v` will return 404; handle 404 there quietly.
+  - **S-16, no Content-Security-Policy yet.** Ship no third-party scripts and no `dangerouslySetInnerHTML`, so a CSP can be added later without breaking your pages.
+  - **S-17, demo account.** `demo@itan.example` also holds "SMOKE TEST" and "THROTTLE TEST" records, and the demo record has hospital-sent results from simulator runs. Do not hard-code record ids; pick "Demo Patient (SYNTHETIC)" by name or let the user choose.
+- **After `npm run build`, restart `npm run dev`.** A build writes into `.next` and can leave a running dev server returning 500s.
+
 ## 1. Run it
-- Copy `.env.example` to `.env.local` and fill it in (never commit it). `npm run dev`. Seed: `npm run db:seed` then `npm run db:seed:demo`.
+- Copy `.env.example` to `.env.local` and fill it in with the team values from Dev B (never commit it, and do not send it over plain chat). Then `npm ci` and `npm run dev`. The shared Supabase project is already migrated, seeded and has the demo user: **do not run `db:migrate`, `db:seed` or `db:seed:demo` against it.** Those are only for a fresh project (see README).
 - Demo patient: `demo@itan.example`, password in `DEMO_PASSWORD`; record "Demo Patient (SYNTHETIC)". Everything is synthetic.
 - Calls use `Authorization: Bearer <Supabase access token>` or the Supabase session cookie. `scripts/smoke.ts` shows a password sign-in over the Supabase REST API.
 - Make hospital results appear for the demo: `npm run sim -- send-results --link <ITN-LNK ref> --mrn DEMO-00123` (create the link with `POST /api/links` first). Everything from it is labelled SIMULATED.
@@ -90,6 +108,8 @@ The wording is checked by tests for advice language, and rewording can turn a st
 | **503 `service_unavailable`** | Sign-in could not be checked (slow or unreachable Supabase Auth, from Nigeria it can stall for 10 to 45 s). **Do not sign the user out.** Show "please try again" and retry after `Retry-After` |
 | 403 `consent_required` | Show the consent screen |
 | 403 `provider_entered_immutable` | Offer dispute instead |
+| 403 `no_cookie`, `session_expired`, `share_expired`, `share_revoked` (clinician) | "This access is no longer valid." and the code entry |
+| 400 `unsupported_type` (upload) | "This file is not a JPEG, PNG or PDF." |
 | 403 `code_not_valid` (`/api/view/open`) | One message for unknown, expired and revoked codes: "This code did not work." |
 | 429 `too_many_attempts` | Show `Retry-After`; 5 wrong codes per IP per 10 minutes |
 | 404 `not_found` | Not found, or not yours (the same on purpose) |
