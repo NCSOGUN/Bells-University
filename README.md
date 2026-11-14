@@ -68,6 +68,8 @@ Exactly those two `NEXT_PUBLIC_` names are allowed (D-021); `tests/static.test.t
 
 CI (`.github/workflows/ci.yml`) runs typecheck, lint, test and build on every push and pull request.
 
+**Automatic checks before you commit or push.** The hooks in `.githooks/` run `npm run lint` before every commit and typecheck plus tests before every push, so a broken change never leaves your machine. `npm ci` switches them on (`npm run prepare` does it by hand). `npm run lint:fix` repairs what it can. They need no extra packages.
+
 ## Who owns what
 
 | Dev A (UI) | Dev B (server) |
