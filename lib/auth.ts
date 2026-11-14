@@ -7,7 +7,7 @@ import { env } from "@/lib/config";
 import type { Actor } from "./policy";
 import { recordIdsForAccount } from "./records";
 import { serviceClient } from "./supabase";
-import { notFound, ServiceUnavailableError, unauthenticated } from "./http";
+import { mfaRequired, notFound, ServiceUnavailableError, unauthenticated } from "./http";
 
 /** How long we wait for Supabase Auth before answering 503 (seen live: 10 to 45 s stalls from Nigeria). */
 export const AUTH_TIMEOUT_MS = 8000;
@@ -37,6 +37,18 @@ export async function verifiedUserId(call: () => Promise<GetUserResult>, timeout
   return result.data.user?.id ?? null;
 }
 
+/** A read-only Supabase client over the request's session cookie. */
+function cookieClient(cookieHeader: string) {
+  const e = env();
+  return createServerClient(e.SUPABASE_URL, e.SUPABASE_ANON_KEY, {
+    cookies: {
+      getAll: () => parseCookieHeader(cookieHeader).map((c) => ({ name: c.name, value: c.value ?? "" })),
+      // Route handlers here only read the session; refreshing cookies is the page/browser client's job.
+      setAll: () => {},
+    },
+  });
+}
+
 /** The verified Supabase user id, or null. Throws ServiceUnavailableError when Auth cannot be reached. */
 export async function getAccountId(request: Request): Promise<string | null> {
   const header = request.headers.get("authorization");
@@ -48,15 +60,84 @@ export async function getAccountId(request: Request): Promise<string | null> {
 
   const cookieHeader = request.headers.get("cookie");
   if (!cookieHeader) return null;
-  const e = env();
-  const sb = createServerClient(e.SUPABASE_URL, e.SUPABASE_ANON_KEY, {
-    cookies: {
-      getAll: () => parseCookieHeader(cookieHeader).map((c) => ({ name: c.name, value: c.value ?? "" })),
-      // Route handlers here only read the session; refreshing cookies is the page/browser client's job.
-      setAll: () => {},
-    },
-  });
+  const sb = cookieClient(cookieHeader);
   return verifiedUserId(() => sb.auth.getUser());
+}
+
+// ---------------------------------------------------------------- two-step sign-in (FR-28)
+// An account that has a verified authenticator (TOTP) must have a session that passed the code (assurance level aal2)
+// before it creates a share code or links a hospital. Accounts without a factor are unaffected. Ending access (revoke
+// and unlink) never needs the code: stopping access must always be easy. Fail closed: if the level cannot be read from
+// the token, an enrolled account is asked for the code.
+
+export type AssuranceLevel = "aal1" | "aal2";
+
+/** The `aal` claim of a Supabase access token. Call it only on a token already verified with getUser: it does not check the signature. */
+export function aalFromJwt(jwt: string): AssuranceLevel | null {
+  try {
+    const part = jwt.split(".")[1];
+    if (!part) return null;
+    const claim = (JSON.parse(Buffer.from(part, "base64url").toString("utf8")) as { aal?: unknown }).aal;
+    return claim === "aal2" ? "aal2" : claim === "aal1" ? "aal1" : null;
+  } catch {
+    return null;
+  }
+}
+
+type FactorList = { data: { factors?: { factor_type: string; status: string }[] } | null; error: unknown };
+
+/** Does this account have a verified authenticator? Same outage rule as sign-in checks: no answer in time or a network
+ *  failure is ServiceUnavailableError (503), never a silent "no". */
+export async function hasVerifiedTotp(call: () => Promise<FactorList>, timeoutMs = AUTH_TIMEOUT_MS): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new ServiceUnavailableError("auth")), timeoutMs);
+  });
+  let result: FactorList;
+  try {
+    result = await Promise.race([call(), timeout]);
+  } catch (e) {
+    if (e instanceof ServiceUnavailableError || isAuthRetryableFetchError(e)) throw new ServiceUnavailableError("auth");
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+  if (result.error) throw new ServiceUnavailableError("auth");
+  return (result.data?.factors ?? []).some((f) => f.factor_type === "totp" && f.status === "verified");
+}
+
+/** The verified user and the assurance level of the session that made this request, or null. */
+async function verifiedSession(request: Request): Promise<{ userId: string; aal: AssuranceLevel | null } | null> {
+  const header = request.headers.get("authorization");
+  if (header?.toLowerCase().startsWith("bearer ")) {
+    const jwt = header.slice(7).trim();
+    if (!jwt) return null;
+    const userId = await verifiedUserId(() => serviceClient().auth.getUser(jwt));
+    return userId ? { userId, aal: aalFromJwt(jwt) } : null;
+  }
+  const cookieHeader = request.headers.get("cookie");
+  if (!cookieHeader) return null;
+  const sb = cookieClient(cookieHeader);
+  const userId = await verifiedUserId(() => sb.auth.getUser());
+  if (!userId) return null;
+  const { data } = await sb.auth.getSession(); // the token was just verified with getUser above
+  return { userId, aal: data.session ? aalFromJwt(data.session.access_token) : null };
+}
+
+/** Whether this session must pass the authenticator code before the action. `listFactors` is injectable for tests. */
+export async function stepUpNeeded(
+  session: { userId: string; aal: AssuranceLevel | null },
+  listFactors: () => Promise<FactorList> = () => serviceClient().auth.admin.mfa.listFactors({ userId: session.userId }),
+): Promise<boolean> {
+  if (session.aal === "aal2") return false;
+  return hasVerifiedTotp(listFactors);
+}
+
+/** Call after authenticating the caller on a sensitive route. Returns a 403 `mfa_required` response, or null to go on. */
+export async function requireStepUp(request: Request): Promise<Response | null> {
+  const session = await verifiedSession(request);
+  if (!session) return unauthenticated();
+  return (await stepUpNeeded(session)) ? mfaRequired() : null;
 }
 
 /** Build the holder Actor for can(). */

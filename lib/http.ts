@@ -16,6 +16,8 @@ export function errorResponse(code: string, message: string, status: number, hea
 
 export const unauthenticated = () => errorResponse("unauthenticated", "Sign in to continue.", 401);
 export const notFound = () => errorResponse("not_found", "Not found.", 404);
+/** FR-28: an account with two-step sign-in must pass the authenticator code before this action. */
+export const mfaRequired = () => errorResponse("mfa_required", "Enter your two-step code to continue.", 403);
 export const forbidden = (code = "forbidden", message = "You do not have permission to do this.") =>
   errorResponse(code, message, 403);
 
