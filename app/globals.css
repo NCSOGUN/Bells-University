@@ -1,26 +1,74 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* One token layer, shared with docs/design-lab.html so the wireframes and the product match.
+   Colour encodes ORIGIN and STATE of a fact only. It is never used to grade a clinical value (NFR-19). */
+@theme {
+  --color-bg: #f3f5f6;
+  --color-surface: #ffffff;
+  --color-sunk: #e8ecee;
+  --color-line: #d3dade;
+  --color-ink: #14212b;
+  --color-muted: #56656f;
+  --color-accent: #0f6f8a;
+  --color-accent-ink: #0b5a72;
+  --color-accent-soft: #d9eef3;
+  --color-ok: #1e7a46;
+  --color-ok-soft: #dcf1e4;
+  --color-bad: #b3261e;
+  --color-bad-soft: #f9e1df;
+  --color-warn: #8a5a00;
+  --color-warn-soft: #f8ecd2;
+  --color-sim: #6a4fb3;
+  --color-sim-soft: #ece6fa;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+  --font-display: var(--font-space), var(--font-plex-sans), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Anything printed on a document: values, units, ranges, codes. Fixed-width digits so columns line up. */
+.printed {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  [data-app-chrome],
+  button,
+  [data-no-print] {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
 }
