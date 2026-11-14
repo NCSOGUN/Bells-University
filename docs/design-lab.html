@@ -278,7 +278,7 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 32px}
     </div>
     <div class="panel">
       <label class="label" for="cut">Cut order switch</label>
-      <input type="range" id="cut" min="0" max="11" value="0" style="margin-top:10px">
+      <input type="range" id="cut" min="0" max="12" value="0" style="margin-top:10px">
       <p class="note" id="cutNote" style="margin:6px 0 0"></p>
     </div>
   </div>
@@ -316,6 +316,7 @@ const COMPS=[
  {id:"C17",name:"Offline app shell",layer:"device",purpose:"Service worker caches the shell so the app opens offline; queue screen with Retry now.",in:"App shell files",out:"Offline launch; retried uploads",tech:"Hand-written service worker",trace:"FR-16, NFR-12",h:2,o:"A",day:"Sun",ord:10},
  {id:"C18",name:"Drug–allergy advisory",layer:"server",purpose:"Small hand-built list of allergy and drug-class pairs; a non-blocking banner telling the patient to confirm with a clinician.",in:"Confirmed allergy and medication facts",out:"Advisory banner on patient and clinician views",tech:"Seed table",trace:"FR-17, NFR-21",h:2,o:"B",day:"Sun",ord:11},
  {id:"C19",name:"Caregiver records",layer:"device",purpose:"Create a record for someone else; switch between records.",in:"record_member rows",out:"Record switcher",tech:"Existing tables",trace:"FR-18",h:2,o:"A",day:"Sun",ord:11},
+ {id:"C20",name:"Two-step sign-in (TOTP)",layer:"server",purpose:"Optional authenticator-app code on top of the password. Enroll with a QR, challenge at sign-in, and require an aal2 session for creating a share or linking a hospital when the account is enrolled. CHANGE REQUEST after the Fri 13 Nov freeze.",in:"6-digit code from the patient's authenticator app",out:"aal2 session; refusal of share and link actions at aal1 for enrolled accounts",tech:"Supabase Auth MFA (TOTP), aal claim read in lib/auth.ts",trace:"FR-28 (new), NFR-04",h:5,o:"A+B",day:"Sun",ord:12},
  {id:"PG",name:"Postgres",layer:"data",ext:1,purpose:"The one database. London (eu-west-2). Row-level security on and deny-all for the public role; only the server key reads and writes.",in:"Queries from the API",out:"Rows",tech:"Supabase Postgres",trace:"NFR-01, NFR-02",h:0,o:"—",day:"—",ord:"—"},
  {id:"ST",name:"Private storage",layer:"data",ext:1,purpose:"Document images and PDFs. Private bucket; signed URLs that live 60 seconds.",in:"Files from C05 via the API",out:"Signed URLs",tech:"Supabase Storage",trace:"FR-05, NFR-16",h:0,o:"—",day:"—",ord:"—"},
  {id:"AU",name:"Supabase Auth",layer:"data",ext:1,purpose:"Accounts and sessions for patients and caregivers only. Clinicians never get accounts.",in:"Sign-up and sign-in",out:"Session",tech:"Supabase Auth",trace:"FR-01, NFR-04",h:0,o:"—",day:"—",ord:"—"},
@@ -351,10 +352,10 @@ const FLOWS={
   ["P","API","Create share","POST /api/shares {expires_in_min: 60, hidden_categories: [\"mental_health\"]}","201 code K7Q2-M9XD + QR, shown once","share: code_hash = HMAC(pepper, code), expires_at = now + 60 min"]]},
  read:{name:"Clinician reads",nodes:["CL","API","POL","DB","ST"],steps:[
   ["CL","API","Open the page","GET /c#K7Q2M9XD (the code stays in the fragment; servers never see it)","Code entry page","—"],
-  ["CL","API","Submit code","POST /api/view/open {code, name: \"Dr T. Ade\", practice_no: \"MDCN 41xxx\"}","(checking)","—"],
+  ["CL","API","Submit code","POST /api/view/open {code, name: \"Dr Demo\", practice_no: \"DEMO-0001\"}","(checking)","—"],
   ["API","DB","Rate limit and lookup","code_attempt for this IP under 5 in 10 min? share where code_hash matches","share s_44 found, not expired, not revoked","—"],
   ["API","POL","Permission check","can(clinician, read_summary, share s_44)","allow","—"],
-  ["API","DB","Open session","INSERT viewer_session; INSERT access_log","—","viewer_session (30 min or share expiry); access_log: opened by Dr T. Ade (name not verified)"],
+  ["API","DB","Open session","INSERT viewer_session; INSERT access_log","—","viewer_session (30 min or share expiry); access_log: opened by Dr Demo (name not verified)"],
   ["API","CL","Cookie","—","Set-Cookie itan_view (HttpOnly, Secure, SameSite=Strict); 303 to /v","—"],
   ["CL","API","Read summary","GET /v","(re-checks the share on every request)","—"],
   ["API","DB","Load facts","facts for r_12 minus hidden categories","12 facts; 2 hidden","—"],
@@ -370,7 +371,7 @@ const FLOWS={
   ["P","API","Share for referral","POST /api/shares {purpose: \"referral\", expires_in_min: 10080}","code H3WP-6RXT","share purpose=referral (7 days, to be agreed at freeze)"],
   ["CL","API","Receiving doctor opens","POST /api/view/open, then GET /v/referral","Packet: reason and urgency with “From the referral letter, photographed 12 Nov”, results, medicines, allergies","access_log: opened packet"],
   ["CL","API","Acknowledge","POST /api/view/ack {status: \"service_offered\"}","200 “Received, service offered here”. Not a statement that a bed is available.","referral_ack"],
-  ["API","P","Patient sees it","GET /api/referrals/ref_7","Acknowledged by Dr T. Ade, 14:05","—"]]},
+  ["API","P","Patient sees it","GET /api/referrals/ref_7","Acknowledged by Dr Demo, 14:05","—"]]},
  partner:{name:"Partner link and feed",nodes:["P","API","DB","H","FD","POL"],steps:[
   ["P","API","Link a hospital","POST /api/links {hospital: \"Demo General (SIMULATED)\"}","(creating)","—"],
   ["API","DB","Store the link","INSERT hospital_link","link_ref ITN-LNK-7K2Q9MWD","hospital_link active; access_log: link granted"],
@@ -581,17 +582,30 @@ function renderPerms(){
 const AI_NOTE=`<div class="disclose">Read by AI from your document. It may contain errors. Not medical advice.</div>`;
 const SCREENS={
  consent:{who:"Patient",name:"Consent",html:`<div class="bar">Before your first document</div><div class="body">
-  <div class="wf"><b>How Itan reads your documents</b><span class="note">Your photo is sent to Google's Gemini service, which reads the text into fields. Processing can happen outside Nigeria. Your documents and record are stored in London, UK.</span></div>
-  <div class="wf"><b>What is kept</b><span class="note">Your photos and the facts read from them, until you delete them. Google does not keep them to improve its products.</span></div>
+  <div class="wf"><b>How Itan reads your documents</b><span class="note">Your photo is sent to Google's Gemini service, which reads the text into fields. Google may process it in any country. Your documents and record are stored in London, UK.</span></div>
+  <div class="wf"><b>What is kept</b><span class="note">Your photos and the facts read from them, until you delete them. Google may keep a copy for a limited time to prevent abuse. On our paid Google account, Google does not use it to improve its products.</span></div>
+  <div class="wf"><b>This is a prototype</b><span class="note">Use made-up documents only. Itan is not cleared for real patients.</span></div>
   <div class="wf"><b>Nothing is shared unless you share it</b><span class="note">You choose who sees what, and for how long.</span></div></div>
   <div class="foot"><button class="hot" data-go="home">I understand, continue</button></div>`,
-  note:"NFR-03: a reader can state what reads the documents, where, and what is kept. Shown once, before the first capture; consent time stored on the account."},
+  note:"NFR-03: a reader can state what reads the documents, where, and what is kept. Shown once, before the first capture; consent time stored on the account. TIER VARIANT: this wording is true only on the paid Google tier. If billing fails and the demo runs on the free tier, replace the last sentence of “What is kept” with: “Google may use it to improve its products, and people at Google may read it. Use made-up documents only.” Show only the variant that matches the tier actually in use (docs/limitations.md section 4)."},
+ security:{who:"Patient",name:"Two-step sign-in",html:`<div class="bar">Security</div><div class="body">
+  <div class="wf"><b>Two-step sign-in</b><span class="note">After your password, Itan asks for a 6-digit code from an authenticator app on your phone. This protects your record if your password is stolen.</span></div>
+  <div class="wf" style="text-align:center"><span class="k">1. Scan with your authenticator app</span><div class="ph" style="height:110px;width:110px;justify-self:center">QR</div><span class="note">Can't scan? Type the setup key shown under the QR.</span></div>
+  <div class="wf"><span class="k">2. Type the 6-digit code to finish</span><div class="ph" style="height:36px">123 456</div></div>
+  <div class="wf soft"><span class="k">Status</span><span>Two-step sign-in: <b>On</b> <span class="chip ok">Enrolled</span></span><span class="note">With two-step on, creating a share code or linking a hospital asks for a fresh code.</span></div></div>
+  <div class="foot"><button class="hot" data-go="home">Done</button><button class="hot ghost" data-go="mfa">See the sign-in step</button></div>`,
+  note:"FR-28 (new, SHOULD, change request). TOTP through Supabase Auth: enroll, challenge, verify. No SMS (cost, delivery in Nigeria). Optional to enrol; once enrolled, sensitive actions (create share, link hospital) need an aal2 session. Recovery: if the phone is lost, a demo-only reset by the team; real recovery codes are future work."},
+ mfa:{who:"Patient",name:"Sign-in code",html:`<div class="bar">Itan · sign in</div><div class="body">
+  <div class="wf"><b>Enter your 6-digit code</b><span class="note">Open your authenticator app and type the current code for Itan.</span><div class="ph" style="height:36px">••• •••</div></div>
+  <span class="note">Codes change every 30 seconds. Wrong three times: wait a minute and try again.</span></div>
+  <div class="foot"><button class="hot" data-go="home">Verify and continue</button></div>`,
+  note:"FR-28. Shown after a correct password when the account has a verified factor. The session stays at aal1 (password only) until the code is verified, and the API refuses share and link actions at aal1 for enrolled accounts."},
  home:{who:"Patient",name:"Home and timeline",html:`<div class="bar">Itan <span class="chip">Mrs Bisi A. ▾</span></div><div class="body">
   <div class="row"><button class="hot" data-go="capture">+ Add a document</button><button class="hot ghost" data-go="share">Share</button></div>
-  <div class="label">12 Nov</div><div class="wf"><div class="row" style="justify-content:space-between"><b>Haemoglobin 9.8 g/dL</b><span class="chip warn">Unverified</span></div><span class="k">Read by AI · Lab report, Sacred Heart Lab</span><button class="hot ghost" data-go="review" style="justify-self:start">Review</button></div>
+  <div class="label">12 Nov</div><div class="wf"><div class="row" style="justify-content:space-between"><b>Haemoglobin 9.8 g/dL</b><span class="chip warn">Unverified</span></div><span class="k">Read by AI · Lab report, Demo Laboratory (SIMULATED)</span><button class="hot ghost" data-go="review" style="justify-self:start">Review</button></div>
   <div class="wf"><div class="row" style="justify-content:space-between"><b>HbA1c 8.9 %</b><span class="chip sim">Sent by hospital</span></div><span class="k">Demo General (SIMULATED) · 10 Nov</span></div>
   <div class="wf"><div class="row" style="justify-content:space-between"><b>Metformin 500 mg twice daily</b><span class="chip ok">Confirmed</span></div><span class="k">Read by AI · Prescription · 2 Oct</span></div>
-  <div class="row"><button class="hot ghost" data-go="log">Who has seen my record</button><button class="hot ghost" data-go="link">Linked hospitals</button></div></div>`,
+  <div class="row"><button class="hot ghost" data-go="log">Who has seen my record</button><button class="hot ghost" data-go="link">Linked hospitals</button><button class="hot ghost" data-go="security">Security</button></div></div>`,
   note:"FR-08 timeline. Every item shows origin and state in words, never colour alone (NFR-07). The record switcher at the top is FR-18."},
  capture:{who:"Patient",name:"Capture and queue",html:`<div class="bar">Add a document</div><div class="body">
   <div class="ph" style="height:200px">camera preview</div>
@@ -617,14 +631,14 @@ const SCREENS={
   <div class="foot"><button class="hot warnb">End access now</button><button class="hot ghost" data-go="center">See what they see</button></div>`,
   note:"FR-10, FR-11, FR-15, NFR-05. The code is shown once; if lost, the patient makes a new one."},
  log:{who:"Patient",name:"Access log",html:`<div class="bar">Who has seen my record</div><div class="body">
-  <div class="wf"><b>Dr T. Ade opened your summary</b><span class="k">12 Nov 12:46 · code K7Q2… · name not verified</span></div>
-  <div class="wf"><b>Dr T. Ade viewed the lab report photo</b><span class="k">12 Nov 12:48</span></div>
+  <div class="wf"><b>Dr Demo opened your summary</b><span class="k">12 Nov 12:46 · code K7Q2… · name not verified</span></div>
+  <div class="wf"><b>Dr Demo viewed the lab report photo</b><span class="k">12 Nov 12:48</span></div>
   <div class="wf"><b>Refused: expired code tried</b><span class="k">12 Nov 15:10 · name entered: “Nurse K.”</span></div>
   <div class="wf"><b>Demo General (SIMULATED) sent 4 results</b><span class="k">10 Nov 09:02 · through your hospital link</span></div></div>`,
   note:"FR-13, NFR-23. Refusals are shown too, so the patient sees attempts as well as reads."},
  center:{who:"Clinician",name:"Enter code",html:`<div class="bar">Itan · view a shared record</div><div class="body">
   <div class="wf"><label class="k" for="wfc">Code from the patient</label><div class="ph" style="height:36px" id="wfc">K7Q2-M9XD</div>
-  <span class="k">Your name</span><div class="ph" style="height:36px">Dr T. Ade</div><span class="k">Practice number</span><div class="ph" style="height:36px">MDCN …</div></div>
+  <span class="k">Your name</span><div class="ph" style="height:36px">Dr Demo</div><span class="k">Practice number</span><div class="ph" style="height:36px">DEMO-0001</div></div>
   <span class="note">Your name and practice number are recorded and shown to the patient. They are not verified.</span></div>
   <div class="foot"><button class="hot" data-go="cview">Open record</button></div>`,
   note:"FR-10, FR-12. No account, no install. Scanning the QR fills the code from the URL fragment."},
@@ -637,7 +651,7 @@ const SCREENS={
   note:"FR-12, FR-17, FR-24, NFR-08, NFR-11, NFR-16. Server-rendered; images load only on tap. Previous value appears only when units match exactly."},
  cpacket:{who:"Clinician",name:"Referral packet",html:`<div class="bar">Referral packet</div><div class="body">
   <div class="wf"><span class="k">Reason, as written</span><b>Poorly controlled DM, for review</b><span class="k">Urgency, as written</span><b>Urgent</b><span class="note">From the referral letter, photographed 12 Nov, confirmed by the patient. Itan does not set urgency.</span></div>
-  <div class="wf"><span class="k">To</span><span>Medical OPD, Federal Medical Centre Abeokuta</span></div>
+  <div class="wf"><span class="k">To</span><span>Medical OPD, Demo General Hospital (SIMULATED)</span></div>
   <div class="wf"><span class="k">Results, medicines, allergies</span><span class="note">As on the summary, with sources</span></div>
   <div class="wf soft"><span class="k">Acknowledge</span><div class="row"><button class="hot">Received, service offered here</button><button class="hot ghost">Received, service not offered</button></div><span class="note">This is not a statement that a bed is available.</span></div></div>`,
   note:"FR-14, FR-19, FR-20, NFR-19. When no source states urgency the field reads “Not stated by the referring clinician”."},
@@ -686,11 +700,13 @@ const TASKS=[
  ["t29","C19","Caregiver records and switcher","A","Sun",2,["FR-18"],3],
  ["t27","C17","Offline app shell and retry UI","A","Sun",2,["FR-16"],3],
  ["t22","C13","Print stylesheet for the packet","A","Sun",0.5,["FR-21"],3],
+ ["t33","C20","Two-step sign-in screens: enroll QR, verify code, challenge at sign-in","A","Sun",3,["FR-28"],3],
+ ["t34","C20","Read aal from the session; refuse share and link at aal1 for enrolled accounts; tests","B","Sun",2,["FR-28"],3],
  ["t30","S4","Stage 4: policy and feed tests, throttled 3G, accessibility pass","AB","Mon",6,[],4],
  ["t31","S5","README, install steps, screenshots, limitations list","AB","Mon",4,[],4],
  ["t32","S6","Push to organisers' repo, two rehearsals, backup video","AB","Tue",4,[],5]
 ].map(([id,c,t,o,d,h,fr,cp])=>({id,c,t,o,d,h,fr,cp}));
-const CUTS=[["FR-22"],["FR-21"],["FR-18"],["FR-20"],["FR-17"],["FR-24"],["FR-19"],["FR-27"],["FR-25","FR-26"],["FR-15"],["FR-16"]];
+const CUTS=[["FR-22"],["FR-21"],["FR-18"],["FR-20"],["FR-17"],["FR-24"],["FR-19"],["FR-27"],["FR-28"],["FR-25","FR-26"],["FR-15"],["FR-16"]];
 const CPS=[[1,"CP1 Walking skeleton","Fri 23:00","Deployed: sign up, upload a printed lab result, see its facts as unverified"],[2,"CP2 MUST spine","Sat 20:00","Deployed: confirm, correct, timeline, explanation, share, clinician view, access log"],[3,"CP3 Feature freeze","Sun 22:00","Referral packet plus the SHOULDs still in scope"],[4,"Stage 4 evidence","Mon 16","Tests, throttled runs, screenshots, limitations"],[5,"Push and rehearse","Tue 17","Code and README in the organisers' repo"]];
 let done=store.get("done",{}),cutN=store.get("cutN",0),feed=store.get("feed","undecided");
 function cutSet(){const s=new Set(CUTS.slice(0,cutN).flat());if(feed==="nogo")["FR-25","FR-26","FR-27"].forEach(x=>s.add(x));return s}
