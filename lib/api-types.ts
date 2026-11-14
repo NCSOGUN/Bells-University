@@ -70,6 +70,7 @@ export type ApiErrorCode =
   | "consent_required"
   | "provider_entered_immutable"
   | "dispute_provider_only"
+  | "mfa_required"
   | "code_not_valid"
   | ViewerRefusal
   // 404 / 409 / 413 / 429

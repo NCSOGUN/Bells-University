@@ -57,6 +57,7 @@ No endpoint takes a record ID without also checking, through `can()`, that the c
 | 400 | `invalid_request` (or a specific code) | Bad JSON or fields. The message lists field paths, never values. |
 | 401 | `unauthenticated` | No valid identity. |
 | 403 | `forbidden`, `consent_required`, `provider_entered_immutable`, `dispute_provider_only`, `code_not_valid`, `link_not_active` | Known caller, not allowed. |
+| 403 | `mfa_required` | **Two-step sign-in (FR-28).** The account has a verified authenticator but this session has not passed the code. Only `POST /api/shares` and `POST /api/links` return it. Ask for the 6-digit code with the browser client (`supabase.auth.mfa.challenge` then `verify`), then repeat the call. Revoking a share or unlinking a hospital never needs the code. |
 | 403 | `no_cookie`, `session_expired`, `share_expired`, `share_revoked` | Clinician routes only: the viewer session can no longer be used. Show "This access is no longer valid." and the code entry. |
 | 404 | `not_found` | Does not exist **or** the caller does not hold it. The two look the same on purpose (NFR-06). |
 | 409 | `extraction_in_progress`, `client_upload_id_conflict`, `invalid_transition`, `already_removed` | Conflict with current state. |
@@ -303,7 +304,7 @@ Strict body. Only `record_id` and `purpose` (`general` or `referral`) are requir
 { "share_id": "…", "code": "7KQ2-M9XD",
   "url": "https://<host>/c#7KQ2-M9XD", "qr_svg": "<svg …>…</svg>", "expires_at": "2026-11-13T11:42:00.000Z" }
 ```
-The code is in the URL **fragment** (after `#`), so it never reaches a server log. Render `qr_svg` for the doctor to scan, or show `code` to read aloud. Errors: 400 `invalid_request` / `invalid_expiry` / `document_not_in_record` / `referral_not_in_record`, 401, 404.
+The code is in the URL **fragment** (after `#`), so it never reaches a server log. Render `qr_svg` for the doctor to scan, or show `code` to read aloud. Errors: 400 `invalid_request` / `invalid_expiry` / `document_not_in_record` / `referral_not_in_record`, 401, 403 `mfa_required` (see Conventions), 404.
 
 ## POST /api/shares/{id}/revoke
 
@@ -506,7 +507,7 @@ Patient (holder of the record).
   "hospital": { "id": "…", "name": "Demo General Hospital (SIMULATED)", "simulated": true },
   "qr_svg": "<svg …>…</svg>", "created_at": "2026-11-13T08:13:49.780Z" }
 ```
-`qr_svg` encodes the link reference as plain text. Access log: `link_created`. Errors: 400 `invalid_request` / `hospital_not_found`, 401, 404 (not your record).
+`qr_svg` encodes the link reference as plain text. Access log: `link_created`. Errors: 400 `invalid_request` / `hospital_not_found`, 401, 403 `mfa_required` (see Conventions), 404 (not your record).
 
 ### POST /api/links/{id}/revoke
 

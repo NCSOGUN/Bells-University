@@ -173,3 +173,11 @@ Every place the build differs from the design, or where the design was silent. F
 - **`lib/api-types.ts` (S-15)** is type-only by rule (tested). Records, consent, dispute and category body types are written out by hand because their schemas live in route files; the rest are derived from the schemas and builders.
 - **Migration 0004 (two indexes)** was generated offline, then applied to the team database with `npm run db:migrate` on 13 Nov; both indexes confirmed in `pg_indexes`.
 - **Not done in R1, on purpose:** see "open" and "needs decision" in `docs/BACKEND-REVIEW.md`. In particular, B-02 (source image shows category-hidden items), S-03 (upload retry race), S-04 (fact transition race), S-05 (rate-limit race), S-10 (optional env vars), S-16 (CSP) and S-17 (demo account data).
+
+## D-023 Two-step sign-in (FR-28), added after the design freeze (14 Nov)
+- **Change request, approved by the team lead on 14 Nov.** Not in the frozen design. Authenticator-app codes (TOTP) through Supabase Auth; no SMS (cost and delivery in Nigeria).
+- **Rule.** An account with a verified TOTP factor must have a session at assurance level `aal2` before `POST /api/shares` and `POST /api/links`. Otherwise 403 `mfa_required`. Accounts with no factor are unaffected. `revoke` and `unlink` never need the code, so ending access stays easy.
+- **Where.** `requireStepUp` in `lib/auth.ts`, called after the permission check in the two routes. The level is read from the `aal` claim of an access token that `getUser` has just verified; enrolment is read with the Supabase Auth admin API, and only when the session is not already `aal2`.
+- **Fail closed.** An unreadable level on an enrolled account asks for the code. A failed or slow factor lookup is 503 `service_unavailable`, never a silent pass.
+- **Tests.** `tests/mfa.test.ts` (rule matrix, fail-closed cases, and the two routes that must and must not require it). **Not verified live:** enable MFA (TOTP) in the Supabase project, enrol a throwaway account, and check that `POST /api/shares` answers 403 at `aal1` and 201 after the code. Do not enrol `demo@itan.example`: the smoke and throttle scripts create shares with it and would hit `mfa_required`.
+- **Recovery.** None in this version. The team resets a factor in the Supabase dashboard.
