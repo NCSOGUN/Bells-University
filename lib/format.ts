@@ -1,4 +1,5 @@
-import { DEMO_TIME_ZONE, type Plan } from "./mock-data";
+import type { Plan } from "./mock-data";
+import { DEMO_TIME_ZONE } from "./time-zone";
 
 // All display formatting is pinned to Lagos time so server and browser agree
 // and a family member abroad sees the time the visit happened locally.
@@ -101,7 +102,7 @@ export function planFrequency(plan: Plan): string {
   return plan.frequencyLabel ?? formatVisitsPerWeek(plan.visitsPerWeek);
 }
 
-/** "₦55,000" */
+/** "₦77,000" */
 export function formatNaira(amount: number): string {
   return nairaFmt.format(amount);
 }

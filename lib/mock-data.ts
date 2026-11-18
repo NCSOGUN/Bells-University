@@ -1,9 +1,14 @@
 // Single source of truth for demo data. Nothing here talks to a backend , 
 // see DEMO-SPEC.md §5. Every screen reads from the state this file seeds.
 
+import type { VisitCareCheck } from "./care-check";
+import { applyCareChecks, deriveElderStatus, type VisitRecord } from "./elder-status";
 import type { NurseOnboardingDraft } from "./nurse-onboarding";
 import type { OnboardingDraft } from "./onboarding";
+import { DEMO_TIME_ZONE } from "./time-zone";
 import type { VisitWorkflow } from "./visit-flow";
+
+export { DEMO_TIME_ZONE };
 
 export type CareStatus = "green" | "yellow" | "red";
 
@@ -65,8 +70,12 @@ export interface Visit {
   wellbeingNote?: string;
   nurseNotes?: string;
   checkOutGpsConfirmed?: boolean; // location at check-out, when the visit ends
-  flagged: boolean; // drives Yellow/Red status
+  /** Derived: true when the nurse-confirmed status is not Green. Never set by hand. */
+  flagged: boolean;
+  /** A nurse's own words, or what the Care Check saw. Only present when flagged. */
   flagReason?: string;
+  /** The Care Check result and the nurse's decision on it. Present on completed visits. */
+  careCheck?: VisitCareCheck;
 }
 
 export interface Plan {
@@ -184,8 +193,6 @@ function daysFromNow(days: number, hour = 9, minute = 0): string {
   return d.toISOString();
 }
 
-export const DEMO_TIME_ZONE = "Africa/Lagos";
-
 /** "Saturday", the weekday of an ISO date, in Lagos. */
 function weekdayOf(iso: string): string {
   return new Intl.DateTimeFormat("en-GB", { timeZone: DEMO_TIME_ZONE, weekday: "long" }).format(
@@ -216,14 +223,18 @@ const ELDER_GRACE_ID = "elder-grace";
 const ELDER_IBRAHIM_ID = "elder-ibrahim";
 
 interface StatusDates {
-  josephFlaggedVisitAt: string;
   graceFirstVisitAt: string;
   ibrahimFirstVisitAt: string;
 }
 
 // Status copy that mentions a visit is built from that visit's date, so it
 // always matches the records it describes.
-const buildElders = ({ josephFlaggedVisitAt, graceFirstVisitAt, ibrahimFirstVisitAt }: StatusDates): Elder[] => [
+// An elder with completed visits has no status here: it is derived from those
+// visits in createSeedState. Elders with no visits yet carry their own line.
+type SeedElder = Omit<Elder, "careStatus" | "careStatusMessage"> &
+  Partial<Pick<Elder, "careStatus" | "careStatusMessage">>;
+
+const buildElders = ({ graceFirstVisitAt, ibrahimFirstVisitAt }: StatusDates): SeedElder[] => [
   {
     id: ELDER_JOSEPH_ID,
     name: "Joseph Okafor",
@@ -237,8 +248,6 @@ const buildElders = ({ josephFlaggedVisitAt, graceFirstVisitAt, ibrahimFirstVisi
     medications: ["Amlodipine 10mg, once daily"],
     planId: "essential",
     assignedNurseId: NURSE_ADAEZE_ID,
-    careStatus: "yellow",
-    careStatusMessage: `Blood pressure was higher than usual on ${weekdayOf(josephFlaggedVisitAt)}. Nurse Adaeze is checking again this visit.`,
     nextBillingDate: daysFromNow(18),
     paymentStatus: "active",
   },
@@ -254,8 +263,6 @@ const buildElders = ({ josephFlaggedVisitAt, graceFirstVisitAt, ibrahimFirstVisi
     medications: ["Paracetamol, as needed"],
     planId: "essential",
     assignedNurseId: NURSE_ADAEZE_ID,
-    careStatus: "green",
-    careStatusMessage: "Recovering well. Everything looked normal at the last visit.",
     nextBillingDate: daysFromNow(9),
     paymentStatus: "active",
   },
@@ -313,7 +320,7 @@ const buildElders = ({ josephFlaggedVisitAt, graceFirstVisitAt, ibrahimFirstVisi
 ];
 
 // Joseph Okafor's six-visit arc: normal, normal, normal, normal, flagged, resolved.
-const buildJosephVisits = (): Visit[] => [
+const buildJosephVisits = (): VisitRecord[] => [
   {
     id: "visit-joseph-1",
     elderId: ELDER_JOSEPH_ID,
@@ -329,7 +336,6 @@ const buildJosephVisits = (): Visit[] => [
     mobilityNote: "Walking independently, no difficulty.",
     wellbeingNote: "In good spirits, mentioned enjoying visits from a neighbour.",
     nurseNotes: "No concerns. Continue current medication schedule.",
-    flagged: false,
   },
   {
     id: "visit-joseph-2",
@@ -346,7 +352,6 @@ const buildJosephVisits = (): Visit[] => [
     mobilityNote: "Walking independently, no difficulty.",
     wellbeingNote: "Reported sleeping well.",
     nurseNotes: "No concerns.",
-    flagged: false,
   },
   {
     id: "visit-joseph-3",
@@ -363,7 +368,6 @@ const buildJosephVisits = (): Visit[] => [
     mobilityNote: "Walking independently, no difficulty.",
     wellbeingNote: "Cheerful, no complaints.",
     nurseNotes: "No concerns.",
-    flagged: false,
   },
   {
     id: "visit-joseph-4",
@@ -380,7 +384,6 @@ const buildJosephVisits = (): Visit[] => [
     mobilityNote: "Walking independently, no difficulty.",
     wellbeingNote: "In good spirits.",
     nurseNotes: "Slightly elevated systolic. Nothing concerning yet, will continue to monitor.",
-    flagged: false,
   },
   {
     id: "visit-joseph-5",
@@ -398,7 +401,6 @@ const buildJosephVisits = (): Visit[] => [
     wellbeingNote: "Felt lightheaded earlier in the day, resting now.",
     nurseNotes:
       "Blood pressure and pulse elevated versus baseline; patient reported dizziness on standing. Advised rest and fluids, family notified, will recheck at next visit.",
-    flagged: true,
     flagReason: "Elevated blood pressure (148/92) with reported dizziness.",
   },
   {
@@ -417,7 +419,6 @@ const buildJosephVisits = (): Visit[] => [
     wellbeingNote: "Feeling much better, no further lightheadedness.",
     nurseNotes:
       "Follow-up on last visit's elevated reading: blood pressure trending back toward baseline. No further dizziness reported. Continue monitoring at next visit.",
-    flagged: false,
   },
   {
     id: "visit-joseph-next",
@@ -428,12 +429,11 @@ const buildJosephVisits = (): Visit[] => [
     scheduledAt: daysFromNow(0, 9, 30),
     status: "scheduled",
     gpsConfirmed: false,
-    flagged: false,
   },
 ];
 
 // Today's visits across the rest of Nurse Adaeze's client list.
-const buildTodayVisits = (): Visit[] => [
+const buildTodayVisits = (): VisitRecord[] => [
   {
     id: "visit-bola-today",
     elderId: "elder-bola",
@@ -449,7 +449,6 @@ const buildTodayVisits = (): Visit[] => [
     mobilityNote: "Walking with a cane, steady.",
     wellbeingNote: "In good spirits.",
     nurseNotes: "Hip recovery progressing well.",
-    flagged: false,
   },
   {
     id: "visit-grace-today",
@@ -458,7 +457,6 @@ const buildTodayVisits = (): Visit[] => [
     scheduledAt: daysFromNow(0, 13, 0),
     status: "scheduled",
     gpsConfirmed: false,
-    flagged: false,
   },
   {
     id: "visit-ibrahim-today",
@@ -467,7 +465,6 @@ const buildTodayVisits = (): Visit[] => [
     scheduledAt: daysFromNow(0, 16, 30),
     status: "scheduled",
     gpsConfirmed: false,
-    flagged: false,
   },
 ];
 
@@ -497,24 +494,49 @@ const buildAssignmentRequests = (): AssignmentRequest[] => [
 
 /** Fresh, independent copy of the seed, with dates relative to today. */
 export function createSeedState(): DemoState {
-  const josephVisits = buildJosephVisits();
-  const todayVisits = buildTodayVisits();
-  const flagged = josephVisits.find((v) => v.flagged);
-  const graceFirst = todayVisits.find((v) => v.elderId === ELDER_GRACE_ID);
-  const ibrahimFirst = todayVisits.find((v) => v.elderId === ELDER_IBRAHIM_ID);
-  if (!flagged || !graceFirst || !ibrahimFirst) {
+  const josephRecords = buildJosephVisits();
+  const todayRecords = buildTodayVisits();
+  const graceFirst = todayRecords.find((v) => v.elderId === ELDER_GRACE_ID);
+  const ibrahimFirst = todayRecords.find((v) => v.elderId === ELDER_IBRAHIM_ID);
+  if (!graceFirst || !ibrahimFirst) {
     throw new Error("Seed invariant: status copy must reference visits that exist");
+  }
+
+  // Flags and statuses are not typed in: the Care Check derives them from the
+  // visit records, so the family and nurse screens always agree with the data.
+  const visits = applyCareChecks([...josephRecords, ...todayRecords]);
+
+  const josephFlags = visits
+    .filter((v) => v.elderId === ELDER_JOSEPH_ID && v.status === "complete")
+    .map((v) => v.flagged);
+  if (josephFlags.join() !== [false, false, false, false, true, false].join()) {
+    throw new Error(
+      `Seed invariant: Joseph's arc must be normal x4, flagged, resolved. The Care Check rules gave [${josephFlags}]. Change the rules in lib/care-check.ts, not the seed vitals.`,
+    );
+  }
+
+  const nurses = NURSES;
+  const elders: Elder[] = buildElders({
+    graceFirstVisitAt: graceFirst.scheduledAt,
+    ibrahimFirstVisitAt: ibrahimFirst.scheduledAt,
+  }).map((seed) => {
+    const mine = visits.filter((v) => v.elderId === seed.id);
+    const derived = deriveElderStatus(mine, nurses.find((n) => n.id === seed.assignedNurseId));
+    return {
+      ...seed,
+      careStatus: derived?.status ?? seed.careStatus ?? "green",
+      careStatusMessage: derived?.message ?? seed.careStatusMessage ?? "",
+    };
+  });
+  if (elders.find((e) => e.id === ELDER_JOSEPH_ID)?.careStatus !== "yellow") {
+    throw new Error("Seed invariant: Joseph is still being monitored after his flagged visit.");
   }
 
   return structuredClone({
     familyAccount: FAMILY_ACCOUNT,
-    elders: buildElders({
-      josephFlaggedVisitAt: flagged.scheduledAt,
-      graceFirstVisitAt: graceFirst.scheduledAt,
-      ibrahimFirstVisitAt: ibrahimFirst.scheduledAt,
-    }),
-    nurses: NURSES,
-    visits: [...josephVisits, ...todayVisits],
+    elders,
+    nurses,
+    visits,
     plans: PLANS,
     assignmentRequests: buildAssignmentRequests(),
     onboarding: {},

@@ -20,3 +20,6 @@ export function PageSkeleton() {
     </div>
   );
 }
+
+/** A single shimmering placeholder block for content that is on its way. */
+export const Skeleton = Block;

@@ -8,6 +8,7 @@ import { formatTime } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { completedVisits, visitsForElder } from "@/lib/selectors";
 import {
+  careCheckBlocker,
   saveReportDraft,
   setOffline,
   validateReport,
@@ -18,6 +19,7 @@ import { ADHERENCE_LABEL } from "@/lib/vitals";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, FieldError, INPUT_CLASSES } from "@/components/ui/field";
+import { CareCheckPanel } from "./care-check-panel";
 import { VisitFrame, type VisitContext } from "./visit-frame";
 
 export function ChecklistStep({ visitId }: { visitId: string }) {
@@ -56,6 +58,8 @@ function Checklist({ state, visit, elder, workflow }: VisitContext) {
 
   const { report, offline, savedAt, checkInGps } = workflow;
   const previous = completedVisits(visitsForElder(state, elder.id)).at(-1);
+  // A Monitoring / Needs-attention suggestion has to be confirmed or changed by the nurse first.
+  const blocker = careCheckBlocker(state, visit.id);
 
   // Every change is written to demo state (and localStorage) straight away.
   const set = (patch: Partial<VisitReportDraft>) => {
@@ -78,6 +82,7 @@ function Checklist({ state, visit, elder, workflow }: VisitContext) {
       requestAnimationFrame(() => form.querySelector<HTMLElement>("[aria-invalid='true'], [data-invalid='true']")?.focus());
       return;
     }
+    if (blocker) return;
     router.push(routes.nurseVisitComplete(visit.id));
   };
 
@@ -207,10 +212,22 @@ function Checklist({ state, visit, elder, workflow }: VisitContext) {
           />
         </Section>
 
+        <CareCheckPanel state={state} visit={visit} elder={elder} workflow={workflow} />
+
         <div className="space-y-2">
-          <Button type="submit" disabled={offline} className="w-full" aria-describedby={offline ? "offline-submit" : undefined}>
+          <Button
+            type="submit"
+            disabled={offline || Boolean(blocker)}
+            className="w-full"
+            aria-describedby={offline ? "offline-submit" : blocker ? "check-blocker" : undefined}
+          >
             Check out &amp; submit report
           </Button>
+          {blocker && !offline && (
+            <p id="check-blocker" className="text-center text-small font-medium text-navy">
+              {blocker}
+            </p>
+          )}
           {offline && (
             <p id="offline-submit" className="text-center text-small text-navy">
               Your report is saved on this phone. It will send when you&apos;re back online.
