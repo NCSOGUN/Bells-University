@@ -31,6 +31,7 @@ import { RecordNotFound } from "@/components/ui/record-not-found";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { TextLink } from "@/components/ui/text-link";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
+import { CareCheckNote } from "../care-check-note";
 import { VisitOutcomeChip } from "../visit-outcome";
 import { VitalsGrid } from "../vitals-grid";
 
@@ -86,6 +87,7 @@ export function VisitDetailView({ visitId }: { visitId: string }) {
               <VitalsGrid vitals={visit.vitals} flagged={visit.flagged} />
             </Card>
           )}
+          <CareCheckNote visit={visit} nurse={nurse} />
           <ObservationsCard visit={visit} />
           {visit.nurseNotes && (
             <Card title="Notes from the nurse">

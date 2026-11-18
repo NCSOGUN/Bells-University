@@ -5,7 +5,8 @@ import { Check, Loader2, MapPin, MapPinOff } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
 import { firstName, formatTime, nurseShortName } from "@/lib/format";
 import { routes } from "@/lib/routes";
-import { completeVisit, validateReport } from "@/lib/visit-flow";
+import { NURSE_CARE_STATUS_LABEL } from "@/lib/care-status";
+import { careCheckBlocker, completeVisit, validateReport } from "@/lib/visit-flow";
 import { ADHERENCE_LABEL } from "@/lib/vitals";
 import { CareStatusChip } from "@/components/care/care-status-chip";
 import { ButtonLink } from "@/components/ui/button";
@@ -33,11 +34,15 @@ function Complete(ctx: VisitContext) {
 
   if (visit.status === "complete") return <Summary {...ctx} />;
 
+  // A Monitoring / Needs-attention suggestion must be confirmed or changed first,
+  // otherwise check-out would be refused and this page would never finish.
+  const blocker = careCheckBlocker(ctx.state, visit.id);
   const ready =
     visit.status === "in_progress" &&
     workflow &&
     !workflow.offline &&
-    Object.keys(validateReport(workflow.report)).length === 0;
+    Object.keys(validateReport(workflow.report)).length === 0 &&
+    !blocker;
 
   if (!ready) {
     return (
@@ -47,7 +52,7 @@ function Complete(ctx: VisitContext) {
             ? "This visit hasn't started yet."
             : workflow?.offline
               ? "You're offline. Your report is saved on this phone and will send when you're back online."
-              : "Some checklist answers are still missing."}
+              : (blocker ?? "Some checklist answers are still missing.")}
         </p>
         <ButtonLink
           href={visit.status === "scheduled" ? routes.nurseVisitStart(visit.id) : routes.nurseVisitChecklist(visit.id)}
@@ -140,6 +145,8 @@ function Summary({ visit, elder, nurse, workflow }: VisitContext) {
         )}
       </section>
 
+      {visit.careCheck && <CareCheckSummary visit={visit} who={who} />}
+
       {sentAt && (
         <section aria-labelledby="family-heading" className="rounded-2xl border-2 border-navy bg-surface p-5">
           <h2 id="family-heading" className="flex items-center gap-2 text-h2 font-semibold">
@@ -171,6 +178,39 @@ function Summary({ visit, elder, nurse, workflow }: VisitContext) {
         Back to today&apos;s visits
       </ButtonLink>
     </div>
+  );
+}
+
+function CareCheckSummary({ visit, who }: { visit: NonNullable<VisitContext["visit"]>; who: string }) {
+  const check = visit.careCheck;
+  if (!check) return null;
+  const { decision } = check;
+  const changed = decision.finalStatus !== check.suggestedStatus;
+  return (
+    <section aria-labelledby="check-heading" className="rounded-2xl border border-line bg-surface p-5">
+      <h2 id="check-heading" className="text-h2 font-semibold">
+        Care check
+      </h2>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <CareStatusChip status={decision.finalStatus} />
+        <p className="text-small text-navy">
+          {changed
+            ? `The check suggested ${NURSE_CARE_STATUS_LABEL[check.suggestedStatus]}. You changed it at ${formatTime(decision.decidedAt)}.`
+            : `You confirmed the suggestion at ${formatTime(decision.decidedAt)}.`}
+        </p>
+      </div>
+      {decision.reason && <p className="mt-2 text-navy">Your reason: {decision.reason}</p>}
+      {check.findings.length > 0 && (
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-small">
+          {check.findings.map((f) => (
+            <li key={f.ruleId}>{f.reason}</li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-3 text-label text-ink">
+        {who}&apos;s family sees this status and reason. Checked {check.source === "server" ? "on our server" : "on this phone"} · {check.modelVersion}.
+      </p>
+    </section>
   );
 }
 

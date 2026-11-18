@@ -20,6 +20,7 @@ import { WhatsAppMark } from "@/components/ui/whatsapp-mark";
 import { TextLink } from "@/components/ui/text-link";
 import { RecordNotFound } from "@/components/ui/record-not-found";
 import { PageSkeleton } from "@/components/ui/skeleton";
+import { HowWeKeepWatch } from "../care-check-note";
 import { CareStatusPanel } from "../care-status";
 import { FamilyAvatars, FamilyCircleCard } from "../family-circle-card";
 import { LatestReadingsCard } from "../latest-readings-card";
@@ -106,6 +107,7 @@ export function DashboardView() {
         </div>
         <div className="space-y-6">
           {nurse && <NurseCard nurse={nurse} title={`${familyTerm}'s nurse`} />}
+          <HowWeKeepWatch />
           <FamilyCircleCard account={account} familyTerm={familyTerm} />
           <Card title="Updates on WhatsApp">
             <p className="flex items-start gap-2">
