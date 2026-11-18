@@ -2,8 +2,9 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { RotateCcw, SquareDashedMousePointer, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Play, RotateCcw, SquareDashedMousePointer, X } from "lucide-react";
+import { prepareReading, type DemoReading } from "@/lib/demo-scenarios";
 import { useDemo } from "@/lib/demo-context";
 import { DEMO_NURSE_ID, type DemoState } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
@@ -61,8 +62,9 @@ function screens(state: DemoState): { family: Screen[]; nurse: Screen[] } {
  * Deliberately not styled like the product, and collapsed until asked for.
  */
 export function DemoNavigator() {
-  const { state, resetDemo } = useDemo();
+  const { state, update, resetDemo } = useDemo();
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -130,6 +132,21 @@ export function DemoNavigator() {
             </button>
           </div>
 
+          <JosephFlow
+            state={state}
+            onReset={() => {
+              resetDemo();
+              setOpen(false);
+              router.push(routes.nurseDashboard);
+            }}
+            onFill={(visitId, reading) => {
+              update((prev) => prepareReading(prev, visitId, reading));
+              setOpen(false);
+              router.push(routes.nurseVisitChecklist(visitId));
+            }}
+            onNavigate={() => setOpen(false)}
+          />
+
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <Group title="Family" screens={family} pathname={pathname} onNavigate={() => setOpen(false)} />
             <Group title="Nurse" screens={nurse} pathname={pathname} onNavigate={() => setOpen(false)} />
@@ -191,6 +208,85 @@ function Group({
           );
         })}
       </ul>
+    </section>
+  );
+}
+
+/** The Care Check story in order, for trying it end to end. */
+function JosephFlow({
+  state,
+  onReset,
+  onFill,
+  onNavigate,
+}: {
+  state: DemoState;
+  onReset: () => void;
+  onFill: (visitId: string, reading: DemoReading) => void;
+  onNavigate: () => void;
+}) {
+  const elderId = state.familyAccount.elderIds[0] ?? "";
+  const first = state.elders.find((e) => e.id === elderId)?.name.split(" ")[0] ?? "Joseph";
+  const visit = todaysVisits(state, DEMO_NURSE_ID).find((t) => t.visit.elderId === elderId)?.visit;
+  const completed = completedVisits(visitsForElder(state, elderId));
+  const latest = completed.at(-1);
+  const done = visit?.status === "complete";
+
+  const link = "flex min-h-11 items-center rounded-lg px-2 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4 hover:bg-bg";
+  const button =
+    "inline-flex min-h-11 items-center justify-center rounded-xl border border-navy px-3 text-small font-semibold text-navy transition-colors duration-150 hover:bg-bg disabled:cursor-not-allowed disabled:border-line disabled:text-muted";
+
+  return (
+    <section aria-labelledby="nav-flow" className="mt-3 rounded-xl border border-teal bg-teal-tint p-3">
+      <h2 id="nav-flow" className="flex items-center gap-2 font-mono text-label font-semibold text-navy">
+        <Play aria-hidden className="size-3.5" />
+        Test the Care Check: {first}&apos;s flow
+      </h2>
+      <ol className="mt-2 space-y-2 text-small text-navy">
+        <li>
+          <span className="font-semibold">1. Start clean.</span> Reset the demo and go to today&apos;s visits.
+          <div className="mt-1">
+            <button type="button" onClick={onReset} className={button}>
+              Reset and start
+            </button>
+          </div>
+        </li>
+        <li>
+          <span className="font-semibold">2. Nurse checks {first} in</span> (or skip: step 3 does it for you).
+          {visit && (
+            <Link href={routes.nurseVisitStart(visit.id)} onClick={onNavigate} className={link}>
+              Open check-in
+            </Link>
+          )}
+        </li>
+        <li>
+          <span className="font-semibold">3. Fill the checklist</span>, then confirm the Care Check and submit.
+          <div className="mt-1 flex flex-wrap gap-2">
+            <button type="button" disabled={!visit || done} onClick={() => visit && onFill(visit.id, "flagged")} className={button}>
+              Higher reading: 148/92, pulse 88
+            </button>
+            <button type="button" disabled={!visit || done} onClick={() => visit && onFill(visit.id, "normal")} className={button}>
+              Normal reading
+            </button>
+          </div>
+          {done && <p className="mt-1">This visit is already submitted. Use Reset and start to run it again.</p>}
+        </li>
+        <li>
+          <span className="font-semibold">4. See what the family sees.</span>
+          <div className="flex flex-col">
+            <Link href={routes.familyDashboard} onClick={onNavigate} className={link}>
+              Family dashboard (status and reason)
+            </Link>
+            {latest && (
+              <Link href={routes.familyVisit(latest.id)} onClick={onNavigate} className={link}>
+                Latest visit record (how it was checked)
+              </Link>
+            )}
+            <Link href={routes.familyWhatsApp} onClick={onNavigate} className={link}>
+              WhatsApp update
+            </Link>
+          </div>
+        </li>
+      </ol>
     </section>
   );
 }
