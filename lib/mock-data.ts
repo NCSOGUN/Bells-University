@@ -12,6 +12,22 @@ export { DEMO_TIME_ZONE };
 
 export type CareStatus = "green" | "yellow" | "red";
 
+/** What a family member agreed to for their relative, and what the relative agreed to in person. */
+export interface ElderConsent {
+  choices: {
+    /** Required for the service: readings are shared with the nurse and care circle. */
+    sharing: boolean;
+    /** Optional: the Care Check may compare readings with their own earlier visits. */
+    personalisedCheck: boolean;
+  };
+  representative: { name: string; relationship: string };
+  givenAt: string;
+  /** The elder's own yes, recorded by their nurse at the first visit. */
+  inPerson?: { at: string; nurseId: string };
+  deletionRequestedAt?: string;
+  log: { at: string; by: string; change: string }[];
+}
+
 export interface Elder {
   id: string;
   name: string;
@@ -26,6 +42,7 @@ export interface Elder {
   assignedNurseId: string;
   careStatus: CareStatus;
   careStatusMessage: string; // descriptive microcopy, per UX Addendum
+  consent?: ElderConsent;
   nextBillingDate: string; // ISO, Journey doc step 6: "payment status/history"
   paymentStatus: PaymentStatus;
 }
@@ -231,6 +248,27 @@ interface StatusDates {
 // always matches the records it describes.
 // An elder with completed visits has no status here: it is derived from those
 // visits in createSeedState. Elders with no visits yet carry their own line.
+/** A seeded consent record: the family agreed `givenDaysAgo`, and the elder may have agreed in person. */
+function seedConsent(
+  representative: { name: string; relationship: string },
+  elderFirstName: string,
+  givenDaysAgo: number,
+  inPersonAt?: string,
+): ElderConsent {
+  const givenAt = daysFromNow(-givenDaysAgo, 10, 0);
+  return {
+    choices: { sharing: true, personalisedCheck: true },
+    representative,
+    givenAt,
+    inPerson: inPersonAt ? { at: inPersonAt, nurseId: NURSE_ADAEZE_ID } : undefined,
+    log: [
+      { at: givenAt, by: representative.name, change: "Agreed to share readings with the nurse and care circle" },
+      { at: givenAt, by: representative.name, change: "Allowed the personalised Care Check" },
+      ...(inPersonAt ? [{ at: inPersonAt, by: "Nurse Adaeze", change: `Recorded that ${elderFirstName} agreed in person` }] : []),
+    ],
+  };
+}
+
 type SeedElder = Omit<Elder, "careStatus" | "careStatusMessage"> &
   Partial<Pick<Elder, "careStatus" | "careStatusMessage">>;
 
@@ -248,6 +286,7 @@ const buildElders = ({ graceFirstVisitAt, ibrahimFirstVisitAt }: StatusDates): S
     medications: ["Amlodipine 10mg, once daily"],
     planId: "essential",
     assignedNurseId: NURSE_ADAEZE_ID,
+    consent: seedConsent({ name: "Grace Okafor", relationship: "Daughter" }, "Joseph", 45, daysFromNow(-40, 9, 2)),
     nextBillingDate: daysFromNow(18),
     paymentStatus: "active",
   },
@@ -263,6 +302,7 @@ const buildElders = ({ graceFirstVisitAt, ibrahimFirstVisitAt }: StatusDates): S
     medications: ["Paracetamol, as needed"],
     planId: "essential",
     assignedNurseId: NURSE_ADAEZE_ID,
+    consent: seedConsent({ name: "Tunde Adeyemi", relationship: "Son" }, "Bola", 3, daysFromNow(0, 8, 2)),
     nextBillingDate: daysFromNow(9),
     paymentStatus: "active",
   },
@@ -280,6 +320,7 @@ const buildElders = ({ graceFirstVisitAt, ibrahimFirstVisitAt }: StatusDates): S
     assignedNurseId: NURSE_ADAEZE_ID,
     careStatus: "green",
     careStatusMessage: firstVisitMessage(graceFirstVisitAt),
+    consent: seedConsent({ name: "Chika Nwosu", relationship: "Grandson" }, "Grace", 2),
     nextBillingDate: daysFromNow(22),
     paymentStatus: "active",
   },
@@ -297,6 +338,7 @@ const buildElders = ({ graceFirstVisitAt, ibrahimFirstVisitAt }: StatusDates): S
     assignedNurseId: NURSE_ADAEZE_ID,
     careStatus: "green",
     careStatusMessage: firstVisitMessage(ibrahimFirstVisitAt),
+    consent: seedConsent({ name: "Yusuf Suleiman", relationship: "Son" }, "Ibrahim", 2),
     nextBillingDate: daysFromNow(4),
     paymentStatus: "active",
   },
@@ -314,6 +356,7 @@ const buildElders = ({ graceFirstVisitAt, ibrahimFirstVisitAt }: StatusDates): S
     assignedNurseId: "",
     careStatus: "green",
     careStatusMessage: "Awaiting first visit.",
+    consent: seedConsent({ name: "Bisi Bello", relationship: "Daughter" }, "Funmilayo", 1),
     nextBillingDate: daysFromNow(30),
     paymentStatus: "active",
   },

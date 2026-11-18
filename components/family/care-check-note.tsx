@@ -1,7 +1,9 @@
 import { NURSE_CARE_STATUS_LABEL } from "@/lib/care-status";
 import { formatTime, nurseShortName } from "@/lib/format";
 import type { Nurse, Visit } from "@/lib/mock-data";
+import { routes } from "@/lib/routes";
 import { Card } from "@/components/ui/card";
+import { TextLink } from "@/components/ui/text-link";
 
 /** What the family sees about how a visit's readings were checked, and who decided. */
 export function CareCheckNote({ visit, nurse }: { visit: Visit; nurse?: Nurse }) {
@@ -49,6 +51,9 @@ export function HowWeKeepWatch() {
       <p className="mt-3 text-small">
         This is a set of simple rules, not a doctor and not artificial intelligence. It never replaces medical advice.
       </p>
+      <TextLink href={routes.familyPrivacy} className="mt-1">
+        Privacy and consent
+      </TextLink>
     </Card>
   );
 }

@@ -408,6 +408,7 @@ export const CARE_CHECK_LIMITS: string[] = [
   "It is decision support, not a diagnosis. A nurse always confirms or changes the status.",
   "It reads numbers only. It does not read the nurse's notes, so symptoms such as dizziness are the nurse's call.",
   "With fewer than three earlier visits it has no personal usual to compare against, so it uses the fixed lines only.",
+  "It only looks at earlier visits if the family has allowed it. If they turn that off, it uses the fixed lines only.",
   "It uses general adult limits and does not yet adjust for a person's conditions or medicines.",
   "These rules haven't been clinically validated. Do not use them for real patients.",
 ];

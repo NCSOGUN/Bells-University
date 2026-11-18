@@ -41,6 +41,8 @@ export interface RelativeDraft {
   age: number;
   city: RequestCity;
   careNeeds: string;
+  /** The family member's agreement to share readings, and their optional choice. */
+  consent?: { personalisedCheck: boolean; agreedAt: string };
 }
 
 export interface PaymentDraft {

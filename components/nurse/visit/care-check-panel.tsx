@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ShieldCheck, Smartphone, Server } from "lucide-react";
 import { CARE_CHECK_LIMITS, describeRules, runCareCheck, type CheckStatus, type FindingSeverity } from "@/lib/care-check";
+import { personalisedCheckAllowed } from "@/lib/consent";
 import { requestCareCheck } from "@/lib/care-check-client";
 import { NURSE_CARE_STATUS_LABEL } from "@/lib/care-status";
 import { useDemo } from "@/lib/demo-context";
@@ -129,7 +130,9 @@ export function CareCheckPanel({ state, visit, elder, workflow }: Required<Pick<
           <p className="text-small">
             {result.baseline
               ? `${who}'s usual: ${result.baseline.systolic}/${result.baseline.diastolic} mmHg, pulse ${result.baseline.pulse} bpm (the middle of their last ${result.baseline.basedOnVisits} visits).`
-              : `${who} doesn't have enough earlier visits for a personal usual yet, so only the fixed limits were used.`}
+              : personalisedCheckAllowed(elder)
+                ? `${who} doesn't have enough earlier visits for a personal usual yet, so only the fixed limits were used.`
+                : `${who}'s family hasn't allowed comparison with earlier visits, so only the fixed limits were used.`}
           </p>
 
           {result.findings.length === 0 ? (

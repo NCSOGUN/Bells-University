@@ -19,6 +19,7 @@ import { useTimers } from "@/lib/use-timers";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, INPUT_CLASSES } from "@/components/ui/field";
 import { WhatsAppMark } from "@/components/ui/whatsapp-mark";
+import { ConsentBlock } from "./consent-block";
 import { OnboardingShell } from "./onboarding-shell";
 
 // §4.3: a beat while we "check" the area, rather than an instant swap.
@@ -51,7 +52,7 @@ export function RelativeStep() {
   );
 }
 
-type Errors = Partial<Record<"name" | "age" | "city" | "careNeeds", string>>;
+type Errors = Partial<Record<"name" | "age" | "city" | "careNeeds" | "consent", string>>;
 
 function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved: () => void }) {
   const { update } = useDemo();
@@ -64,6 +65,8 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
   const [careNeeds, setCareNeeds] = useState(relative?.careNeeds ?? "");
   const [errors, setErrors] = useState<Errors>({});
   const [voiceNoteAsked, setVoiceNoteAsked] = useState(false);
+  const [sharing, setSharing] = useState(Boolean(relative?.consent));
+  const [personalised, setPersonalised] = useState(relative?.consent?.personalisedCheck ?? false);
 
   const who = name.trim() ? firstName(name.trim()) : "Mama";
 
@@ -78,6 +81,7 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
           : `Enter their age in years, between ${MIN_AGE} and ${MAX_AGE}.`,
       city: city ? undefined : "Choose the city they live in.",
       careNeeds: careNeeds.trim() ? undefined : `Tell us a little about what ${who} needs help with.`,
+      consent: sharing ? undefined : `We can only share updates with ${who}'s nurse if you agree. Tick the box to continue.`,
     };
     setErrors(next);
     if (Object.values(next).some(Boolean) || !city) {
@@ -91,7 +95,13 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
     after(AREA_CHECK_MS, () => {
       update((prev) =>
         patchOnboarding(prev, {
-          relative: { name: name.trim(), age: ageNumber, city, careNeeds: careNeeds.trim() },
+          relative: {
+            name: name.trim(),
+            age: ageNumber,
+            city,
+            careNeeds: careNeeds.trim(),
+            consent: { personalisedCheck: personalised, agreedAt: new Date().toISOString() },
+          },
         }),
       );
       onSaved();
@@ -196,6 +206,18 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
             : "Soon you'll be able to say it instead of typing it."}
         </p>
       </div>
+
+      <ConsentBlock
+        who={who}
+        sharing={sharing}
+        onSharing={(v) => {
+          setSharing(v);
+          if (v) setErrors((e) => ({ ...e, consent: undefined }));
+        }}
+        personalised={personalised}
+        onPersonalised={setPersonalised}
+        error={errors.consent}
+      />
 
       <Button type="submit" loading={checking} loadingText={`Checking nurses near ${city || "them"}…`} className="w-full">
         Continue

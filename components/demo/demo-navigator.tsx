@@ -39,6 +39,7 @@ function screens(state: DemoState): { family: Screen[]; nurse: Screen[] } {
       { code: "F9", label: "Profile and trend", href: routes.familyElder(elderId) },
       { code: "F10", label: "Flagged visit", href: routes.familyVisit(visitId) },
       { code: "F11", label: "WhatsApp updates", href: routes.familyWhatsApp },
+      { code: "F12", label: "Privacy and consent", href: routes.familyPrivacy },
     ],
     nurse: [
       { code: "N1", label: "Join as a nurse", href: routes.nurseLanding },

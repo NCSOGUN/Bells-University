@@ -7,10 +7,12 @@ import { useDemo } from "@/lib/demo-context";
 import { firstName, formatShortDate, formatTime, nurseShortName } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { completedVisits, visitsForElder } from "@/lib/selectors";
+import { inPersonConsentRecorded } from "@/lib/consent";
 import { checkIn, type GpsState } from "@/lib/visit-flow";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CareStatusChip } from "../care-status-chip";
+import { ConsentPanel } from "./consent-panel";
 import { VisitFrame, type VisitContext } from "./visit-frame";
 
 // §4.3: about a second of "confirming location…" before the note appears.
@@ -52,11 +54,13 @@ function StartVisit({ state, visit, elder }: VisitContext) {
   }
 
   const previous = completedVisits(visitsForElder(state, elder.id)).at(-1);
+  const consentRecorded = inPersonConsentRecorded(elder);
 
   return (
     <>
+      {!consentRecorded && <ConsentPanel elder={elder} />}
       <LastVisitNote state={state} elderId={elder.id} previous={previous} />
-      <CheckIn visitId={visit.id} address={elder.address} />
+      <CheckIn visitId={visit.id} address={elder.address} consentRecorded={consentRecorded} />
     </>
   );
 }
@@ -123,7 +127,7 @@ function LastVisitNote({
 
 type GpsView = "locating" | GpsState;
 
-function CheckIn({ visitId, address }: { visitId: string; address: string }) {
+function CheckIn({ visitId, address, consentRecorded }: { visitId: string; address: string; consentRecorded: boolean }) {
   const { update } = useDemo();
   const router = useRouter();
   const [gps, setGps] = useState<GpsView>("locating");
@@ -212,9 +216,14 @@ function CheckIn({ visitId, address }: { visitId: string; address: string }) {
         </div>
       </div>
 
-      <Button onClick={start} disabled={gps === "locating"} className="w-full">
+      <Button onClick={start} disabled={gps === "locating" || !consentRecorded} className="w-full" aria-describedby={consentRecorded ? undefined : "consent-needed"}>
         Start visit &amp; check in
       </Button>
+      {!consentRecorded && (
+        <p id="consent-needed" className="text-center text-small font-medium text-navy">
+          Record their consent above before you start.
+        </p>
+      )}
 
       <div className="rounded-2xl border-2 border-dashed border-muted bg-bg p-4">
         <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">

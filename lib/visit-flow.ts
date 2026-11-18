@@ -7,6 +7,7 @@ import {
   type Reading,
   type VisitCareCheck,
 } from "./care-check";
+import { inPersonConsentRecorded, personalisedCheckAllowed } from "./consent";
 import { deriveElderStatus, readingsFromVisits } from "./elder-status";
 import { daysFromToday } from "./format";
 import type { DemoState, Visit, Vitals } from "./mock-data";
@@ -86,6 +87,8 @@ function updateWorkflow(state: DemoState, visitId: string, patch: Partial<VisitW
 export function checkIn(state: DemoState, visitId: string, gps: GpsState, address: string): DemoState {
   const visit = state.visits.find((v) => v.id === visitId);
   if (!visit || visit.status !== "scheduled") return state;
+  // The elder's own yes, recorded in person, comes before any health data is taken.
+  if (!inPersonConsentRecorded(state.elders.find((e) => e.id === visit.elderId))) return state;
   const next = updateVisit(state, visitId, {
     status: "in_progress",
     checkInAt: new Date().toISOString(),
@@ -155,10 +158,15 @@ export function careCheckInput(report: VisitReportDraft, history: Reading[]): Ca
 
 export const careCheckKey = (input: CareCheckInput): string => JSON.stringify(input);
 
-/** Earlier completed readings for the elder a visit belongs to. */
+/**
+ * Earlier completed readings for the elder a visit belongs to. Empty unless the
+ * family allowed the personalised Care Check: without that, only the fixed
+ * limits are used and earlier visits are not looked at.
+ */
 export function historyForVisit(state: DemoState, visitId: string): Reading[] {
   const visit = state.visits.find((v) => v.id === visitId);
   if (!visit) return [];
+  if (!personalisedCheckAllowed(state.elders.find((e) => e.id === visit.elderId))) return [];
   return readingsFromVisits(state.visits.filter((v) => v.elderId === visit.elderId && v.id !== visitId));
 }
 
