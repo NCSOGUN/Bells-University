@@ -1,11 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useDemo } from "@/lib/demo-context";
-import { initialsOf } from "@/lib/format";
+import { familyTermFor, firstName, initialsOf } from "@/lib/format";
 import { routes } from "@/lib/routes";
+import { findVisit, viewedElderId } from "@/lib/selectors";
 import { Brand } from "@/components/ui/brand";
 
 /** Signed-in family pages get section tabs; the sign-up steps get a quiet header. */
@@ -13,9 +14,33 @@ const SIGNED_IN = ["/family/dashboard", "/family/elder", "/family/visits", "/fam
 
 export function FamilyShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { state } = useDemo();
+  const router = useRouter();
+  const { state, update } = useDemo();
   const signedIn = SIGNED_IN.some((p) => pathname.startsWith(p));
-  const elderId = state.familyAccount.elderIds[0] ?? "";
+  const elderId = viewedElderId(state);
+
+  // A record page belongs to one relative. Opening it (say, from a notification)
+  // makes the tabs and the switcher follow that person.
+  const [, , section, recordId] = pathname.split("/");
+  const recordElderId =
+    section === "elder" ? decodeURIComponent(recordId ?? "") : section === "visits" ? findVisit(state, decodeURIComponent(recordId ?? ""))?.elderId : undefined;
+  useEffect(() => {
+    const mine = state.familyAccount.elderIds;
+    if (recordElderId && mine.includes(recordElderId) && recordElderId !== elderId) {
+      update((prev) => ({ ...prev, familyViewingElderId: recordElderId }));
+    }
+  }, [recordElderId, elderId, state.familyAccount.elderIds, update]);
+
+  const people = state.familyAccount.elderIds.flatMap((id) => {
+    const e = state.elders.find((x) => x.id === id);
+    return e ? [{ id, label: firstName(e.name), term: familyTermFor(e.relationship, e.name) }] : [];
+  });
+  const choose = (id: string) => {
+    update((prev) => ({ ...prev, familyViewingElderId: id }));
+    // A record page is one person's: go to the same page for the other person.
+    if (pathname.startsWith("/family/visits")) router.push(routes.familyDashboard);
+    else if (pathname.startsWith("/family/elder")) router.push(routes.familyElder(id));
+  };
 
   const tabs = [
     { href: routes.familyDashboard, label: "Overview", active: pathname === routes.familyDashboard },
@@ -90,6 +115,24 @@ export function FamilyShell({ children }: { children: ReactNode }) {
       </header>
       {/* Bottom padding keeps content clear of the fixed demo control. */}
       <main id="main-content" className="mx-auto max-w-6xl px-4 pt-8 pb-28 sm:px-8 sm:pt-12">
+        {signedIn && people.length > 1 && (
+          <div role="group" aria-label="Whose care you are viewing" className="mb-6 flex flex-wrap items-center gap-2">
+            <span className="text-small text-ink">Viewing</span>
+            {people.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => choose(p.id)}
+                aria-pressed={p.id === elderId}
+                className={`inline-flex min-h-11 cursor-pointer items-center rounded-full px-5 font-semibold transition-colors duration-150 ${
+                  p.id === elderId ? "bg-navy text-white" : "bg-surface text-navy shadow-card hover:bg-bg"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        )}
         {children}
       </main>
     </div>

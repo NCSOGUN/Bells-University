@@ -14,7 +14,7 @@ import {
   type ServerStatus,
 } from "@/lib/push-client";
 import { routes } from "@/lib/routes";
-import { findElder } from "@/lib/selectors";
+import { findElder, viewedElderId } from "@/lib/selectors";
 import { notificationText } from "@/lib/visit-update";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -48,7 +48,7 @@ export function AlertsView() {
 
   if (!hydrated) return <PageSkeleton />;
 
-  const elder = findElder(state, state.familyAccount.elderIds[0]);
+  const elder = findElder(state, viewedElderId(state));
   const term = elder ? familyTermFor(elder.relationship, elder.name) : "your relative";
   const nurse = elder && state.nurses.find((n) => n.id === elder.assignedNurseId);
   const example = notificationText(term, nurse ? nurse.name.split(/\s+/)[0] : null, "green");

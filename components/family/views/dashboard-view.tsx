@@ -5,12 +5,14 @@ import { useDemo } from "@/lib/demo-context";
 import { useFirstLoad } from "@/lib/use-first-load";
 import { familyTermFor, firstName, formatRelativeDay, formatTime, nurseShortName } from "@/lib/format";
 import {
+  circleFor,
   completedVisits,
   findElder,
   findNurse,
   findPlan,
   followedUpVisit,
   nextScheduledVisit,
+  viewedElderId,
   visitsForElder,
 } from "@/lib/selectors";
 import { routes } from "@/lib/routes";
@@ -35,7 +37,7 @@ export function DashboardView() {
   if (!hydrated || !loaded) return <PageSkeleton />;
 
   const account = state.familyAccount;
-  const elder = findElder(state, account.elderIds[0]);
+  const elder = findElder(state, viewedElderId(state));
   if (!elder) {
     return (
       <RecordNotFound
@@ -46,6 +48,7 @@ export function DashboardView() {
   }
 
   const familyTerm = familyTermFor(elder.relationship, elder.name);
+  const circle = circleFor(state, elder);
   const nurse = findNurse(state, elder.assignedNurseId);
   const visits = visitsForElder(state, elder.id);
   const completed = completedVisits(visits);
@@ -105,7 +108,7 @@ export function DashboardView() {
         <div className="space-y-6">
           {nurse && <NurseCard nurse={nurse} title={`${familyTerm}'s nurse`} />}
           <HowWeKeepWatch />
-          <FamilyCircleCard account={account} familyTerm={familyTerm} />
+          <FamilyCircleCard account={account} relationship={circle.relationship} sponsor={circle.sponsor} familyTerm={familyTerm} />
           <Card title="Updates on WhatsApp">
             <p className="flex items-start gap-2">
               <WhatsAppMark className="mt-0.5 size-5" />
@@ -122,7 +125,7 @@ export function DashboardView() {
             plan={findPlan(state, elder.planId)}
             nextBillingDate={elder.nextBillingDate}
             paymentStatus={elder.paymentStatus}
-            sponsor={account.sponsor}
+            sponsor={circle.sponsor}
           />
         </div>
       </div>

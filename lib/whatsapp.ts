@@ -1,5 +1,5 @@
 import type { DemoState, Elder, Nurse, Visit } from "./mock-data";
-import { completedVisits, findElder, findNurse, nextScheduledVisit, visitsForElder } from "./selectors";
+import { completedVisits, findElder, findNurse, nextScheduledVisit, viewedElderId, visitsForElder } from "./selectors";
 
 // The family's WhatsApp thread (F11) is a view of the records the dashboard
 // already shows: the same elder, nurse and visits. Nothing here is stored.
@@ -35,7 +35,7 @@ function plus(iso: string, minutes: number): string {
  * side shows up here without a second source of truth.
  */
 export function buildFamilyThread(state: DemoState): FamilyThread | undefined {
-  const elder = findElder(state, state.familyAccount.elderIds[0]);
+  const elder = findElder(state, viewedElderId(state));
   if (!elder) return undefined;
 
   const visits = visitsForElder(state, elder.id);

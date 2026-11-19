@@ -6,7 +6,7 @@ import { buildDataExport, requestDeletion, setPersonalisedCheck } from "@/lib/co
 import { useDemo } from "@/lib/demo-context";
 import { familyTermFor, formatLongDate, formatShortDate, formatTime, nurseShortName } from "@/lib/format";
 import { routes } from "@/lib/routes";
-import { findElder, findNurse } from "@/lib/selectors";
+import { circleFor, findElder, findNurse, viewedElderId } from "@/lib/selectors";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { RecordNotFound } from "@/components/ui/record-not-found";
@@ -20,7 +20,7 @@ export function PrivacyView() {
   if (!hydrated) return <PageSkeleton />;
 
   const account = state.familyAccount;
-  const elder = findElder(state, account.elderIds[0]);
+  const elder = findElder(state, viewedElderId(state));
   const consent = elder?.consent;
   if (!elder || !consent) {
     return <RecordNotFound title="No consent record yet" message="Add a relative and agree to share their readings to see this page." />;
@@ -60,7 +60,7 @@ export function PrivacyView() {
         <ul className="list-disc space-y-1 pl-5 text-navy">
           {nurse && <li>{nurse.name}, {term}&apos;s nurse</li>}
           <li>{account.name} (you)</li>
-          {account.sponsor && <li>{account.sponsor.name}, who sponsors the care plan</li>}
+          {circleFor(state, elder).sponsor && <li>{circleFor(state, elder).sponsor?.name}, who sponsors the care plan</li>}
         </ul>
         <p className="mt-3 text-small">
           No one else can see it. At each visit we record blood pressure, pulse, temperature, weight, medicines taken, the nurse&apos;s

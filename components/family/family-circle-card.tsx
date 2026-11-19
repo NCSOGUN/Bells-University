@@ -1,15 +1,16 @@
-import type { FamilyAccount } from "@/lib/mock-data";
+import type { FamilyAccount, Sponsor } from "@/lib/mock-data";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 
 interface FamilyCircleCardProps {
   account: FamilyAccount;
+  /** How the account holder relates to this person, e.g. "Daughter". */
+  relationship: string;
+  sponsor?: Sponsor;
   familyTerm: string;
 }
 
-export function FamilyCircleCard({ account, familyTerm }: FamilyCircleCardProps) {
-  const { sponsor } = account;
-
+export function FamilyCircleCard({ account, relationship, sponsor, familyTerm }: FamilyCircleCardProps) {
   return (
     <Card title={`${familyTerm}'s care circle`}>
       <ul className="space-y-4">
@@ -18,7 +19,7 @@ export function FamilyCircleCard({ account, familyTerm }: FamilyCircleCardProps)
           <div>
             <p className="font-semibold text-navy">{account.name} (you)</p>
             <p className="text-small">
-              {account.relationship} · Arranges {familyTerm}&apos;s care
+              {relationship} · Arranges {familyTerm}&apos;s care
             </p>
           </div>
         </li>

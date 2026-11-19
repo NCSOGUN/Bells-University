@@ -43,6 +43,11 @@ export interface Elder {
   careStatus: CareStatus;
   careStatusMessage: string; // descriptive microcopy, per UX Addendum
   consent?: ElderConsent;
+  /**
+   * Who looks after this person, when it differs from the account's own relationship
+   * and sponsor (which describe the first relative). Left out for that first relative.
+   */
+  circle?: { relationship: string; sponsor?: Sponsor };
   nextBillingDate: string; // ISO, Journey doc step 6: "payment status/history"
   paymentStatus: PaymentStatus;
 }
@@ -145,6 +150,8 @@ export interface DemoState {
   nurseOnboarding: NurseOnboardingDraft;
   /** In-progress visit reports, keyed by the existing Visit id. */
   visitWorkflows: Record<string, VisitWorkflow>;
+  /** Which of the family account's relatives the family screens show. Defaults to the first. */
+  familyViewingElderId?: string;
 }
 
 export const PLANS: Plan[] = [
@@ -351,13 +358,14 @@ const buildElders = ({ graceFirstVisitAt, ibrahimFirstVisitAt }: StatusDates): S
     age: 77,
     city: "Ilorin",
     address: "17 Ibrahim Taiwo Road, Ilorin, Kwara State",
-    relationship: "Mother",
+    relationship: "Aunt",
     careNeeds: "Blood pressure checks while her doctor adjusts her treatment.",
     conditions: ["Long-standing hypertension"],
     medications: ["Amlodipine 10mg, once daily", "Losartan 50mg, once daily"],
     planId: "essential",
     assignedNurseId: NURSE_ADAEZE_ID,
-    consent: seedConsent({ name: "Kemi Lawal", relationship: "Daughter" }, "Adunni", 30, daysFromNow(-28, 11, 32)),
+    consent: seedConsent({ name: "Grace Okafor", relationship: "Niece" }, "Adunni", 30, daysFromNow(-28, 11, 32)),
+    circle: { relationship: "Niece" },
     nextBillingDate: daysFromNow(12),
     paymentStatus: "active",
   },
@@ -602,7 +610,7 @@ const FAMILY_ACCOUNT: FamilyAccount = {
   phone: "+2348031234567",
   relationship: "Daughter",
   planId: "essential",
-  elderIds: [ELDER_JOSEPH_ID],
+  elderIds: [ELDER_JOSEPH_ID, ELDER_ADUNNI_ID],
   sponsor: {
     name: "Emeka Okafor",
     relationship: "Son",

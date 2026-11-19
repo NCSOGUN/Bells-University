@@ -6,6 +6,7 @@ import {
   type Elder,
   type Nurse,
   type Plan,
+  type Sponsor,
   type Visit,
 } from "./mock-data";
 
@@ -25,6 +26,18 @@ export function findPlan(state: DemoState, id: string): Plan | undefined {
 
 export function findVisit(state: DemoState, id: string): Visit | undefined {
   return state.visits.find((v) => v.id === id);
+}
+
+/** The relative the family screens are showing: the one chosen, else the first on the account. */
+export function viewedElderId(state: DemoState): string {
+  const { elderIds } = state.familyAccount;
+  const chosen = state.familyViewingElderId;
+  return chosen && elderIds.includes(chosen) ? chosen : (elderIds[0] ?? "");
+}
+
+/** How the account holder relates to this elder, and who sponsors their plan. */
+export function circleFor(state: DemoState, elder: Elder): { relationship: string; sponsor?: Sponsor } {
+  return elder.circle ?? { relationship: state.familyAccount.relationship, sponsor: state.familyAccount.sponsor };
 }
 
 /** Family screens only show elders on the signed-in family account. */
