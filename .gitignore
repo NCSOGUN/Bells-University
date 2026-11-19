@@ -40,10 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# editor / agent local files
+# editor local files
 .idea/
 *.iml
-.claude/
 
 .vercel
 .env*

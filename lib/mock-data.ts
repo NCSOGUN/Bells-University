@@ -1,5 +1,5 @@
-// Single source of truth for demo data. Nothing here talks to a backend , 
-// see DEMO-SPEC.md §5. Every screen reads from the state this file seeds.
+// Single source of truth for demo data. Nothing here talks to a backend.
+// Every screen reads from the state this file seeds.
 
 import type { VisitCareCheck } from "./care-check";
 import { applyCareChecks, deriveElderStatus, type VisitRecord } from "./elder-status";
