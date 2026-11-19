@@ -150,6 +150,15 @@ export function DemoNavigator() {
             onNavigate={() => setOpen(false)}
           />
 
+          <IbrahimCase
+            state={state}
+            onFill={(visitId, reading) => {
+              update((prev) => prepareReading(prev, visitId, reading));
+              setOpen(false);
+              router.push(routes.nurseVisitChecklist(visitId));
+            }}
+          />
+
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <Group title="Family" screens={family} pathname={pathname} onNavigate={() => setOpen(false)} />
             <Group title="Nurse" screens={nurse} pathname={pathname} onNavigate={() => setOpen(false)} />
@@ -294,6 +303,34 @@ function JosephFlow({
           </div>
         </li>
       </ol>
+    </section>
+  );
+}
+
+/** The case a fixed limit misses: a reading under 140/90 that is far above this person's own usual. */
+function IbrahimCase({ state, onFill }: { state: DemoState; onFill: (visitId: string, reading: DemoReading) => void }) {
+  const visit = todaysVisits(state, DEMO_NURSE_ID).find((t) => t.visit.elderId === "elder-ibrahim")?.visit;
+  const done = visit?.status === "complete";
+  const button =
+    "inline-flex min-h-11 items-center justify-center rounded-xl border border-navy px-3 text-small font-semibold text-navy transition-colors duration-150 hover:bg-bg disabled:cursor-not-allowed disabled:border-line disabled:text-muted";
+  return (
+    <section aria-labelledby="nav-ibrahim" className="mt-3 rounded-xl border border-teal bg-teal-tint p-3">
+      <h2 id="nav-ibrahim" className="flex items-center gap-2 font-mono text-label font-semibold text-navy">
+        <Play aria-hidden className="size-3.5" />
+        Personal baseline: Ibrahim&apos;s visit (4:30 pm)
+      </h2>
+      <p className="mt-1 text-small text-navy">
+        His usual is 117/75. This reading passes a textbook 140/90 line, but not his own normal.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button type="button" disabled={!visit || done} onClick={() => visit && onFill(visit.id, "subtle")} className={button}>
+          138/86, doses taken
+        </button>
+        <button type="button" disabled={!visit || done} onClick={() => visit && onFill(visit.id, "subtleMissed")} className={button}>
+          138/86, doses missed
+        </button>
+      </div>
+      {done && <p className="mt-1 text-small text-navy">This visit is already submitted. Use Reset demo to run it again.</p>}
     </section>
   );
 }

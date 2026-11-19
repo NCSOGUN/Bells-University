@@ -254,7 +254,7 @@ export function runCareCheck(
     add({
       ruleId: "BP_HIGH",
       severity: "watch",
-      headline: "Blood pressure was higher than usual",
+      headline: "Blood pressure was above the clinical limit",
       reason: `Blood pressure ${bp} is at or above ${T.bpHigh.systolic}/${T.bpHigh.diastolic} mmHg.`,
     });
   } else if (s < T.bpLow.systolic || d < T.bpLow.diastolic) {
@@ -263,6 +263,17 @@ export function runCareCheck(
       severity: "watch",
       headline: "Blood pressure was lower than usual",
       reason: `Blood pressure ${bp} is below ${T.bpLow.systolic}/${T.bpLow.diastolic} mmHg.`,
+    });
+  }
+
+  // A personal baseline measures change, not control. If their usual is itself
+  // at or above the clinical line, say so rather than let "normal for them" reassure.
+  if (baseline && (baseline.systolic >= T.bpHigh.systolic || baseline.diastolic >= T.bpHigh.diastolic)) {
+    add({
+      ruleId: "BASELINE_HIGH",
+      severity: "info",
+      headline: "Their usual is already high",
+      reason: `Their usual ${baseline.systolic}/${baseline.diastolic} mmHg is itself at or above ${T.bpHigh.systolic}/${T.bpHigh.diastolic} mmHg. Being close to usual is not the same as well controlled. This alone doesn't change the status.`,
     });
   }
 
@@ -348,6 +359,18 @@ export function runCareCheck(
     });
   }
 
+  // Two signals read together: higher blood pressure on a day doses were missed.
+  // It suggests a likely reason to recheck; it never decides the cause.
+  const bpUp = findings.some((f) => f.ruleId === "BP_RISE" || f.ruleId === "BP_HIGH" || f.ruleId === "BP_URGENT");
+  if (bpUp && current.medicationAdherence !== "taken_as_scheduled") {
+    add({
+      ruleId: "MED_BP_LINK",
+      severity: "watch",
+      headline: "Missed doses may explain the higher reading",
+      reason: `Blood pressure ${bp} is up and ${current.medicationAdherence === "missed" ? "doses were missed" : "some doses were missed"}. Missed medication can raise blood pressure, so recheck once doses are back on schedule. The nurse judges whether this is the cause.`,
+    });
+  }
+
   findings.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
   const suggestedStatus: CheckStatus = findings.some((f) => f.severity === "urgent")
     ? "red"
@@ -401,6 +424,14 @@ export function describeRules(): RuleDescription[] {
       text: `Temperature at or above ${T.temperature.high.toFixed(1)} °C or below ${T.temperature.low.toFixed(1)} °C. Urgent at ${T.temperature.urgentHigh.toFixed(1)} °C or above, or ${T.temperature.urgentLow.toFixed(1)} °C or below.`,
     },
     { id: "MED", text: "Missed medication doses are flagged. Some missed doses are noted only." },
+    {
+      id: "MED_BP_LINK",
+      text: "Higher blood pressure on a visit where doses were missed is flagged together, with a reminder to recheck once doses resume. The nurse decides whether the doses are the cause.",
+    },
+    {
+      id: "BASELINE_HIGH",
+      text: `If their usual is already at or above ${T.bpHigh.systolic}/${T.bpHigh.diastolic} mmHg, that is noted: being close to usual is not the same as well controlled.`,
+    },
   ];
 }
 

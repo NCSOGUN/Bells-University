@@ -338,7 +338,7 @@ const buildElders = ({ graceFirstVisitAt, ibrahimFirstVisitAt }: StatusDates): S
     assignedNurseId: NURSE_ADAEZE_ID,
     careStatus: "green",
     careStatusMessage: firstVisitMessage(ibrahimFirstVisitAt),
-    consent: seedConsent({ name: "Yusuf Suleiman", relationship: "Son" }, "Ibrahim", 2),
+    consent: seedConsent({ name: "Yusuf Suleiman", relationship: "Son" }, "Ibrahim", 32, daysFromNow(-28, 16, 32)),
     nextBillingDate: daysFromNow(4),
     paymentStatus: "active",
   },
@@ -475,6 +475,35 @@ const buildJosephVisits = (): VisitRecord[] => [
   },
 ];
 
+// Ibrahim Suleiman: four steady weekly visits, well controlled on treatment. His
+// usual (about 117/75) is the case a fixed 140/90 limit would never catch: a
+// reading of 138/86 passes the textbook line but is far above HIS normal.
+const buildIbrahimVisits = (): VisitRecord[] => {
+  const history: Array<[number, string, number, string]> = [
+    // days ago, blood pressure, pulse, nurse's note
+    [-28, "116/74", 70, "First visit. Well controlled on lisinopril. Reminder routine agreed."],
+    [-21, "118/76", 71, "No concerns. Taking medication each morning."],
+    [-14, "115/74", 69, "No concerns."],
+    [-7, "117/75", 70, "No concerns. Continue current medication schedule."],
+  ];
+  return history.map(([days, bloodPressure, pulse, nurseNotes], i) => ({
+    id: `visit-ibrahim-${i + 1}`,
+    elderId: ELDER_IBRAHIM_ID,
+    nurseId: NURSE_ADAEZE_ID,
+    scheduledAt: daysFromNow(days, 16, 30),
+    status: "complete" as const,
+    checkInAt: daysFromNow(days, 16, 32),
+    checkOutAt: daysFromNow(days, 17, 3),
+    gpsConfirmed: true,
+    gpsAddress: "9 Post Office Road, Ilorin, Kwara State",
+    vitals: { bloodPressure, pulse, temperature: 36.6, weight: 72 },
+    medicationAdherence: "taken_as_scheduled" as const,
+    mobilityNote: "Walking independently. Mild stiffness in the knees in the morning.",
+    wellbeingNote: "In good spirits.",
+    nurseNotes,
+  }));
+};
+
 // Today's visits across the rest of Nurse Adaeze's client list.
 const buildTodayVisits = (): VisitRecord[] => [
   {
@@ -538,6 +567,7 @@ const buildAssignmentRequests = (): AssignmentRequest[] => [
 /** Fresh, independent copy of the seed, with dates relative to today. */
 export function createSeedState(): DemoState {
   const josephRecords = buildJosephVisits();
+  const ibrahimRecords = buildIbrahimVisits();
   const todayRecords = buildTodayVisits();
   const graceFirst = todayRecords.find((v) => v.elderId === ELDER_GRACE_ID);
   const ibrahimFirst = todayRecords.find((v) => v.elderId === ELDER_IBRAHIM_ID);
@@ -547,7 +577,7 @@ export function createSeedState(): DemoState {
 
   // Flags and statuses are not typed in: the Care Check derives them from the
   // visit records, so the family and nurse screens always agree with the data.
-  const visits = applyCareChecks([...josephRecords, ...todayRecords]);
+  const visits = applyCareChecks([...josephRecords, ...ibrahimRecords, ...todayRecords]);
 
   const josephFlags = visits
     .filter((v) => v.elderId === ELDER_JOSEPH_ID && v.status === "complete")
@@ -555,6 +585,13 @@ export function createSeedState(): DemoState {
   if (josephFlags.join() !== [false, false, false, false, true, false].join()) {
     throw new Error(
       `Seed invariant: Joseph's arc must be normal x4, flagged, resolved. The Care Check rules gave [${josephFlags}]. Change the rules in lib/care-check.ts, not the seed vitals.`,
+    );
+  }
+
+  const ibrahimFlags = visits.filter((v) => v.elderId === ELDER_IBRAHIM_ID && v.status === "complete").map((v) => v.flagged);
+  if (ibrahimFlags.length !== 4 || ibrahimFlags.some(Boolean)) {
+    throw new Error(
+      `Seed invariant: Ibrahim's four earlier visits must all be normal, so his usual is steady. The Care Check gave [${ibrahimFlags}].`,
     );
   }
 

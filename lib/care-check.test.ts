@@ -117,3 +117,43 @@ test("the payload parser rejects impossible readings and drops extra fields", ()
   assert.ok(ok.ok);
   assert.ok(!JSON.stringify(ok.input).includes("dropped"));
 });
+
+// ── The cases the demo is built around ─────────────────────────────────────
+
+const WELL_CONTROLLED = [reading(0, 116, 74, 70), reading(1, 118, 76, 71), reading(2, 115, 74, 69), reading(3, 117, 75, 70)];
+
+test("a reading under the textbook limit is still flagged when it is far above THEIR usual", () => {
+  const result = run(input(138, 86, WELL_CONTROLLED));
+  assert.equal(result.suggestedStatus, "yellow");
+  assert.deepEqual(result.findings.map((f) => f.ruleId), ["BP_RISE"]);
+  assert.match(result.findings[0].reason, /138\/86 mmHg is 21 mmHg higher on the top number than their usual 117\/75 mmHg/);
+  // The same reading means nothing to a fixed limit, and nothing to someone whose usual is higher.
+  assert.equal(run(input(138, 86, [])).suggestedStatus, "green");
+  assert.equal(run(input(138, 86, STEADY)).suggestedStatus, "green");
+});
+
+test("a high usual is called out, and the fixed limit still catches the reading", () => {
+  const high = [reading(0, 150, 92, 76), reading(1, 152, 93, 77), reading(2, 151, 92, 76), reading(3, 153, 93, 78)];
+  const result = run(input(152, 93, high));
+  const rules = result.findings.map((f) => f.ruleId);
+  assert.ok(rules.includes("BASELINE_HIGH"));
+  assert.ok(rules.includes("BP_HIGH"));
+  assert.ok(!rules.includes("BP_RISE"));
+  assert.equal(result.suggestedStatus, "yellow");
+  // Close to a low usual never produces the note.
+  assert.ok(!ids(input(134, 86)).includes("BASELINE_HIGH"));
+});
+
+test("higher blood pressure with missed doses is linked, but missed doses alone are not", () => {
+  const linked = run(input(138, 86, WELL_CONTROLLED, { medicationAdherence: "missed" }));
+  assert.deepEqual(linked.findings.map((f) => f.ruleId).sort(), ["BP_RISE", "MED_BP_LINK", "MED_MISSED"]);
+  assert.equal(linked.suggestedStatus, "yellow");
+  assert.ok(ids(input(138, 86, WELL_CONTROLLED, { medicationAdherence: "partial" })).includes("MED_BP_LINK"));
+  assert.ok(!ids(input(130, 83, STEADY, { medicationAdherence: "missed" })).includes("MED_BP_LINK"));
+  assert.ok(!ids(input(138, 86, WELL_CONTROLLED)).includes("MED_BP_LINK"));
+});
+
+test("a critical reading stays red whatever the usual is", () => {
+  assert.equal(run(input(184, 118, WELL_CONTROLLED)).suggestedStatus, "red");
+  assert.equal(run(input(184, 118, [])).suggestedStatus, "red");
+});

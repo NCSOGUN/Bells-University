@@ -1,6 +1,7 @@
 import type { Visit } from "@/lib/mock-data";
 import { formatDayMonthParts, formatShortDate } from "@/lib/format";
 import { followedUpVisit, followUpVisit } from "@/lib/selectors";
+import { computeBaseline, THRESHOLDS } from "@/lib/care-check";
 import { parseBloodPressure } from "@/lib/vitals";
 
 // Hand-built on purpose (spec: no chart library). X positions are percentages
@@ -45,8 +46,21 @@ export function BpTrendChart({ completed }: BpTrendChartProps) {
     );
   }
 
+  // The usual range the Care Check would use at the next visit, drawn from the same rules.
+  const baseline = computeBaseline(
+    points.map((p) => ({
+      recordedAt: p.visit.checkOutAt ?? p.visit.scheduledAt,
+      systolic: p.systolic,
+      diastolic: p.diastolic,
+      pulse: p.visit.vitals?.pulse ?? 0,
+    })),
+  );
+  const flagLine = baseline ? baseline.systolic + THRESHOLDS.bpRiseFromUsual.systolic : null;
+  const lowLine = baseline ? baseline.systolic - THRESHOLDS.bpDropFromUsual.systolic : null;
+  const fixedLine = THRESHOLDS.bpHigh.systolic;
+
   const min = Math.floor((Math.min(...points.map((p) => p.diastolic)) - 10) / 10) * 10;
-  const max = Math.ceil((Math.max(...points.map((p) => p.systolic)) + 5) / 10) * 10;
+  const max = Math.ceil((Math.max(...points.map((p) => p.systolic), fixedLine, flagLine ?? 0) + 5) / 10) * 10;
   const ticks = Array.from({ length: Math.floor((max - min) / 20) + 1 }, (_, i) => min + i * 20);
 
   const x = (i: number) => X_START + (i / (points.length - 1)) * (X_END - X_START);
@@ -73,6 +87,14 @@ export function BpTrendChart({ completed }: BpTrendChartProps) {
         <span className="inline-flex items-center gap-2">
           <span aria-hidden className="size-3 rounded-full bg-coral" /> Flagged reading
         </span>
+        {baseline && (
+          <span className="inline-flex items-center gap-2">
+            <span aria-hidden className="h-3 w-5 rounded-sm bg-teal-tint ring-1 ring-teal" /> Usual range (top number)
+          </span>
+        )}
+        <span className="inline-flex items-center gap-2">
+          <span aria-hidden className="h-0.5 w-5 border-t-2 border-dashed border-ink" /> Fixed limit ({fixedLine})
+        </span>
       </div>
 
       <svg
@@ -93,6 +115,26 @@ export function BpTrendChart({ completed }: BpTrendChartProps) {
             </text>
           </g>
         ))}
+
+        {baseline && flagLine !== null && lowLine !== null && (
+          <rect
+            x="0"
+            width="100%"
+            y={y(flagLine)}
+            height={Math.max(0, y(lowLine) - y(flagLine))}
+            className="fill-teal-tint"
+            opacity={0.7}
+          />
+        )}
+        <line
+          x1="0"
+          x2="100%"
+          y1={y(fixedLine)}
+          y2={y(fixedLine)}
+          className="stroke-ink"
+          strokeWidth={1.5}
+          strokeDasharray="6 4"
+        />
 
         {points.slice(1).map((p, i) => (
           <g key={p.visit.id}>

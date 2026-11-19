@@ -12,6 +12,7 @@ import { careCheckInput, careCheckKey, decideCareCheck, historyForVisit, setCare
 import { Button } from "@/components/ui/button";
 import { INPUT_CLASSES } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BaselineChart } from "@/components/care/baseline-chart";
 import { CareStatusChip } from "../care-status-chip";
 import type { VisitContext } from "./visit-frame";
 
@@ -134,6 +135,15 @@ export function CareCheckPanel({ state, visit, elder, workflow }: Required<Pick<
                 ? `${who} doesn't have enough earlier visits for a personal usual yet, so only the fixed limits were used.`
                 : `${who}'s family hasn't allowed comparison with earlier visits, so only the fixed limits were used.`}
           </p>
+
+          {result.baseline && input && (
+            <BaselineChart
+              history={history}
+              baseline={result.baseline}
+              today={{ systolic: input.current.systolic, diastolic: input.current.diastolic }}
+              who={who}
+            />
+          )}
 
           {result.findings.length === 0 ? (
             <p className="font-medium text-navy">Nothing unusual compared with {who}&apos;s earlier visits or the fixed limits.</p>
@@ -269,7 +279,7 @@ export function HowItWorks() {
       <div className="space-y-3 pt-2 text-small">
         <p>
           It compares today&apos;s readings with this person&apos;s own earlier visits and with fixed limits, then suggests a status
-          and shows the rule behind each reason. It is rules-based, not artificial intelligence, so it can always explain itself.
+          and shows the rule behind each reason. It is rules-based decision support, not machine learning or generative AI, so it can always explain itself.
         </p>
         <ul className="list-disc space-y-1 pl-5">
           {describeRules().map((r) => (

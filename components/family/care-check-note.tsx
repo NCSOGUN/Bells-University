@@ -32,8 +32,8 @@ export function CareCheckNote({ visit, nurse }: { visit: Visit; nurse?: Nurse })
         {decision.outcome === "adjusted" && decision.reason && ` Their note: ${decision.reason}`}
       </p>
       <p className="mt-2 text-small">
-        The check is a simple set of rules, not a diagnosis, and a nurse always has the final say. If you are worried, call us
-        or your doctor.
+        The check is rule-based decision support, not a diagnosis, and a nurse always has the final say. If you are worried,
+        call us or your doctor.
       </p>
     </Card>
   );
@@ -49,7 +49,8 @@ export function HowWeKeepWatch() {
         <li>If something looks different, the nurse decides what it means and how to follow up.</li>
       </ul>
       <p className="mt-3 text-small">
-        This is a set of simple rules, not a doctor and not artificial intelligence. It never replaces medical advice.
+        These are transparent clinical rules that compare each reading with your relative&apos;s own history. They support the
+        nurse and explain themselves. They don&apos;t diagnose, and they never replace medical advice.
       </p>
       <TextLink href={routes.familyPrivacy} className="mt-1">
         Privacy and consent
