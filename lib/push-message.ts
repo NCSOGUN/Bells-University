@@ -3,7 +3,7 @@
 //
 // The service worker shows `title` and `body` (status and one line, never a
 // reading). `record` is the submitted visit, encrypted end to end by Web Push;
-// the service worker keeps it on the phone until the family signs in. The
+// the service worker keeps it on the phone until the notification is tapped. The
 // server passes it through and stores none of it.
 
 export interface PushMessage {

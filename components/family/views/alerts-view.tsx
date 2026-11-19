@@ -106,8 +106,8 @@ export function AlertsView() {
           <p className="mt-0.5 text-small text-navy">{example.body}</p>
         </div>
         <p className="mt-3 text-small">
-          The notification says how {term} is and nothing more. Readings and the nurse&apos;s notes stay behind
-          sign-in, because anyone can glance at a lock screen.
+          The notification says how {term} is and nothing more. Readings and the nurse&apos;s notes only
+          appear once you tap it, because anyone can glance at a lock screen.
         </p>
       </Card>
 
