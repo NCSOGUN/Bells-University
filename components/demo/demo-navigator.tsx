@@ -30,9 +30,9 @@ function screens(state: DemoState): { family: Screen[]; nurse: Screen[] } {
   return {
     family: [
       { code: "F1", label: "Landing", href: routes.home },
-      { code: "F2", label: "Choose a plan", href: routes.familyPlans },
-      { code: "F3", label: "Sign up and code", href: routes.familySignup },
-      { code: "F4", label: "Add a relative", href: routes.familyRelative },
+      { code: "F2", label: "Sign up and code", href: routes.familySignup },
+      { code: "F3", label: "Add a relative", href: routes.familyRelative },
+      { code: "F4", label: "Choose a plan", href: routes.familyPlans },
       { code: "F5", label: "Matching", href: routes.familyMatching },
       { code: "F6", label: "Payment", href: routes.familyPayment },
       { code: "F7", label: "Confirmation", href: routes.familyConfirmed },

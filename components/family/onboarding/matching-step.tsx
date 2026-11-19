@@ -22,7 +22,7 @@ export function MatchingStep() {
   return (
     <OnboardingShell
       step="nurse"
-      back={{ href: routes.familyRelative, label: "Your relative" }}
+      back={{ href: routes.familyPlans, label: "Plan" }}
       title={
         matched
           ? `We've found a nurse${relativeName ? ` for ${relativeName}` : ""}`

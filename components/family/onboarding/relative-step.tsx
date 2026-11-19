@@ -104,7 +104,7 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
         }),
       );
       onSaved();
-      if (isServiceCity(city)) router.push(routes.familyMatching);
+      if (isServiceCity(city)) router.push(routes.familyPlans);
       else setChecking(false);
     });
   };

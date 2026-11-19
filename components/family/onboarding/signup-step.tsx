@@ -32,7 +32,7 @@ export function SignupStep() {
   return (
     <OnboardingShell
       step="account"
-      back={{ href: routes.familyPlans, label: "Plans" }}
+      back={{ href: routes.home, label: "Home" }}
       title={awaitingCode ? "Enter your code" : "Your details"}
       description={
         awaitingCode

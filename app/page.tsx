@@ -75,7 +75,7 @@ export default function LandingPage() {
             >
               For nurses
             </Link>
-            <ButtonLink href={routes.familyPlans} className="px-4 text-small sm:text-body">
+            <ButtonLink href={routes.familySignup} className="px-4 text-small sm:text-body">
               Get care
             </ButtonLink>
           </nav>
@@ -138,7 +138,7 @@ export default function LandingPage() {
               </p>
 
               <div className="mt-7 flex flex-col gap-3 motion-safe:animate-reveal [animation-delay:160ms] sm:flex-row">
-                <ButtonLink href={routes.familyPlans}>Get care for a loved one</ButtonLink>
+                <ButtonLink href={routes.familySignup}>Get care for a loved one</ButtonLink>
                 <ButtonLink href="#how-it-works" variant="secondary">
                   See how it works
                 </ButtonLink>
@@ -266,11 +266,11 @@ export default function LandingPage() {
             <h2 className="text-h1 font-bold sm:text-display">Start with one visit a week</h2>
             <p className="mx-auto mt-3 max-w-xl">
               {cheapest.name} is {formatNaira(cheapest.priceNGN)} a month for{" "}
-              {planFrequency(cheapest)}. Choose a plan, tell us about your parent, and
+              {planFrequency(cheapest)}. Tell us about your parent, choose a plan, and
               we&apos;ll match a nurse near them.
             </p>
             <div className="mt-6 flex justify-center">
-              <ButtonLink href={routes.familyPlans}>Get care for a loved one</ButtonLink>
+              <ButtonLink href={routes.familySignup}>Get care for a loved one</ButtonLink>
             </div>
           </div>
         </section>

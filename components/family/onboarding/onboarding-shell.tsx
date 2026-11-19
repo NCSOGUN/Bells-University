@@ -8,9 +8,9 @@ import { routes } from "@/lib/routes";
 import { StepShell } from "@/components/ui/step-shell";
 
 export const ONBOARDING_STEPS = [
-  { key: "plan", label: "Plan" },
   { key: "account", label: "Your details" },
   { key: "relative", label: "Your relative" },
+  { key: "plan", label: "Plan" },
   { key: "nurse", label: "Nurse" },
   { key: "payment", label: "Payment" },
 ] as const;

@@ -2,7 +2,7 @@
 
 import { Check } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
-import { formatNaira, planFrequency } from "@/lib/format";
+import { firstName, formatNaira, planFrequency } from "@/lib/format";
 import { patchOnboarding } from "@/lib/onboarding";
 import { routes } from "@/lib/routes";
 import { findPlan } from "@/lib/selectors";
@@ -10,11 +10,14 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { OnboardingShell } from "./onboarding-shell";
 
 export function PlansStep() {
+  const { state } = useDemo();
+  const relative = state.onboarding.relative;
+  const who = relative ? firstName(relative.name) : undefined;
   return (
     <OnboardingShell
       step="plan"
-      back={{ href: routes.home, label: "Home" }}
-      title="Choose a care plan"
+      back={{ href: routes.familyRelative, label: "Your relative" }}
+      title={who ? `Choose a care plan for ${who}` : "Choose a care plan"}
       description="Every plan includes a verified nurse and an update after each visit. You can change plans later."
     >
       <PlanPicker />
@@ -85,7 +88,10 @@ function PlanPicker() {
       </fieldset>
 
       {selected ? (
-        <ButtonLink href={routes.familySignup} className="w-full">
+        <ButtonLink
+          href={state.onboarding.relative ? routes.familyMatching : routes.familySignup}
+          className="w-full"
+        >
           Continue with {selected.name}
         </ButtonLink>
       ) : (
