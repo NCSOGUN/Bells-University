@@ -167,7 +167,7 @@ function Observations({ visit, open }: { visit: Visit; open: boolean }) {
 
   return (
     <details className="mt-1">
-      <summary className="inline-flex min-h-11 cursor-pointer items-center text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4">
+      <summary className="inline-flex min-h-11 cursor-pointer items-center text-small font-semibold text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline">
         Medication, mobility and wellbeing
       </summary>
       {list}

@@ -43,7 +43,7 @@ export function ConfirmedStep() {
         </div>
       </header>
 
-      <dl className="divide-y divide-line rounded-2xl border border-line bg-surface">
+      <dl className="divide-y divide-line rounded-2xl bg-surface shadow-card">
         {plan && (
           <div className="flex justify-between gap-4 p-4">
             <dt>Plan</dt>

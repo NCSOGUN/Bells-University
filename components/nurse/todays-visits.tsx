@@ -56,7 +56,7 @@ export function TodaysVisits({ visits, elders, plans, newClients, highlightId }:
               <h3 className="mt-1 text-h2 font-semibold">
                 <Link
                   href={routes.nurseClient(elder.id)}
-                  className="inline-flex min-h-11 items-center underline decoration-teal decoration-2 underline-offset-4 hover:decoration-navy"
+                  className="inline-flex min-h-11 items-center text-teal-deep decoration-2 underline-offset-4 hover:underline hover:decoration-navy"
                 >
                   {elder.name}
                 </Link>
@@ -118,7 +118,7 @@ export function TodaysVisits({ visits, elders, plans, newClients, highlightId }:
           <h3 className="mt-1 text-h2 font-semibold">
             <Link
               href={routes.nurseClient(elder.id)}
-              className="inline-flex min-h-11 items-center underline decoration-teal decoration-2 underline-offset-4 hover:decoration-navy"
+              className="inline-flex min-h-11 items-center text-teal-deep decoration-2 underline-offset-4 hover:underline hover:decoration-navy"
             >
               {elder.name}
             </Link>

@@ -213,32 +213,9 @@ export function runCareCheck(
   const findings: Finding[] = [];
   const add = (f: Finding) => findings.push(f);
 
-  // Blood pressure against fixed lines.
+  // Blood pressure against this person's own usual. It runs first so that, where
+  // only one reason is shown, the personal one leads.
   const T = THRESHOLDS;
-  if (s >= T.bpUrgent.systolic || d >= T.bpUrgent.diastolic) {
-    add({
-      ruleId: "BP_URGENT",
-      severity: "urgent",
-      headline: "Blood pressure is very high",
-      reason: `Blood pressure ${bp} is at or above the urgent line of ${T.bpUrgent.systolic}/${T.bpUrgent.diastolic} mmHg.`,
-    });
-  } else if (s >= T.bpHigh.systolic || d >= T.bpHigh.diastolic) {
-    add({
-      ruleId: "BP_HIGH",
-      severity: "watch",
-      headline: "Blood pressure was higher than usual",
-      reason: `Blood pressure ${bp} is at or above ${T.bpHigh.systolic}/${T.bpHigh.diastolic} mmHg.`,
-    });
-  } else if (s < T.bpLow.systolic || d < T.bpLow.diastolic) {
-    add({
-      ruleId: "BP_LOW",
-      severity: "watch",
-      headline: "Blood pressure was lower than usual",
-      reason: `Blood pressure ${bp} is below ${T.bpLow.systolic}/${T.bpLow.diastolic} mmHg.`,
-    });
-  }
-
-  // Blood pressure against this person's own usual.
   if (baseline) {
     const usual = `${baseline.systolic}/${baseline.diastolic} mmHg`;
     const span = `the middle of their last ${baseline.basedOnVisits} visits`;
@@ -263,6 +240,30 @@ export function runCareCheck(
         reason: `Blood pressure ${bp} is ${-ds} mmHg lower on the top number than their usual ${usual} (${span}).`,
       });
     }
+  }
+
+  // Blood pressure against fixed lines.
+  if (s >= T.bpUrgent.systolic || d >= T.bpUrgent.diastolic) {
+    add({
+      ruleId: "BP_URGENT",
+      severity: "urgent",
+      headline: "Blood pressure is very high",
+      reason: `Blood pressure ${bp} is at or above the urgent line of ${T.bpUrgent.systolic}/${T.bpUrgent.diastolic} mmHg.`,
+    });
+  } else if (s >= T.bpHigh.systolic || d >= T.bpHigh.diastolic) {
+    add({
+      ruleId: "BP_HIGH",
+      severity: "watch",
+      headline: "Blood pressure was higher than usual",
+      reason: `Blood pressure ${bp} is at or above ${T.bpHigh.systolic}/${T.bpHigh.diastolic} mmHg.`,
+    });
+  } else if (s < T.bpLow.systolic || d < T.bpLow.diastolic) {
+    add({
+      ruleId: "BP_LOW",
+      severity: "watch",
+      headline: "Blood pressure was lower than usual",
+      reason: `Blood pressure ${bp} is below ${T.bpLow.systolic}/${T.bpLow.diastolic} mmHg.`,
+    });
   }
 
   // A slow climb that no single reading would reveal.

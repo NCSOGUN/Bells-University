@@ -33,7 +33,7 @@ export function NurseProfileStep() {
       {approved ? (
         <ProfileForm />
       ) : (
-        <div className="space-y-4 rounded-2xl border border-line bg-surface p-5">
+        <div className="space-y-4 rounded-2xl bg-surface shadow-card p-5">
           <p className="text-navy">Your profile opens once your documents have been approved.</p>
           <ButtonLink href={routes.nursePending} className="w-full">
             Check your application

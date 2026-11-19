@@ -246,7 +246,7 @@ function Waitlist({ relative, onChangeCity }: { relative: RelativeDraft; onChang
         </div>
       </section>
 
-      <div className="rounded-2xl border border-line bg-surface p-5">
+      <div className="rounded-2xl bg-surface shadow-card p-5">
         <h2 className="text-h2 font-semibold">What happens next</h2>
         <p className="mt-2 flex items-start gap-2">
           <WhatsAppMark className="mt-0.5 size-5" />

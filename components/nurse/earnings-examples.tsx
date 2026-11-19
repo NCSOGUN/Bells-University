@@ -17,7 +17,7 @@ export function EarningsExamples({ headingLevel: Heading = "h2" }: { headingLeve
       </p>
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">
         {EXAMPLE_CLIENT_COUNTS.map((clients) => (
-          <div key={clients} className="rounded-2xl border border-line bg-surface p-4">
+          <div key={clients} className="rounded-2xl bg-surface shadow-card p-4">
             <dt className="text-small">
               {clients} clients × {EXAMPLE_VISITS_PER_CLIENT} visits a month
             </dt>

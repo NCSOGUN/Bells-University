@@ -22,7 +22,7 @@ import { RecordNotFound } from "@/components/ui/record-not-found";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { HowWeKeepWatch } from "../care-check-note";
 import { CareStatusPanel } from "../care-status";
-import { FamilyAvatars, FamilyCircleCard } from "../family-circle-card";
+import { FamilyCircleCard } from "../family-circle-card";
 import { LatestReadingsCard } from "../latest-readings-card";
 import { NextVisitCard } from "../next-visit-card";
 import { NurseCard } from "../nurse-card";
@@ -61,17 +61,14 @@ export function DashboardView() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-small">
+          <p className="text-small text-ink">
             Hello, {firstName(account.name)} · {familyTerm}&apos;s care
           </p>
-          <h1 className="text-h2 font-semibold">{elder.name}</h1>
-          <TextLink href={routes.familyElder(elder.id)} className="text-small">
-            View {familyTerm}&apos;s profile and readings
-          </TextLink>
+          <h1 className="mt-1 text-h1 sm:text-display">{elder.name}</h1>
         </div>
-        <FamilyAvatars account={account} />
+        <TextLink href={routes.familyElder(elder.id)}>{familyTerm}&apos;s health record</TextLink>
       </div>
 
       <CareStatusPanel

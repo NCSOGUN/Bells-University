@@ -80,7 +80,7 @@ function LastVisitNote({
   const author = previous && state.nurses.find((n) => n.id === previous.nurseId);
 
   return (
-    <section aria-labelledby="before-heading" className="rounded-2xl border-2 border-navy bg-surface p-5">
+    <section aria-labelledby="before-heading" className="rounded-2xl bg-surface shadow-float p-5">
       <h2 id="before-heading" className="text-h2 font-semibold">
         Before you go in
       </h2>
@@ -197,7 +197,7 @@ function CheckIn({ visitId, address, consentRecorded }: { visitId: string; addre
             <button
               type="button"
               onClick={() => setGps(noSignal ? "unavailable" : "confirmed")}
-              className="inline-flex min-h-11 items-center px-2 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4"
+              className="inline-flex min-h-11 items-center px-2 text-small font-semibold text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline"
             >
               Skip
             </button>
@@ -206,7 +206,7 @@ function CheckIn({ visitId, address, consentRecorded }: { visitId: string; addre
               <button
                 type="button"
                 onClick={() => setGps("locating")}
-                className="inline-flex min-h-11 items-center gap-1.5 px-2 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4"
+                className="inline-flex min-h-11 items-center gap-1.5 px-2 text-small font-semibold text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline"
               >
                 <RotateCw aria-hidden className="size-4" />
                 Try again

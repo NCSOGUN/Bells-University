@@ -34,7 +34,7 @@ export function ClientListView() {
       </header>
 
       {clients.length === 0 ? (
-        <p className="rounded-2xl border border-line bg-surface p-6">
+        <p className="rounded-2xl bg-surface shadow-card p-6">
           You don&apos;t have any clients yet. Accepted assignment requests will appear here.
         </p>
       ) : (
@@ -46,7 +46,7 @@ export function ClientListView() {
               <li key={elder.id}>
                 <Link
                   href={routes.nurseClient(elder.id)}
-                  className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 transition-[border-color,transform] duration-150 hover:-translate-y-px hover:border-teal sm:gap-4 sm:p-5"
+                  className="flex items-center gap-3 rounded-2xl bg-surface shadow-card p-4 transition-[border-color,transform] duration-150 hover:-translate-y-px hover:border-teal sm:gap-4 sm:p-5"
                 >
                   <Avatar name={elder.name} tone="teal" className="max-sm:hidden" />
                   <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_8rem] sm:items-center">

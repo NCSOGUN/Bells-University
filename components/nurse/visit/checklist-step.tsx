@@ -24,7 +24,7 @@ import { VisitFrame, type VisitContext } from "./visit-frame";
 
 export function ChecklistStep({ visitId }: { visitId: string }) {
   return (
-    <VisitFrame visitId={visitId} step="Checklist">
+    <VisitFrame visitId={visitId} step="Checklist" wide>
       {(ctx) => <Checklist {...ctx} />}
     </VisitFrame>
   );
@@ -87,8 +87,9 @@ function Checklist({ state, visit, elder, workflow }: VisitContext) {
   };
 
   return (
-    <>
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-2xl border border-line bg-surface px-4 py-3 text-small">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start">
+    <div className="min-w-0 space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-2xl bg-surface px-5 py-3 text-small shadow-card">
         <p className="flex items-center gap-1.5 text-navy">
           {checkInGps === "confirmed" ? (
             <MapPin aria-hidden className="size-4" />
@@ -122,7 +123,7 @@ function Checklist({ state, visit, elder, workflow }: VisitContext) {
         </p>
       )}
 
-      <form onSubmit={submit} noValidate className="space-y-6">
+      <form id="visit-form" onSubmit={submit} noValidate className="space-y-6">
         <Section title="Vital signs">
           <fieldset aria-describedby={errors.bloodPressure ? "bp-error" : "bp-hint"}>
             <legend className="font-semibold text-navy">Blood pressure</legend>
@@ -212,28 +213,6 @@ function Checklist({ state, visit, elder, workflow }: VisitContext) {
           />
         </Section>
 
-        <CareCheckPanel state={state} visit={visit} elder={elder} workflow={workflow} />
-
-        <div className="space-y-2">
-          <Button
-            type="submit"
-            disabled={offline || Boolean(blocker)}
-            className="w-full"
-            aria-describedby={offline ? "offline-submit" : blocker ? "check-blocker" : undefined}
-          >
-            Check out &amp; submit report
-          </Button>
-          {blocker && !offline && (
-            <p id="check-blocker" className="text-center text-small font-medium text-navy">
-              {blocker}
-            </p>
-          )}
-          {offline && (
-            <p id="offline-submit" className="text-center text-small text-navy">
-              Your report is saved on this phone. It will send when you&apos;re back online.
-            </p>
-          )}
-        </div>
       </form>
 
       <div className="rounded-2xl border-2 border-dashed border-muted bg-bg p-4">
@@ -254,13 +233,40 @@ function Checklist({ state, visit, elder, workflow }: VisitContext) {
           />
         </label>
       </div>
-    </>
+    </div>
+
+    {/* The Care Check sits beside the form so the nurse sees it react as she types. */}
+    <aside aria-label="Care check and submit" className="space-y-4 lg:sticky lg:top-8">
+      <CareCheckPanel state={state} visit={visit} elder={elder} workflow={workflow} />
+      <div className="space-y-2">
+        <Button
+          type="submit"
+          form="visit-form"
+          disabled={offline || Boolean(blocker)}
+          className="w-full"
+          aria-describedby={offline ? "offline-submit" : blocker ? "check-blocker" : undefined}
+        >
+          Check out &amp; submit report
+        </Button>
+        {blocker && !offline && (
+          <p id="check-blocker" className="text-center text-small font-medium text-navy">
+            {blocker}
+          </p>
+        )}
+        {offline && (
+          <p id="offline-submit" className="text-center text-small text-navy">
+            Your report is saved on this phone. It will send when you&apos;re back online.
+          </p>
+        )}
+      </div>
+    </aside>
+    </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="space-y-5 rounded-2xl border border-line bg-surface p-5">
+    <section className="space-y-5 rounded-2xl bg-surface p-6 shadow-card">
       <h2 className="text-h2 font-semibold">{title}</h2>
       {children}
     </section>

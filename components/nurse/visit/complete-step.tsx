@@ -84,7 +84,7 @@ function Submitting({ visitId }: { visitId: string }) {
   }, [done, update, visitId]);
 
   return (
-    <div className="rounded-2xl border border-line bg-surface p-5">
+    <div className="rounded-2xl bg-surface shadow-card p-5">
       <ol aria-label="Submitting" className="space-y-3">
         {STAGES.map((label, i) => (
           <li key={label} className={`flex items-center gap-3 ${i > stage ? "opacity-40" : ""}`}>
@@ -107,7 +107,7 @@ function Submitting({ visitId }: { visitId: string }) {
         <button
           type="button"
           onClick={() => setStage(STAGES.length)}
-          className="inline-flex min-h-11 items-center px-2 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4"
+          className="inline-flex min-h-11 items-center px-2 text-small font-semibold text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline"
         >
           Skip
         </button>
@@ -148,7 +148,7 @@ function Summary({ visit, elder, nurse, workflow }: VisitContext) {
       {visit.careCheck && <CareCheckSummary visit={visit} who={who} />}
 
       {sentAt && (
-        <section aria-labelledby="family-heading" className="rounded-2xl border-2 border-navy bg-surface p-5">
+        <section aria-labelledby="family-heading" className="rounded-2xl bg-surface shadow-float p-5">
           <h2 id="family-heading" className="flex items-center gap-2 text-h2 font-semibold">
             <WhatsAppMark className="size-7" />
             The family&apos;s WhatsApp update was sent.
@@ -187,7 +187,7 @@ function CareCheckSummary({ visit, who }: { visit: NonNullable<VisitContext["vis
   const { decision } = check;
   const changed = decision.finalStatus !== check.suggestedStatus;
   return (
-    <section aria-labelledby="check-heading" className="rounded-2xl border border-line bg-surface p-5">
+    <section aria-labelledby="check-heading" className="rounded-2xl bg-surface shadow-card p-5">
       <h2 id="check-heading" className="text-h2 font-semibold">
         Care check
       </h2>

@@ -110,7 +110,7 @@ function Documents() {
                       <button
                         type="button"
                         onClick={() => markUploaded(doc.key)}
-                        className="mt-1 inline-flex min-h-11 items-center text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4"
+                        className="mt-1 inline-flex min-h-11 items-center text-small font-semibold text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline"
                       >
                         Skip
                       </button>

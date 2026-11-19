@@ -35,7 +35,7 @@ export function ContinuityBriefing({ elder, completed, next, nurses }: Continuit
   return (
     <section
       aria-labelledby="briefing-heading"
-      className="overflow-hidden rounded-3xl border-2 border-navy bg-surface"
+      className="overflow-hidden rounded-3xl bg-surface shadow-float"
     >
       <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 bg-navy px-5 py-4 sm:px-6">
         <h2 id="briefing-heading" className="text-h2 font-semibold text-white">

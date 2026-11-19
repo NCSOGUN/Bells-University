@@ -26,6 +26,8 @@ export interface VisitContext {
 interface VisitFrameProps {
   visitId: string;
   step: VisitStep;
+  /** The checklist uses the full width: form on the left, Care Check on the right. */
+  wide?: boolean;
   children: (ctx: VisitContext) => ReactNode;
 }
 
@@ -33,7 +35,7 @@ interface VisitFrameProps {
  * Resolves the route's visit id to the existing seeded Visit (and its elder
  * and nurse) for N9–N11. Anything else gets a clear dead-end-free message.
  */
-export function VisitFrame({ visitId, step, children }: VisitFrameProps) {
+export function VisitFrame({ visitId, step, wide = false, children }: VisitFrameProps) {
   const { state, hydrated } = useDemo();
   if (!hydrated) return <PageSkeleton />;
 
@@ -58,7 +60,7 @@ export function VisitFrame({ visitId, step, children }: VisitFrameProps) {
   const current = STEPS.indexOf(step);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className={`mx-auto space-y-8 ${wide ? "max-w-6xl" : "max-w-2xl"}`}>
       <div className="-mt-2 flex flex-wrap items-center justify-between gap-2">
         <TextLink href={routes.nurseDashboard} direction="back">
           Today&apos;s visits
@@ -68,8 +70,8 @@ export function VisitFrame({ visitId, step, children }: VisitFrameProps) {
             <li
               key={s}
               aria-current={i === current ? "step" : undefined}
-              className={`rounded-full px-2.5 py-1 font-semibold ${
-                i === current ? "bg-navy text-white" : i < current ? "bg-teal-tint text-navy" : "text-ink"
+              className={`rounded-full px-3 py-1 font-semibold ${
+                i === current ? "bg-navy text-white" : i < current ? "bg-teal-tint text-navy" : "bg-surface text-ink shadow-card"
               }`}
             >
               {s}
@@ -80,7 +82,7 @@ export function VisitFrame({ visitId, step, children }: VisitFrameProps) {
 
       <header>
         <p className="text-small">Visit booked for {formatTime(visit.scheduledAt)} today</p>
-        <h1 className="mt-1 text-display font-bold">{elder.name}</h1>
+        <h1 className="mt-1 text-h1 sm:text-display">{elder.name}</h1>
         <p className="mt-1 flex items-start gap-1.5 text-navy">
           <MapPin aria-hidden className="mt-1 size-4 shrink-0" />
           {elder.address}

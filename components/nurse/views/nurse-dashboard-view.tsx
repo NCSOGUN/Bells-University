@@ -85,7 +85,7 @@ export function NurseDashboardView() {
           <section aria-label="Your work so far" className="grid grid-cols-2 gap-3">
             <Link
               href={routes.nurseEarnings}
-              className="rounded-2xl border border-line bg-surface p-4 transition-[border-color,transform] duration-150 hover:-translate-y-px hover:border-teal"
+              className="rounded-2xl bg-surface shadow-card p-4 transition-[border-color,transform] duration-150 hover:-translate-y-px hover:border-teal"
             >
               <p className="flex items-center gap-1.5 text-small">
                 <Wallet aria-hidden className="size-4 text-navy" />
@@ -97,14 +97,14 @@ export function NurseDashboardView() {
               <p className="text-small">
                 {earnings.visits} visits × {formatNaira(EARNINGS_PER_VISIT_NGN)}
               </p>
-              <p className="mt-1 inline-flex items-center gap-0.5 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4">
+              <p className="mt-1 inline-flex items-center gap-0.5 text-small font-semibold text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline">
                 See earnings
                 <ChevronRight aria-hidden className="size-4" />
               </p>
             </Link>
             <Link
               href={routes.nurseClients}
-              className="rounded-2xl border border-line bg-surface p-4 transition-[border-color,transform] duration-150 hover:-translate-y-px hover:border-teal"
+              className="rounded-2xl bg-surface shadow-card p-4 transition-[border-color,transform] duration-150 hover:-translate-y-px hover:border-teal"
             >
               <p className="flex items-center gap-1.5 text-small">
                 <Users aria-hidden className="size-4 text-navy" />
@@ -113,7 +113,7 @@ export function NurseDashboardView() {
               <p className="mt-1 font-display text-h2 font-semibold tabular-nums text-navy">
                 <Highlight value={clients.length}>{clients.length}</Highlight>
               </p>
-              <p className="inline-flex items-center gap-0.5 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4">
+              <p className="inline-flex items-center gap-0.5 text-small font-semibold text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline">
                 View all clients
                 <ChevronRight aria-hidden className="size-4" />
               </p>

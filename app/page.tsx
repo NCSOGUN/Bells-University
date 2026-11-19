@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Brand } from "@/components/ui/brand";
 import {
   ClipboardCheck,
   Clock,
@@ -58,11 +59,9 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-          <p className="font-display text-h2 font-bold text-navy">
-            Care<span className="text-teal">Circle</span>
-          </p>
+      <header className="sticky top-0 z-40 border-b border-line bg-surface/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-8">
+          <Brand />
           <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2">
             <Link
               href="#how-it-works"
@@ -109,7 +108,7 @@ export default function LandingPage() {
                   Arrival confirmed, 9:02 am
                 </p>
 
-                <div className="relative mx-3 -mt-20 rounded-2xl border border-line bg-surface p-4 shadow-xl shadow-navy/10 sm:mx-auto sm:max-w-sm lg:absolute lg:-bottom-6 lg:-left-10 lg:mx-0 lg:mt-0 lg:w-72">
+                <div className="relative mx-3 -mt-20 rounded-2xl bg-surface shadow-card p-4 shadow-xl shadow-navy/10 sm:mx-auto sm:max-w-sm lg:absolute lg:-bottom-6 lg:-left-10 lg:mx-0 lg:mt-0 lg:w-72">
                   <p className="flex items-center gap-2 text-label font-semibold text-navy">
                     <WhatsAppMark className="size-4" />
                     Example update on WhatsApp
@@ -280,9 +279,7 @@ export default function LandingPage() {
       <footer className="border-t border-line bg-bg">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-3 sm:px-6">
           <div>
-            <p className="font-display text-h2 font-bold text-navy">
-              Care<span className="text-teal">Circle</span>
-            </p>
+            <Brand />
             <p className="mt-2 text-small">Home nursing for older people in {cities}.</p>
           </div>
           <FooterLinks

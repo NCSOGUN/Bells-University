@@ -47,7 +47,7 @@ export default function NurseLandingPage() {
         </h2>
         <ol className="mt-4 grid gap-4 sm:grid-cols-2">
           {STEPS.map(({ icon: Icon, title, body }, i) => (
-            <li key={title} className="flex gap-3 rounded-2xl border border-line bg-surface p-4">
+            <li key={title} className="flex gap-3 rounded-2xl bg-surface shadow-card p-4">
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-teal-tint text-navy">
                 <Icon aria-hidden className="size-5" />
               </span>

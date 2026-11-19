@@ -14,7 +14,7 @@ interface ConsentBlockProps {
  */
 export function ConsentBlock({ who, sharing, onSharing, error }: ConsentBlockProps) {
   return (
-    <section aria-labelledby="consent-heading" className="space-y-4 rounded-2xl border-2 border-navy bg-surface p-5">
+    <section aria-labelledby="consent-heading" className="space-y-4 rounded-2xl bg-surface shadow-float p-5">
       <div>
         <h2 id="consent-heading" className="text-h2 font-semibold">
           Before we continue

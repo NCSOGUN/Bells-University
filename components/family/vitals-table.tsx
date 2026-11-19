@@ -62,7 +62,7 @@ export function VitalsTable({ completed, nurses }: VitalsTableProps) {
                 >
                   <Link
                     href={routes.familyVisit(visit.id)}
-                    className="inline-flex min-h-11 items-center gap-1 rounded-lg px-3 text-navy underline decoration-teal decoration-2 underline-offset-4 hover:decoration-navy"
+                    className="inline-flex min-h-11 items-center gap-1 rounded-lg px-3 text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline hover:decoration-navy"
                   >
                     {completed.indexOf(visit) + 1} · {formatShortDate(visit.scheduledAt)}
                     <ChevronRight aria-hidden className="size-4" />

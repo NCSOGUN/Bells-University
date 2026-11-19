@@ -84,7 +84,7 @@ function Checkout() {
 
   return (
     <div className="space-y-5">
-      <section aria-labelledby="order-heading" className="rounded-2xl border border-line bg-surface p-5">
+      <section aria-labelledby="order-heading" className="rounded-2xl bg-surface shadow-card p-5">
         <h2 id="order-heading" className="text-h2 font-semibold">
           {plan.name} plan
         </h2>
@@ -115,7 +115,7 @@ function Checkout() {
         </dl>
       </section>
 
-      <section aria-label="Paying from abroad" className="rounded-2xl border border-line bg-surface p-5">
+      <section aria-label="Paying from abroad" className="rounded-2xl bg-surface shadow-card p-5">
         <div className="flex items-center justify-between gap-4">
           <span id="abroad-label" className="flex items-center gap-2 font-semibold text-navy">
             <Globe aria-hidden className="size-5" />
@@ -191,7 +191,7 @@ function Checkout() {
             <button
               type="button"
               onClick={complete}
-              className="inline-flex min-h-11 items-center px-2 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4"
+              className="inline-flex min-h-11 items-center px-2 text-small font-semibold text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline"
             >
               Skip
             </button>

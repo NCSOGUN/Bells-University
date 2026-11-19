@@ -4,16 +4,15 @@ import { Loader2 } from "lucide-react";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost";
 
-// Primary is the screen's one teal action (§4.5); navy text keeps contrast on teal.
+// Primary is the screen's one filled action. White on the deep teal passes 4.5:1.
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary:
-    "bg-teal text-navy hover:-translate-y-px hover:bg-teal-light disabled:translate-y-0 disabled:bg-line disabled:text-ink",
-  secondary: "border border-line bg-surface text-navy hover:border-navy disabled:text-muted",
-  ghost: "text-navy underline decoration-teal decoration-2 underline-offset-4 hover:decoration-navy",
+  primary: "bg-teal-deep text-white hover:bg-teal-deeper disabled:bg-line disabled:text-ink",
+  secondary: "bg-surface text-navy shadow-card hover:bg-bg disabled:text-muted",
+  ghost: "text-teal-deep underline decoration-transparent underline-offset-4 hover:decoration-teal-deep",
 };
 
 const BASE =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 font-semibold transition-[background-color,border-color,transform] duration-150 active:translate-y-px disabled:cursor-not-allowed disabled:active:translate-y-0";
+  "inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-full px-6 font-semibold transition-[background-color,box-shadow,transform] duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:active:scale-100";
 
 export function buttonClasses(variant: ButtonVariant = "primary", className = ""): string {
   return `${BASE} ${VARIANTS[variant]} ${className}`;

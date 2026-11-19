@@ -8,9 +8,9 @@ const STATUS_STYLES: Record<
   CareStatus,
   { panel: string; iconWrap: string; icon: LucideIcon; tone: ChipTone }
 > = {
-  green: { panel: "border-teal bg-teal-tint", iconWrap: "bg-teal", icon: CheckCircle2, tone: "teal" },
-  yellow: { panel: "border-amber bg-amber/10", iconWrap: "bg-amber", icon: Eye, tone: "amber" },
-  red: { panel: "border-coral bg-coral/10", iconWrap: "bg-coral", icon: AlertTriangle, tone: "coral" },
+  green: { panel: "border-teal", iconWrap: "bg-teal-tint text-teal-deep", icon: CheckCircle2, tone: "teal" },
+  yellow: { panel: "border-amber", iconWrap: "bg-amber/15 text-navy", icon: Eye, tone: "amber" },
+  red: { panel: "border-coral", iconWrap: "bg-coral/15 text-navy", icon: AlertTriangle, tone: "coral" },
 };
 
 interface CareStatusPanelProps {
@@ -31,25 +31,23 @@ export function CareStatusPanel({ status, message, familyTerm, checkedLine, acti
   return (
     <section
       aria-labelledby="care-status-heading"
-      className={`rounded-3xl border-2 p-5 sm:p-8 ${styles.panel}`}
+      className={`rounded-3xl border-t-4 bg-surface p-6 shadow-card sm:p-10 ${styles.panel}`}
     >
       <div className="flex items-start gap-4">
         <span className={`grid size-12 shrink-0 place-items-center rounded-full sm:size-14 ${styles.iconWrap}`}>
-          <Icon aria-hidden className="size-6 text-navy sm:size-7" />
+          <Icon aria-hidden className="size-6 sm:size-7" />
         </span>
         <div className="min-w-0">
-          <p className="text-small font-medium text-navy">Is {familyTerm} okay?</p>
-          <h2 id="care-status-heading" className="mt-1 text-h1 font-bold sm:text-display">
+          <p className="text-small font-medium text-ink">Is {familyTerm} okay?</p>
+          <h2 id="care-status-heading" className="mt-1 text-h1 font-bold tracking-tight sm:text-display">
             {copy.headline(familyTerm)}
           </h2>
         </div>
       </div>
 
       <div className="mt-5 space-y-3 sm:pl-18">
-        <Chip tone={styles.tone} className="bg-surface">
-          {copy.label}
-        </Chip>
-        <p className="text-h2 font-medium text-navy">{message}</p>
+        <Chip tone={styles.tone}>{copy.label}</Chip>
+        <p className="max-w-3xl text-h2 font-normal text-navy">{message}</p>
         {checkedLine && <p className="text-small text-ink">{checkedLine}</p>}
         {action && <div className="pt-2">{action}</div>}
       </div>
@@ -61,7 +59,7 @@ export function CareStatusPanel({ status, message, familyTerm, checkedLine, acti
 export function CareStatusNote({ status, message }: { status: CareStatus; message: string }) {
   const styles = STATUS_STYLES[status];
   return (
-    <div className={`rounded-2xl border-l-4 p-4 ${styles.panel}`}>
+    <div className={`rounded-2xl border-l-4 bg-surface p-4 shadow-card ${styles.panel}`}>
       <Chip tone={styles.tone} className="bg-surface">
         {CARE_STATUS_COPY[status].label}
       </Chip>

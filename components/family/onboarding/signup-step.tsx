@@ -139,7 +139,7 @@ function DetailsForm({ account }: { account?: AccountDraft }) {
           <button
             type="button"
             onClick={sendNow}
-            className="inline-flex min-h-11 items-center px-2 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4"
+            className="inline-flex min-h-11 items-center px-2 text-small font-semibold text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline"
           >
             Skip
           </button>

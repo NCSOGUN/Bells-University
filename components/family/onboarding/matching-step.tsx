@@ -73,7 +73,7 @@ function Matching() {
 
   if (!done) {
     return (
-      <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+      <div className="rounded-2xl bg-surface shadow-card p-5 sm:p-6">
         <ol aria-label="Matching progress" className="space-y-4">
           {stages.map((label, i) => {
             const status = i < stage ? "done" : i === stage ? "active" : "waiting";
@@ -106,7 +106,7 @@ function Matching() {
           <button
             type="button"
             onClick={() => setStage(stages.length)}
-            className="inline-flex min-h-11 items-center px-2 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4"
+            className="inline-flex min-h-11 items-center px-2 text-small font-semibold text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline"
           >
             Skip
           </button>

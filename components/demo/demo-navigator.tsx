@@ -232,7 +232,7 @@ function JosephFlow({
   const latest = completed.at(-1);
   const done = visit?.status === "complete";
 
-  const link = "flex min-h-11 items-center rounded-lg px-2 text-small font-semibold text-navy underline decoration-teal decoration-2 underline-offset-4 hover:bg-bg";
+  const link = "flex min-h-11 items-center rounded-lg px-2 text-small font-semibold text-navy text-teal-deep decoration-2 underline-offset-4 hover:underline hover:bg-bg";
   const button =
     "inline-flex min-h-11 items-center justify-center rounded-xl border border-navy px-3 text-small font-semibold text-navy transition-colors duration-150 hover:bg-bg disabled:cursor-not-allowed disabled:border-line disabled:text-muted";
 

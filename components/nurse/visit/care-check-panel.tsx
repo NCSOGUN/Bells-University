@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ShieldCheck, Smartphone, Server } from "lucide-react";
-import { CARE_CHECK_LIMITS, describeRules, runCareCheck, type CheckStatus, type FindingSeverity } from "@/lib/care-check";
+import { CARE_CHECK_LIMITS, describeRules, runCareCheck, type CheckStatus, type Finding, type FindingSeverity } from "@/lib/care-check";
 import { personalisedCheckAllowed } from "@/lib/consent";
 import { requestCareCheck } from "@/lib/care-check-client";
 import { NURSE_CARE_STATUS_LABEL } from "@/lib/care-status";
@@ -77,7 +77,7 @@ export function CareCheckPanel({ state, visit, elder, workflow }: Required<Pick<
   const needsDecision = result && result.suggestedStatus !== "green" && !decision;
 
   return (
-    <section aria-labelledby="care-check-title" className="space-y-4 rounded-2xl border-2 border-navy bg-surface p-5">
+    <section aria-labelledby="care-check-title" className="space-y-4 rounded-2xl bg-surface p-6 shadow-float">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h2 id="care-check-title" className="flex items-center gap-2 text-h2 font-semibold">
           <ShieldCheck aria-hidden className="size-5" />
@@ -139,13 +139,17 @@ export function CareCheckPanel({ state, visit, elder, workflow }: Required<Pick<
             <p className="font-medium text-navy">Nothing unusual compared with {who}&apos;s earlier visits or the fixed limits.</p>
           ) : (
             <ul className="space-y-2">
-              {result.findings.map((f) => (
-                <li key={f.ruleId} className="rounded-xl border border-line bg-bg p-3">
+              {groupByHeadline(result.findings).map((g) => (
+                <li key={g.headline} className="rounded-xl bg-bg p-3">
                   <p className="font-semibold text-navy">
-                    <span className="mr-2 rounded border border-navy px-1.5 py-0.5 text-label uppercase">{SEVERITY_LABEL[f.severity]}</span>
-                    {f.headline}
+                    <span className="mr-2 rounded border border-navy px-1.5 py-0.5 text-label uppercase">{SEVERITY_LABEL[g.severity]}</span>
+                    {g.headline}
                   </p>
-                  <p className="mt-1 text-small">{f.reason}</p>
+                  {g.reasons.map((r) => (
+                    <p key={r} className="mt-1 text-small">
+                      {r}
+                    </p>
+                  ))}
                 </li>
               ))}
             </ul>
@@ -244,6 +248,17 @@ export function CareCheckPanel({ state, visit, elder, workflow }: Required<Pick<
       <HowItWorks />
     </section>
   );
+}
+
+/** Findings with the same headline, shown once with every reason under it. Keeps the most severe level. */
+function groupByHeadline(findings: Finding[]) {
+  const groups: { headline: string; severity: FindingSeverity; reasons: string[] }[] = [];
+  for (const f of findings) {
+    const g = groups.find((x) => x.headline === f.headline);
+    if (g) g.reasons.push(f.reason);
+    else groups.push({ headline: f.headline, severity: f.severity, reasons: [f.reason] });
+  }
+  return groups;
 }
 
 /** The rules and the limits, in plain words, built from the same constants the check runs on. */

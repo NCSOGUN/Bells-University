@@ -108,7 +108,7 @@ export function WhatsAppView() {
       </div>
 
       <div className="space-y-6">
-        <section aria-labelledby="when-heading" className="rounded-2xl border border-line bg-surface p-5">
+        <section aria-labelledby="when-heading" className="rounded-2xl bg-surface shadow-card p-5">
           <h2 id="when-heading" className="text-h2 font-semibold">
             When we message you
           </h2>

@@ -1,35 +1,46 @@
 @import "tailwindcss";
 
-/* Design tokens — DEMO-SPEC.md §4.1 / §4.2. Generates utilities such as
-   bg-teal, text-navy, border-line, font-display, text-h1. */
+/* Design tokens. Generates utilities such as bg-teal, text-navy, border-line,
+   font-display, text-h1. Visual direction: a calm clinical product in the
+   manner of Apple Health and the NHS App: one sans-serif, generous space,
+   hairline structure, colour reserved for meaning. */
 @theme {
   --color-navy: #0a2e45;
   --color-navy-mid: #12405e;
   --color-teal: #1ba9a0;
   --color-teal-light: #5fc9c1;
-  --color-teal-tint: #e8f5f3;
+  --color-teal-tint: #e9f6f4;
+  /* Filled buttons: white text on this teal passes 4.5:1. */
+  --color-teal-deep: #0d7a73;
+  --color-teal-deeper: #0a625c;
   --color-verified: #006644; /* NMCN verified badge only */
   --color-amber: #f5a623;
   --color-coral: #e65f2b; /* Red status, risk flags, urgent action only */
-  --color-bg: #f8f9fa;
+  --color-bg: #f4f6f8;
   --color-surface: #ffffff;
-  --color-line: #dfe7ea;
+  --color-line: #e3e8ec;
   --color-ink: #44525a; /* spec "body"; renamed so text-ink doesn't clash with the text-body size */
   --color-muted: #8496a0;
 
-  --font-display: var(--font-fraunces), Georgia, serif;
+  /* One typeface throughout; "display" is kept as a name so headings can be
+     styled together, but it is the same Inter. */
+  --font-display: var(--font-inter), system-ui, sans-serif;
   --font-sans: var(--font-inter), system-ui, sans-serif;
 
-  --text-display: 36px;
-  --text-display--line-height: 40px;
-  --text-h1: 28px;
-  --text-h1--line-height: 34px;
-  --text-h2: 20px;
+  --text-display: 40px;
+  --text-display--line-height: 46px;
+  --text-h1: 30px;
+  --text-h1--line-height: 38px;
+  --text-h2: 19px;
   --text-h2--line-height: 26px;
-  --text-body: 15px;
-  --text-body--line-height: 24px;
-  --text-small: 13px;
-  --text-small--line-height: 20px;
+  --text-body: 16px;
+  --text-body--line-height: 25px;
+  --text-small: 14px;
+  --text-small--line-height: 21px;
+
+  /* Hairline cards: a 1px edge and a soft lift, no heavy borders. */
+  --shadow-card: 0 0 0 1px rgb(10 46 69 / 0.06), 0 1px 2px rgb(10 46 69 / 0.04), 0 6px 20px rgb(10 46 69 / 0.04);
+  --shadow-float: 0 0 0 1px rgb(10 46 69 / 0.06), 0 12px 40px rgb(10 46 69 / 0.12);
   --text-label: 12px;
   --text-label--line-height: 16px;
 
@@ -105,6 +116,12 @@
   h2,
   h3 {
     @apply font-display text-navy;
+    letter-spacing: -0.018em;
+  }
+
+  h1 {
+    font-weight: 700;
+    letter-spacing: -0.025em;
   }
 
   :focus-visible {

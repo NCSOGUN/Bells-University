@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { DemoNavigator } from "@/components/demo/demo-navigator";
 import { DemoProvider } from "@/lib/demo-context";
 import { PageTransition } from "@/components/ui/page-transition";
-import { fraunces, inter } from "./fonts";
+import { inter } from "./fonts";
 import "./globals.css";
 
 const description =
@@ -26,7 +26,7 @@ export const viewport: Viewport = { themeColor: "#0a2e45" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
+    <html lang="en" className={inter.variable}>
       <body className="min-h-dvh">
         <DemoProvider>
           {/* First stop for a keyboard user on every screen. */}
