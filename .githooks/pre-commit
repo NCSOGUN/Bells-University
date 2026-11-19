@@ -1,9 +1,0 @@
-#!/bin/sh
-# Runs before every commit: lint the project. The same check runs in CI (.github/workflows/ci.yml).
-# Fix the errors it prints, then commit again. Do not bypass it (--no-verify) unless you know why.
-echo "pre-commit: running lint..."
-npm run lint --silent || {
-  echo ""
-  echo "Lint failed, so the commit was not made. Fix the errors above (npm run lint:fix fixes some), then commit again."
-  exit 1
-}

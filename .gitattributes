@@ -1,2 +1,0 @@
-# Shell hooks must keep LF line endings on every machine, or sh fails on a trailing carriage return.
-.githooks/* text eol=lf
