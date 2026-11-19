@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+/* Design tokens. Generates utilities such as bg-teal, text-navy, border-line,
+   font-display, text-h1. Visual direction: a calm clinical product in the
+   manner of Apple Health and the NHS App: one sans-serif, generous space,
+   hairline structure, colour reserved for meaning. */
+@theme {
+  --color-navy: #0a2e45;
+  --color-navy-mid: #12405e;
+  --color-teal: #1ba9a0;
+  --color-teal-light: #5fc9c1;
+  --color-teal-tint: #e9f6f4;
+  /* Filled buttons: white text on this teal passes 4.5:1. */
+  --color-teal-deep: #0d7a73;
+  --color-teal-deeper: #0a625c;
+  --color-verified: #006644; /* NMCN verified badge only */
+  --color-amber: #f5a623;
+  --color-coral: #e65f2b; /* Red status, risk flags, urgent action only */
+  --color-bg: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-line: #e3e8ec;
+  --color-ink: #44525a; /* spec "body"; renamed so text-ink doesn't clash with the text-body size */
+  --color-muted: #8496a0;
+
+  /* One typeface throughout; "display" is kept as a name so headings can be
+     styled together, but it is the same Inter. */
+  --font-display: var(--font-inter), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  --text-display: 40px;
+  --text-display--line-height: 46px;
+  --text-h1: 30px;
+  --text-h1--line-height: 38px;
+  --text-h2: 19px;
+  --text-h2--line-height: 26px;
+  --text-body: 16px;
+  --text-body--line-height: 25px;
+  --text-small: 14px;
+  --text-small--line-height: 21px;
+
+  /* Hairline cards: a 1px edge and a soft lift, no heavy borders. */
+  --shadow-card: 0 0 0 1px rgb(10 46 69 / 0.06), 0 1px 2px rgb(10 46 69 / 0.04), 0 6px 20px rgb(10 46 69 / 0.04);
+  --shadow-float: 0 0 0 1px rgb(10 46 69 / 0.06), 0 12px 40px rgb(10 46 69 / 0.12);
+  --text-label: 12px;
+  --text-label--line-height: 16px;
+
+  /* §4.3 motion: a success tick scales in once; a changed value flashes once. */
+  --animate-tick-in: tick-in 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-highlight: highlight 300ms ease-out;
+  --animate-reveal: reveal 200ms ease-out both;
+  --animate-progress: progress 1200ms linear both;
+  --animate-shimmer: shimmer 1400ms ease-in-out infinite;
+
+  @keyframes tick-in {
+    from {
+      transform: scale(0.4);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes notify-in {
+    from {
+      opacity: 0;
+      transform: translateY(-24px) scale(0.96);
+    }
+  }
+
+  @keyframes shimmer {
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  @keyframes progress {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  @keyframes highlight {
+    from {
+      background-color: var(--color-teal-tint);
+    }
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg font-sans text-body text-ink antialiased;
+  }
+
+  /* Headings break on sense rather than leaving one word alone on a line. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    @apply bg-teal-tint text-navy;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-navy;
+    letter-spacing: -0.018em;
+  }
+
+  h1 {
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-teal;
+  }
+
+  /* One global switch for people who ask for less movement (§4.3): state still
+     changes, it just stops moving. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
