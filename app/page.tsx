@@ -185,9 +185,6 @@ export default function LandingPage() {
                     <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-teal-tint text-navy">
                       <Icon aria-hidden className="size-6" />
                     </span>
-                    <span aria-hidden className="font-display text-h1 font-bold text-line">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
                   </div>
                   <h3 className="mt-4 text-h2 font-semibold">
                     <span className="sr-only">Step {i + 1}: </span>

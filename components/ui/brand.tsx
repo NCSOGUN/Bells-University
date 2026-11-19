@@ -10,7 +10,7 @@ export function Brand({ suffix, href = "/" }: { suffix?: string; href?: string }
       </svg>
       <span className="text-[19px] font-semibold tracking-tight">CareCircle</span>
       {suffix && (
-        <span className="rounded-full bg-bg px-2 py-0.5 text-label font-semibold text-ink shadow-card">{suffix}</span>
+        <span className="rounded-full bg-bg px-2 py-0.5 text-label font-semibold text-ink shadow-card max-sm:hidden">{suffix}</span>
       )}
     </Link>
   );

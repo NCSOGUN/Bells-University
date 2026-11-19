@@ -7,9 +7,11 @@ import { VerifiedBadge } from "@/components/ui/verified-badge";
 interface NurseCardProps {
   nurse: Nurse;
   title?: string;
+  /** Name, badge and licence only, for the overview. */
+  compact?: boolean;
 }
 
-export function NurseCard({ nurse, title = "Your nurse" }: NurseCardProps) {
+export function NurseCard({ nurse, title = "Your nurse", compact = false }: NurseCardProps) {
   return (
     <Card title={title}>
       <div className="flex items-start gap-4">
@@ -23,9 +25,9 @@ export function NurseCard({ nurse, title = "Your nurse" }: NurseCardProps) {
         </div>
       </div>
 
-      <p className="mt-4">{nurse.microBio}</p>
+      {!compact && <p className="mt-4">{nurse.microBio}</p>}
 
-      <ul className="mt-4 flex flex-wrap gap-2" aria-label="Specialisations">
+      <ul className={`mt-4 flex-wrap gap-2 ${compact ? "hidden" : "flex"}`} aria-label="Specialisations">
         {nurse.specializations.map((s) => (
           <li key={s} className="rounded-full bg-teal-tint px-3 py-1 text-label font-semibold text-navy">
             {s}

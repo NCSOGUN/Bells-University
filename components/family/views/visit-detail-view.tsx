@@ -91,9 +91,7 @@ export function VisitDetailView({ visitId }: { visitId: string }) {
           <ObservationsCard visit={visit} />
           {visit.nurseNotes && (
             <Card title="Notes from the nurse">
-              <blockquote className="border-l-4 border-teal-light pl-4 text-navy">
-                {visit.nurseNotes}
-              </blockquote>
+              <blockquote className="text-navy">&ldquo;{visit.nurseNotes}&rdquo;</blockquote>
               {nurse && (
                 <p className="mt-3 text-small">
                   {nurse.name}
@@ -151,7 +149,7 @@ function FollowUpNote({ visit, completed }: { visit: Visit; completed: Visit[] }
   const flagged = followedUpVisit(completed, visit.id);
   if (!flagged?.vitals) return null;
   return (
-    <div className="rounded-2xl border-l-4 border-teal bg-teal-tint p-4">
+    <div className="rounded-2xl border border-teal/40 bg-teal-tint p-4">
       <p className="text-navy">
         This visit rechecked the higher reading of {flagged.vitals.bloodPressure} mmHg from{" "}
         {formatShortDate(flagged.scheduledAt)}.

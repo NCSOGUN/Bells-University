@@ -11,6 +11,7 @@ import { TextLink } from "@/components/ui/text-link";
 import { RecordNotFound } from "@/components/ui/record-not-found";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { BpTrendChart } from "@/components/care/bp-trend-chart";
+import { HealthFacts } from "@/components/care/health-facts";
 import { CareStatusNote } from "../care-status";
 import { NurseCard } from "../nurse-card";
 import { VitalsTable } from "../vitals-table";
@@ -54,32 +55,9 @@ export function ElderProfileView({ elderId }: { elderId: string }) {
 
       <CareStatusNote status={elder.careStatus} message={elder.careStatusMessage} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="What they need help with" description="In your words, from when care was arranged">
-          <blockquote className="border-l-4 border-teal-light pl-4 text-navy">
-            {elder.careNeeds}
-          </blockquote>
-        </Card>
-
-        <Card title="Health conditions and medication">
-          <h3 className="font-sans text-label font-semibold">Conditions</h3>
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {elder.conditions.map((c) => (
-              <li key={c} className="rounded-full bg-teal-tint px-3 py-1 text-small font-medium text-navy">
-                {c}
-              </li>
-            ))}
-          </ul>
-          <h3 className="mt-5 font-sans text-label font-semibold">Medication</h3>
-          <ul className="mt-2 space-y-2">
-            {elder.medications.map((m) => (
-              <li key={m} className="rounded-xl border border-line bg-bg px-3 py-2 text-navy">
-                {m}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
+      <Card title="About them">
+        <HealthFacts careNeeds={elder.careNeeds} conditions={elder.conditions} medications={elder.medications} />
+      </Card>
 
       {nurse && <NurseCard nurse={nurse} title={`${familyTerm}'s nurse`} />}
 

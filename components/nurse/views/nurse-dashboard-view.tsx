@@ -74,7 +74,6 @@ export function NurseDashboardView() {
         <TodaysVisits
           visits={visits}
           elders={state.elders}
-          plans={state.plans}
           newClients={newClients}
           highlightId={recentElderId}
         />

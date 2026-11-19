@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { NURSE_CARE_STATUS_LABEL } from "@/lib/care-status";
 import { formatTime, nurseShortName } from "@/lib/format";
 import type { Nurse, Visit } from "@/lib/mock-data";
@@ -42,19 +43,21 @@ export function CareCheckNote({ visit, nurse }: { visit: Visit; nurse?: Nurse })
 /** Dashboard explainer: how we keep watch, with no numbers that could drift from the rules. */
 export function HowWeKeepWatch() {
   return (
-    <Card title="How we keep watch">
-      <ul className="list-disc space-y-1 pl-5">
-        <li>At each visit the nurse records blood pressure, pulse, temperature and medication.</li>
-        <li>We compare the readings with your relative&apos;s own earlier visits, not just a textbook number.</li>
-        <li>If something looks different, the nurse decides what it means and how to follow up.</li>
-      </ul>
-      <p className="mt-3 text-small">
-        These are transparent clinical rules that compare each reading with your relative&apos;s own history. They support the
-        nurse and explain themselves. They don&apos;t diagnose, and they never replace medical advice.
-      </p>
-      <TextLink href={routes.familyPrivacy} className="mt-1">
-        Privacy and consent
-      </TextLink>
-    </Card>
+    <details className="group rounded-2xl bg-surface shadow-card">
+      <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-6 py-3 text-h2 font-semibold tracking-tight [&::-webkit-details-marker]:hidden">
+        How we keep watch
+        <ChevronDown aria-hidden className="size-5 text-ink transition-transform duration-200 group-open:rotate-180" />
+      </summary>
+      <div className="px-6 pb-6">
+        <ul className="list-disc space-y-1 pl-5">
+          <li>The nurse records blood pressure, pulse, temperature and medication at every visit.</li>
+          <li>We compare each reading with your relative&apos;s own earlier visits, not only a textbook number.</li>
+          <li>The nurse decides what it means. The check supports them and never replaces medical advice.</li>
+        </ul>
+        <TextLink href={routes.familyPrivacy} className="mt-1">
+          Privacy and consent
+        </TextLink>
+      </div>
+    </details>
   );
 }

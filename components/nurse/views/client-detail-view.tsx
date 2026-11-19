@@ -14,6 +14,7 @@ import {
   visitsForElder,
 } from "@/lib/selectors";
 import { BpTrendChart } from "@/components/care/bp-trend-chart";
+import { HealthFacts } from "@/components/care/health-facts";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
@@ -81,45 +82,26 @@ export function ClientDetailView({ elderId }: { elderId: string }) {
 
       <ContinuityBriefing elder={elder} completed={completed} next={next} nurses={state.nurses} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Care plan">
+      <Card title="Care plan and health">
+        <p className="mb-5 text-navy">
           {plan ? (
             <>
-              <p className="font-semibold text-navy">
+              <span className="font-semibold">
                 {plan.name} · {planFrequency(plan)}
-              </p>
-              <ul className="mt-2 list-disc space-y-1 pl-5">
-                {plan.features.map((f) => (
-                  <li key={f}>{f}</li>
-                ))}
-              </ul>
+              </span>
+              <span className="text-ink"> · {plan.features.join(", ")}</span>
             </>
           ) : (
-            <p>No plan on file. Check with the coordinator before the visit.</p>
+            "No plan on file. Check with the coordinator before the visit."
           )}
-          <h3 className="mt-5 font-sans text-label font-semibold">What the family asked for</h3>
-          <blockquote className="mt-2 border-l-4 border-teal-light pl-4 text-navy">{elder.careNeeds}</blockquote>
-        </Card>
-
-        <Card title="Conditions and medication">
-          <h3 className="font-sans text-label font-semibold">Conditions</h3>
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {elder.conditions.map((c) => (
-              <li key={c} className="rounded-full bg-teal-tint px-3 py-1 text-small font-medium text-navy">
-                {c}
-              </li>
-            ))}
-          </ul>
-          <h3 className="mt-5 font-sans text-label font-semibold">Medication</h3>
-          <ul className="mt-2 space-y-2">
-            {elder.medications.map((m) => (
-              <li key={m} className="rounded-xl border border-line bg-bg px-3 py-2 text-navy">
-                {m}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      </div>
+        </p>
+        <HealthFacts
+          careNeeds={elder.careNeeds}
+          needsLabel="What the family asked for"
+          conditions={elder.conditions}
+          medications={elder.medications}
+        />
+      </Card>
 
       <Card
         title="Blood pressure trend"

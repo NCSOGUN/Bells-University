@@ -103,30 +103,33 @@ export function DashboardView() {
             followedUp={latest && followedUpVisit(completed, latest.id)}
             familyTerm={familyTerm}
           />
-          <VisitHistoryList completed={completed} nurses={state.nurses} familyTerm={familyTerm} />
+          <VisitHistoryList
+            completed={completed}
+            limit={3}
+            moreHref={routes.familyElder(elder.id)}
+            familyTerm={familyTerm}
+          />
         </div>
         <div className="space-y-6">
-          {nurse && <NurseCard nurse={nurse} title={`${familyTerm}'s nurse`} />}
-          <HowWeKeepWatch />
-          <FamilyCircleCard account={account} relationship={circle.relationship} sponsor={circle.sponsor} familyTerm={familyTerm} />
-          <Card title="Updates on WhatsApp">
+          {nurse && <NurseCard nurse={nurse} title={`${familyTerm}'s nurse`} compact />}
+          <Card title="Updates">
             <p className="flex items-start gap-2">
-              <WhatsAppMark className="mt-0.5 size-5" />
-              After every visit we message you the readings and the nurse&apos;s note.
+              <WhatsAppMark className="mt-0.5 size-5 shrink-0" />
+              After each visit, a message on WhatsApp and a notification on your phone.
             </p>
-            <TextLink href={routes.familyWhatsApp} className="mt-1">
-              See the update as the family received it
-            </TextLink>
-            <TextLink href={routes.familyAlerts} className="mt-1">
-              Get a notification on this phone too
-            </TextLink>
+            <div className="mt-1 flex flex-col">
+              <TextLink href={routes.familyWhatsApp}>See a WhatsApp update</TextLink>
+              <TextLink href={routes.familyAlerts}>Notify this phone</TextLink>
+            </div>
           </Card>
+          <FamilyCircleCard account={account} relationship={circle.relationship} sponsor={circle.sponsor} familyTerm={familyTerm} />
           <PlanSummaryCard
             plan={findPlan(state, elder.planId)}
             nextBillingDate={elder.nextBillingDate}
             paymentStatus={elder.paymentStatus}
             sponsor={circle.sponsor}
           />
+          <HowWeKeepWatch />
         </div>
       </div>
     </div>

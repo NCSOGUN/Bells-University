@@ -1,4 +1,4 @@
-import { CalendarClock, MapPin, MapPinOff } from "lucide-react";
+import { CalendarClock, ChevronDown, MapPin, MapPinOff } from "lucide-react";
 import {
   formatCountdown,
   formatShortDate,
@@ -29,6 +29,41 @@ export function CareHistory({ completed, next, nurses }: CareHistoryProps) {
     const recheck = followUpVisit(completed, visit.id);
     const nurse = nurseFor(visit);
     const notable = visit.flagged || Boolean(followed);
+
+    if (!notable) {
+      return {
+        id: visit.id,
+        tone: "done",
+        content: (
+          <details className="group" aria-label={`Visit ${number}, ${formatShortDate(visit.scheduledAt)}`}>
+            <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+              <span className="font-semibold text-navy">
+                Visit {number} · {formatShortDate(visit.scheduledAt)}
+              </span>
+              {visit.vitals && <span className="text-small tabular-nums">BP {visit.vitals.bloodPressure}</span>}
+              <Chip>Routine</Chip>
+              <ChevronDown aria-hidden className="ml-auto size-4 text-ink transition-transform duration-200 group-open:rotate-180" />
+            </summary>
+            <div className="pb-2">
+              <p className="text-small">
+                {nurse ? nurseShortName(nurse.name) : "Nurse not recorded"}
+                {visit.checkInAt && visit.checkOutAt && ` · ${formatTime(visit.checkInAt)}–${formatTime(visit.checkOutAt)}`}
+                {` · ${visit.gpsConfirmed ? "GPS confirmed" : "Location not recorded"}`}
+              </p>
+              {visit.vitals && (
+                <div className="mt-3">
+                  <VitalsInline vitals={visit.vitals} flagged={false} />
+                </div>
+              )}
+              {visit.nurseNotes && (
+                <blockquote className="mt-3 text-navy">&ldquo;{visit.nurseNotes}&rdquo;</blockquote>
+              )}
+              <Observations visit={visit} open />
+            </div>
+          </details>
+        ),
+      };
+    }
 
     return {
       id: visit.id,
@@ -79,13 +114,13 @@ export function CareHistory({ completed, next, nurses }: CareHistoryProps) {
           </p>
 
           {visit.flagged && visit.flagReason && (
-            <p className="mt-3 border-l-4 border-coral pl-3 font-medium text-navy">
+            <p className="mt-3 font-medium text-navy">
               <span className="sr-only">Flag reason: </span>
               {visit.flagReason}
             </p>
           )}
           {visit.flagged && recheck && (
-            <p className="mt-1 pl-4 text-small">
+            <p className="mt-1 text-small">
               Rechecked at visit {visitNumber(completed, recheck.id)} on {formatShortDate(recheck.scheduledAt)}.
             </p>
           )}
@@ -103,7 +138,7 @@ export function CareHistory({ completed, next, nurses }: CareHistoryProps) {
           )}
 
           {visit.nurseNotes && (
-            <blockquote className="mt-3 border-l-2 border-navy/30 pl-3 text-navy">
+            <blockquote className="mt-3 text-navy">
               &ldquo;{visit.nurseNotes}&rdquo;
             </blockquote>
           )}

@@ -8,9 +8,9 @@ const STATUS_STYLES: Record<
   CareStatus,
   { panel: string; iconWrap: string; icon: LucideIcon; tone: ChipTone }
 > = {
-  green: { panel: "border-teal", iconWrap: "bg-teal-tint text-teal-deep", icon: CheckCircle2, tone: "teal" },
-  yellow: { panel: "border-amber", iconWrap: "bg-amber/15 text-navy", icon: Eye, tone: "amber" },
-  red: { panel: "border-coral", iconWrap: "bg-coral/15 text-navy", icon: AlertTriangle, tone: "coral" },
+  green: { panel: "border-teal bg-teal-tint/40", iconWrap: "bg-teal-tint text-teal-deep", icon: CheckCircle2, tone: "teal" },
+  yellow: { panel: "border-amber bg-amber/5", iconWrap: "bg-amber/15 text-navy", icon: Eye, tone: "amber" },
+  red: { panel: "border-coral bg-coral/5", iconWrap: "bg-coral/15 text-navy", icon: AlertTriangle, tone: "coral" },
 };
 
 interface CareStatusPanelProps {
@@ -31,7 +31,7 @@ export function CareStatusPanel({ status, message, familyTerm, checkedLine, acti
   return (
     <section
       aria-labelledby="care-status-heading"
-      className={`rounded-3xl border-t-4 bg-surface p-6 shadow-card sm:p-10 ${styles.panel}`}
+      className={`rounded-3xl border-2 p-6 shadow-card sm:p-10 ${styles.panel}`}
     >
       <div className="flex items-start gap-4">
         <span className={`grid size-12 shrink-0 place-items-center rounded-full sm:size-14 ${styles.iconWrap}`}>

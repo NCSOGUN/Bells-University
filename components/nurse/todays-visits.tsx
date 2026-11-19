@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MapPin, UserPlus } from "lucide-react";
-import { formatTime, planFrequency } from "@/lib/format";
-import type { Elder, Plan } from "@/lib/mock-data";
+import { formatTime } from "@/lib/format";
+import type { Elder } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
 import type { TodayVisit, TodayVisitState } from "@/lib/selectors";
 import { ButtonLink } from "@/components/ui/button";
@@ -21,21 +21,19 @@ const STATE_COPY: Record<TodayVisitState, { label: string; chip: ChipTone; tone:
 interface TodaysVisitsProps {
   visits: TodayVisit[];
   elders: Elder[];
-  plans: Plan[];
   /** Clients accepted today, who join the day's work without a visit booked yet. */
   newClients: Elder[];
   /** Briefly highlight an item that has just been added. */
   highlightId?: string;
 }
 
-export function TodaysVisits({ visits, elders, plans, newClients, highlightId }: TodaysVisitsProps) {
+export function TodaysVisits({ visits, elders, newClients, highlightId }: TodaysVisitsProps) {
   const done = visits.filter((v) => v.state === "complete").length;
   const items: TimelineItem[] = [
     ...visits.flatMap(({ visit, state }) => {
       const elder = elders.find((e) => e.id === visit.elderId);
       if (!elder) return [];
       const copy = STATE_COPY[state];
-      const plan = plans.find((p) => p.id === elder.planId);
       const upNext = state === "next" || state === "in_progress";
 
       return [
@@ -80,11 +78,11 @@ export function TodaysVisits({ visits, elders, plans, newClients, highlightId }:
                     <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-navy" />
                     {elder.address}
                   </p>
-                  <p className="text-small">
-                    {elder.conditions.join(", ")}
-                    {plan && ` · ${plan.name}, ${planFrequency(plan)}`}
-                  </p>
-                  {(upNext || elder.careStatus !== "green") && (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <p className="text-small">{elder.conditions.join(", ")}</p>
+                    {!upNext && elder.careStatus !== "green" && <CareStatusChip status={elder.careStatus} />}
+                  </div>
+                  {upNext && (
                     <div className="flex flex-wrap items-start gap-2">
                       <CareStatusChip status={elder.careStatus} className="bg-surface" />
                       <p className="min-w-0 flex-1 basis-48 text-small text-navy">{elder.careStatusMessage}</p>

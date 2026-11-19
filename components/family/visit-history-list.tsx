@@ -1,19 +1,23 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import type { Nurse, Visit } from "@/lib/mock-data";
-import { formatShortDate, formatTime, nurseShortName } from "@/lib/format";
+import type { Visit } from "@/lib/mock-data";
+import { formatShortDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import { Card } from "@/components/ui/card";
+import { TextLink } from "@/components/ui/text-link";
 import { VisitOutcomeChip } from "./visit-outcome";
 
 interface VisitHistoryListProps {
   /** Completed visits, oldest first. */
   completed: Visit[];
-  nurses: Nurse[];
+  /** Show only the newest few, with a link to the rest. */
+  limit?: number;
+  /** Where "all visits" goes when some are hidden. */
+  moreHref?: string;
   familyTerm: string;
 }
 
-export function VisitHistoryList({ completed, nurses, familyTerm }: VisitHistoryListProps) {
+export function VisitHistoryList({ completed, limit, moreHref, familyTerm }: VisitHistoryListProps) {
   if (completed.length === 0) {
     return (
       <Card title="Visit history">
@@ -26,45 +30,47 @@ export function VisitHistoryList({ completed, nurses, familyTerm }: VisitHistory
   }
 
   const newestFirst = completed.map((visit, i) => ({ visit, number: i + 1 })).reverse();
+  const shown = limit ? newestFirst.slice(0, limit) : newestFirst;
+  const hidden = newestFirst.length - shown.length;
 
   return (
-    <Card title="Visit history" description={`${completed.length} visits so far, newest first`}>
-      <ol className="space-y-3">
-        {newestFirst.map(({ visit, number }) => {
-          const nurse = nurses.find((n) => n.id === visit.nurseId);
-          const time = visit.checkInAt ?? visit.scheduledAt;
-          return (
-            <li key={visit.id}>
-              <Link
-                href={routes.familyVisit(visit.id)}
-                className={`flex items-center gap-3 rounded-xl border p-4 transition-[border-color,transform] duration-150 hover:-translate-y-px ${
-                  visit.flagged
-                    ? "border-l-4 border-coral bg-coral/5"
-                    : "border-line hover:border-teal"
-                }`}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-semibold text-navy">
-                      Visit {number} · {formatShortDate(visit.scheduledAt)}
-                    </p>
-                    <VisitOutcomeChip completed={completed} visit={visit} />
-                  </div>
-                  <p className="mt-1 text-small">
-                    {formatTime(time)}
-                    {nurse && ` with ${nurseShortName(nurse.name)}`}
-                    {visit.vitals && ` · Blood pressure ${visit.vitals.bloodPressure} mmHg`}
-                  </p>
-                  {visit.flagged && visit.flagReason && (
-                    <p className="mt-2 text-small font-medium text-navy">{visit.flagReason}</p>
+    <Card title="Recent visits">
+      <ol className="-mt-1 divide-y divide-line">
+        {shown.map(({ visit, number }) => (
+          <li key={visit.id}>
+            <Link
+              href={routes.familyVisit(visit.id)}
+              className="group -mx-2 flex min-h-14 items-center gap-3 rounded-xl px-2 py-3 transition-colors duration-150 hover:bg-bg"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold whitespace-nowrap text-navy">
+                  {formatShortDate(visit.scheduledAt)}
+                  {visit.vitals && (
+                    <span className="ml-2 font-normal tabular-nums">
+                      {visit.vitals.bloodPressure} <span className="text-small">mmHg</span>
+                    </span>
                   )}
-                </div>
-                <ChevronRight aria-hidden className="size-5 shrink-0 text-navy" />
-              </Link>
-            </li>
-          );
-        })}
+                </p>
+                {/* On a phone the outcome sits under the reading instead of squeezing beside it. */}
+                <span className="mt-1.5 inline-flex sm:hidden">
+                  <VisitOutcomeChip completed={completed} visit={visit} />
+                </span>
+                {visit.flagged && visit.flagReason && <p className="mt-1.5 text-small text-navy">{visit.flagReason}</p>}
+              </div>
+              <span className="hidden text-label text-ink sm:inline">Visit {number}</span>
+              <span className="hidden sm:inline-flex">
+                <VisitOutcomeChip completed={completed} visit={visit} />
+              </span>
+              <ChevronRight aria-hidden className="size-5 shrink-0 text-ink transition-transform duration-150 group-hover:translate-x-0.5" />
+            </Link>
+          </li>
+        ))}
       </ol>
+      {hidden > 0 && moreHref && (
+        <TextLink href={moreHref} className="mt-2">
+          All {completed.length} visits
+        </TextLink>
+      )}
     </Card>
   );
 }
