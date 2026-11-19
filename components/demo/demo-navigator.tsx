@@ -160,6 +160,15 @@ export function DemoNavigator() {
             }}
           />
 
+          <HighUsualCase
+            state={state}
+            onFill={(visitId, reading) => {
+              update((prev) => prepareReading(prev, visitId, reading));
+              setOpen(false);
+              router.push(routes.nurseVisitChecklist(visitId));
+            }}
+          />
+
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <Group title="Family" screens={family} pathname={pathname} onNavigate={() => setOpen(false)} />
             <Group title="Nurse" screens={nurse} pathname={pathname} onNavigate={() => setOpen(false)} />
@@ -330,6 +339,31 @@ function IbrahimCase({ state, onFill }: { state: DemoState; onFill: (visitId: st
         </button>
         <button type="button" disabled={!visit || done} onClick={() => visit && onFill(visit.id, "subtleMissed")} className={button}>
           138/86, doses missed
+        </button>
+      </div>
+      {done && <p className="mt-1 text-small text-navy">This visit is already submitted. Use Reset demo to run it again.</p>}
+    </section>
+  );
+}
+
+/** The reverse case: a usual that is itself high never makes a high reading look fine. */
+function HighUsualCase({ state, onFill }: { state: DemoState; onFill: (visitId: string, reading: DemoReading) => void }) {
+  const visit = todaysVisits(state, DEMO_NURSE_ID).find((t) => t.visit.elderId === "elder-adunni")?.visit;
+  const done = visit?.status === "complete";
+  const button =
+    "inline-flex min-h-11 items-center justify-center rounded-xl border border-navy px-3 text-small font-semibold text-navy transition-colors duration-150 hover:bg-bg disabled:cursor-not-allowed disabled:border-line disabled:text-muted";
+  return (
+    <section aria-labelledby="nav-adunni" className="mt-3 rounded-xl border border-teal bg-teal-tint p-3">
+      <h2 id="nav-adunni" className="flex items-center gap-2 font-mono text-label font-semibold text-navy">
+        <Play aria-hidden className="size-3.5" />
+        High usual: Adunni&apos;s visit (11:30 am)
+      </h2>
+      <p className="mt-1 text-small text-navy">
+        Her usual is about 147/92, already over 140/90. This reading is normal for her, and still flagged.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button type="button" disabled={!visit || done} onClick={() => visit && onFill(visit.id, "highUsual")} className={button}>
+          148/92, close to her usual
         </button>
       </div>
       {done && <p className="mt-1 text-small text-navy">This visit is already submitted. Use Reset demo to run it again.</p>}

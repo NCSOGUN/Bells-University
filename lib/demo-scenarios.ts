@@ -4,7 +4,7 @@ import { checkIn, saveReportDraft, type VisitReportDraft } from "./visit-flow";
 // Shortcuts for the demo navigator only: they fill in the visit checklist the
 // way a nurse would, so the Care Check can be tried without typing every field.
 
-export type DemoReading = "flagged" | "normal" | "subtle" | "subtleMissed";
+export type DemoReading = "flagged" | "normal" | "subtle" | "subtleMissed" | "highUsual";
 
 export const DEMO_READINGS: Record<DemoReading, Partial<VisitReportDraft>> = {
   flagged: {
@@ -38,6 +38,17 @@ export const DEMO_READINGS: Record<DemoReading, Partial<VisitReportDraft>> = {
     medicationAdherence: "missed",
     mobilityNote: "Walking independently.",
     wellbeingNote: "Said he forgot his tablets for two days.",
+  },
+  // Adunni: 148/92 is right at her usual of about 147/92, and still over 140/90.
+  highUsual: {
+    systolic: "148",
+    diastolic: "92",
+    pulse: "76",
+    temperature: "36.7",
+    weight: "70",
+    medicationAdherence: "taken_as_scheduled",
+    mobilityNote: "Walking independently.",
+    wellbeingNote: "Feels well. No headaches or dizziness.",
   },
   normal: {
     systolic: "132",

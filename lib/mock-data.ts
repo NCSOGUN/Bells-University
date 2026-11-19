@@ -240,6 +240,7 @@ function firstVisitMessage(visitAt: string): string {
 const ELDER_JOSEPH_ID = "elder-joseph";
 const ELDER_GRACE_ID = "elder-grace";
 const ELDER_IBRAHIM_ID = "elder-ibrahim";
+const ELDER_ADUNNI_ID = "elder-adunni";
 
 interface StatusDates {
   graceFirstVisitAt: string;
@@ -342,6 +343,22 @@ const buildElders = ({ graceFirstVisitAt, ibrahimFirstVisitAt }: StatusDates): S
     careStatusMessage: firstVisitMessage(ibrahimFirstVisitAt),
     consent: seedConsent({ name: "Yusuf Suleiman", relationship: "Son" }, "Ibrahim", 32, daysFromNow(-28, 16, 32)),
     nextBillingDate: daysFromNow(4),
+    paymentStatus: "active",
+  },
+  {
+    id: ELDER_ADUNNI_ID,
+    name: "Adunni Lawal",
+    age: 77,
+    city: "Ilorin",
+    address: "17 Ibrahim Taiwo Road, Ilorin, Kwara State",
+    relationship: "Mother",
+    careNeeds: "Blood pressure checks while her doctor adjusts her treatment.",
+    conditions: ["Long-standing hypertension"],
+    medications: ["Amlodipine 10mg, once daily", "Losartan 50mg, once daily"],
+    planId: "essential",
+    assignedNurseId: NURSE_ADAEZE_ID,
+    consent: seedConsent({ name: "Kemi Lawal", relationship: "Daughter" }, "Adunni", 30, daysFromNow(-28, 11, 32)),
+    nextBillingDate: daysFromNow(12),
     paymentStatus: "active",
   },
   {
@@ -506,6 +523,35 @@ const buildIbrahimVisits = (): VisitRecord[] => {
   }));
 };
 
+// Adunni Lawal: the reverse of Ibrahim. Her usual (about 147/92) is itself above
+// the 140/90 line. A reading near her usual is "normal for her", but the fixed
+// limit still flags it every time: a personal baseline never talks the check
+// out of a high reading. All four earlier visits are flagged for that reason.
+const buildAdunniVisits = (): VisitRecord[] => {
+  const history: Array<[number, string, number, string]> = [
+    [-28, "146/92", 76, "First visit. Blood pressure above the limit. Her doctor is aware and reviewing her treatment."],
+    [-21, "148/93", 77, "Above the limit again. Losartan added by her doctor this week."],
+    [-14, "145/91", 75, "Still above the limit. Taking both medicines each morning."],
+    [-7, "147/92", 76, "Still above the limit. Doctor's review booked for next month."],
+  ];
+  return history.map(([days, bloodPressure, pulse, nurseNotes], i) => ({
+    id: `visit-adunni-${i + 1}`,
+    elderId: ELDER_ADUNNI_ID,
+    nurseId: NURSE_ADAEZE_ID,
+    scheduledAt: daysFromNow(days, 11, 30),
+    status: "complete" as const,
+    checkInAt: daysFromNow(days, 11, 32),
+    checkOutAt: daysFromNow(days, 12, 4),
+    gpsConfirmed: true,
+    gpsAddress: "17 Ibrahim Taiwo Road, Ilorin, Kwara State",
+    vitals: { bloodPressure, pulse, temperature: 36.7, weight: 70 },
+    medicationAdherence: "taken_as_scheduled" as const,
+    mobilityNote: "Walking independently.",
+    wellbeingNote: "Feels well. No headaches or dizziness.",
+    nurseNotes,
+  }));
+};
+
 // Today's visits across the rest of Nurse Adaeze's client list.
 const buildTodayVisits = (): VisitRecord[] => [
   {
@@ -523,6 +569,14 @@ const buildTodayVisits = (): VisitRecord[] => [
     mobilityNote: "Walking with a cane, steady.",
     wellbeingNote: "In good spirits.",
     nurseNotes: "Hip recovery progressing well.",
+  },
+  {
+    id: "visit-adunni-today",
+    elderId: ELDER_ADUNNI_ID,
+    nurseId: NURSE_ADAEZE_ID,
+    scheduledAt: daysFromNow(0, 11, 30),
+    status: "scheduled",
+    gpsConfirmed: false,
   },
   {
     id: "visit-grace-today",
@@ -579,7 +633,7 @@ export function createSeedState(): DemoState {
 
   // Flags and statuses are not typed in: the Care Check derives them from the
   // visit records, so the family and nurse screens always agree with the data.
-  const visits = applyCareChecks([...josephRecords, ...ibrahimRecords, ...todayRecords]);
+  const visits = applyCareChecks([...josephRecords, ...ibrahimRecords, ...buildAdunniVisits(), ...todayRecords]);
 
   const josephFlags = visits
     .filter((v) => v.elderId === ELDER_JOSEPH_ID && v.status === "complete")
@@ -594,6 +648,15 @@ export function createSeedState(): DemoState {
   if (ibrahimFlags.length !== 4 || ibrahimFlags.some(Boolean)) {
     throw new Error(
       `Seed invariant: Ibrahim's four earlier visits must all be normal, so his usual is steady. The Care Check gave [${ibrahimFlags}].`,
+    );
+  }
+
+  // Every earlier visit is caught by the fixed limit, and none as "higher than her usual".
+  const adunni = visits.filter((v) => v.elderId === ELDER_ADUNNI_ID && v.status === "complete");
+  const adunniRules = adunni.map((v) => v.careCheck?.findings.map((f) => f.ruleId) ?? []);
+  if (adunni.length !== 4 || adunniRules.some((r) => !r.includes("BP_HIGH") || r.includes("BP_RISE"))) {
+    throw new Error(
+      `Seed invariant: Adunni's four earlier visits must each be over the fixed limit and close to her usual. The Care Check gave [${adunniRules.map((r) => r.join("+")).join(", ")}].`,
     );
   }
 

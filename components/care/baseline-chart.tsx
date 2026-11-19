@@ -34,6 +34,8 @@ export function BaselineChart({ history, baseline, today, who }: BaselineChartPr
   const outsideUsual =
     ds >= T.bpRiseFromUsual.systolic || dd >= T.bpRiseFromUsual.diastolic || -ds >= T.bpDropFromUsual.systolic;
   const overFixedLimit = today.systolic >= fixedLine || today.diastolic >= T.bpHigh.diastolic;
+  // Today's dot is a warning colour if either check flags it: inside a high usual is not "fine".
+  const flaggedToday = outsideUsual || overFixedLimit;
 
   // Keep the vertical scale tight so a few mmHg stay visible. The lower edge of
   // the band only sets the scale when today's reading is down near it.
@@ -61,13 +63,13 @@ export function BaselineChart({ history, baseline, today, who }: BaselineChartPr
           <span aria-hidden className="h-0.5 w-5 border-t-2 border-dashed border-ink" /> Fixed limit ({fixedLine})
         </span>
         <span className="inline-flex items-center gap-2">
-          <span aria-hidden className={`size-3 rounded-full ${outsideUsual ? "bg-coral" : "bg-teal"}`} /> Today
+          <span aria-hidden className={`size-3 rounded-full ${flaggedToday ? "bg-coral" : "bg-teal"}`} /> Today
         </span>
       </div>
 
       <svg role="img" aria-labelledby="baseline-title baseline-desc" width="100%" height={HEIGHT} className="block overflow-visible">
         <title id="baseline-title">{`Today's top blood pressure number against ${who}'s usual range`}</title>
-        <desc id="baseline-desc">{`${summary} The fixed limit is ${fixedLine}.`}</desc>
+        <desc id="baseline-desc">{`${summary} The fixed limit is ${fixedLine}${overFixedLimit ? ", and today's reading is at or above it" : ""}.`}</desc>
 
         {/* The band the rules treat as "usual": inside it nothing is flagged on the top number. */}
         <rect x="0" width="100%" y={y(flagLine)} height={Math.max(0, y(bandBottom) - y(flagLine))} className="fill-teal-tint" />
@@ -129,7 +131,7 @@ export function BaselineChart({ history, baseline, today, who }: BaselineChartPr
           <circle
             cy={y(today.systolic)}
             r={8}
-            className={outsideUsual ? "fill-coral stroke-surface" : "fill-teal stroke-surface"}
+            className={flaggedToday ? "fill-coral stroke-surface" : "fill-teal stroke-surface"}
             strokeWidth={2}
           />
           <text y={y(today.systolic) - 16} textAnchor="middle" className="fill-navy text-[12px] font-bold tabular-nums">
@@ -158,6 +160,8 @@ export function BaselineChart({ history, baseline, today, who }: BaselineChartPr
           <>
             Today&apos;s {today.systolic}/{today.diastolic} is within {who}&apos;s usual range, around {baseline.systolic}/
             {baseline.diastolic}.
+            {overFixedLimit &&
+              ` It is still at or above the fixed ${fixedLine}/${T.bpHigh.diastolic} limit, so it is flagged: being normal for ${who} doesn't make it safe.`}
           </>
         )}
       </figcaption>
