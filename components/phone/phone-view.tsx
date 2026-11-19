@@ -2,11 +2,11 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Wifi, WifiOff } from "lucide-react";
+import { Lock, Wifi } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
 import { formatPhone } from "@/lib/onboarding";
 import { routes } from "@/lib/routes";
-import { subscribeUpdates, type ChannelStatus } from "@/lib/update-channel";
+import { subscribeUpdates } from "@/lib/update-channel";
 import { applyVisitUpdate, type VisitUpdate } from "@/lib/visit-update";
 import { Button } from "@/components/ui/button";
 
@@ -26,7 +26,6 @@ export function PhoneView() {
   const { state, update } = useDemo();
   const router = useRouter();
   const [now, setNow] = useState(() => new Date());
-  const [status, setStatus] = useState<ChannelStatus>("connecting");
   const [incoming, setIncoming] = useState<VisitUpdate | null>(null);
   const [screen, setScreen] = useState<Screen>("locked");
   const [code, setCode] = useState("");
@@ -43,7 +42,7 @@ export function PhoneView() {
         update((prev) => applyVisitUpdate(prev, u));
         setIncoming(u);
         setScreen("locked");
-      }, setStatus),
+      }),
     [update],
   );
 
@@ -54,15 +53,16 @@ export function PhoneView() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[#e9edf1] px-4 py-10">
-      <div className="relative h-[780px] w-[380px] overflow-hidden rounded-[3.2rem] border-[10px] border-[#0b1c28] bg-[#0b1c28] shadow-[0_30px_80px_rgb(10_46_69/0.35)]">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#e9edf1] px-4 py-6">
+      {/* Scales to the window's height so it fits beside the nurse screen on a laptop. */}
+      <div className="relative aspect-[380/780] h-[min(780px,calc(100dvh-5rem))] overflow-hidden rounded-[3.2rem] border-[10px] border-[#0b1c28] bg-[#0b1c28] shadow-[0_30px_80px_rgb(10_46_69/0.35)]">
         <div aria-hidden className="absolute top-2.5 left-1/2 z-20 h-7 w-28 -translate-x-1/2 rounded-full bg-black" />
 
         {screen === "locked" ? (
           <div className="relative h-full bg-[radial-gradient(120%_80%_at_20%_0%,#1ba9a0_0%,#0d7a73_30%,#0a2e45_75%)] px-4 text-white">
             <div className="flex justify-between px-5 pt-3.5 text-[13px] font-semibold">
               <span>{clock.format(now)}</span>
-              <span className="flex items-center gap-1">{status === "server" ? <Wifi className="size-3.5" aria-hidden /> : <WifiOff className="size-3.5" aria-hidden />}</span>
+              <Wifi className="size-3.5" aria-hidden />
             </div>
             <div className="mt-14 text-center">
               <Lock aria-hidden className="mx-auto size-4 opacity-80" />
@@ -131,12 +131,8 @@ export function PhoneView() {
       </div>
 
       <p className="flex items-center gap-2 text-small text-ink" role="status">
-        <span aria-hidden className={`size-2 rounded-full ${status === "server" ? "bg-teal" : status === "local-only" ? "bg-amber" : "bg-muted"}`} />
-        {status === "server"
-          ? "Connected. Waiting for the nurse to submit a visit."
-          : status === "local-only"
-            ? "Same-laptop mode: open the nurse screen in another window of this browser."
-            : "Connecting…"}
+        <span aria-hidden className="size-2 rounded-full bg-teal" />
+        {incoming ? "Update received." : "Waiting for the nurse to submit a visit in the other window."}
       </p>
     </div>
   );

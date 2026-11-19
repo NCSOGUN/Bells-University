@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Play, RotateCcw, SquareDashedMousePointer, X } from "lucide-react";
 import { prepareReading, type DemoReading } from "@/lib/demo-scenarios";
+import { openPhoneWindow } from "@/lib/update-channel";
 import { useDemo } from "@/lib/demo-context";
 import { DEMO_NURSE_ID, type DemoState } from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
@@ -245,10 +246,14 @@ function JosephFlow({
       </h2>
       <ol className="mt-2 space-y-2 text-small text-navy">
         <li>
-          <span className="font-semibold">1. Start clean.</span> Reset the demo and go to today&apos;s visits.
-          <div className="mt-1">
+          <span className="font-semibold">1. Start clean.</span> Reset the demo and go to today&apos;s visits, then open
+          the family&apos;s phone in a window beside this one.
+          <div className="mt-1 flex flex-wrap gap-2">
             <button type="button" onClick={onReset} className={button}>
               Reset and start
+            </button>
+            <button type="button" onClick={openPhoneWindow} className={button}>
+              Open the family phone
             </button>
           </div>
         </li>

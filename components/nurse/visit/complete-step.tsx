@@ -133,7 +133,7 @@ function Summary({ state, visit, elder, nurse, workflow }: VisitContext) {
       // Storage blocked: publishing twice is harmless, the phone ignores repeats.
     }
     const update = buildVisitUpdate(state, visit.id);
-    if (update) void publishUpdate(update);
+    if (update) publishUpdate(update);
   }, [sentAt, state, visit.id, visit.checkOutAt]);
   const who = firstName(elder.name);
   const bp = visit.vitals?.bloodPressure;
