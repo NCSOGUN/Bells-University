@@ -151,21 +151,21 @@ export const PLANS: Plan[] = [
   {
     id: "essential",
     name: "Essential",
-    priceNGN: 40000,
+    priceNGN: 55000,
     visitsPerWeek: 1,
     features: ["Vitals check", "Medication reminders", "Weekly WhatsApp report"],
   },
   {
     id: "standard",
     name: "Standard",
-    priceNGN: 77000,
+    priceNGN: 100000,
     visitsPerWeek: 2,
     features: ["Full vitals & medication management", "Twice-weekly reports", "Priority nurse matching"],
   },
   {
     id: "live-in",
     name: "Live-In",
-    priceNGN: 150000,
+    priceNGN: 200000,
     visitsPerWeek: 7,
     frequencyLabel: "Daily or live-in",
     features: ["Daily care & companionship", "Real-time family updates", "Dedicated nurse"],
@@ -177,9 +177,11 @@ const NURSE_ADAEZE_ID = "nurse-adaeze";
 /** The nurse the demo's nurse screens are signed in as. */
 export const DEMO_NURSE_ID = NURSE_ADAEZE_ID;
 
-// Per-visit pay behind the deck's earning maths (spec §7, N1):
-// 4 clients × 4 visits a month = ₦80,000.
-export const EARNINGS_PER_VISIT_NGN = 80_000 / (4 * 4);
+// Per-visit pay behind the earning maths: a visit fee plus a transport allowance.
+export const VISIT_FEE_NGN = 6_000;
+export const TRANSPORT_ALLOWANCE_NGN = 750;
+/** What a nurse earns for one completed visit, transport included. */
+export const EARNINGS_PER_VISIT_NGN = VISIT_FEE_NGN + TRANSPORT_ALLOWANCE_NGN;
 
 const NURSES: Nurse[] = [
   {

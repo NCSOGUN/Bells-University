@@ -3,7 +3,14 @@
 import { useDemo } from "@/lib/demo-context";
 import { earningsByMonth, type PayoutStatus } from "@/lib/earnings";
 import { formatNaira, formatShortDate } from "@/lib/format";
-import { DEMO_NURSE_ID, EARNINGS_PER_VISIT_NGN, type Elder, type Visit } from "@/lib/mock-data";
+import {
+  DEMO_NURSE_ID,
+  EARNINGS_PER_VISIT_NGN,
+  TRANSPORT_ALLOWANCE_NGN,
+  VISIT_FEE_NGN,
+  type Elder,
+  type Visit,
+} from "@/lib/mock-data";
 import { routes } from "@/lib/routes";
 import { Card } from "@/components/ui/card";
 import { Chip, type ChipTone } from "@/components/ui/chip";
@@ -33,7 +40,8 @@ export function EarningsView() {
       <header>
         <h1 className="text-display font-bold">Earnings</h1>
         <p className="mt-1">
-          {formatNaira(EARNINGS_PER_VISIT_NGN)} for every completed visit. {formatNaira(total)} earned from{" "}
+          {formatNaira(EARNINGS_PER_VISIT_NGN)} for every completed visit ({formatNaira(VISIT_FEE_NGN)} plus{" "}
+          {formatNaira(TRANSPORT_ALLOWANCE_NGN)} transport). {formatNaira(total)} earned from{" "}
           {totalVisits} {totalVisits === 1 ? "visit" : "visits"} so far.
         </p>
       </header>

@@ -1,6 +1,6 @@
 import { EXAMPLE_VISITS_PER_CLIENT, monthlyEarningsFor } from "@/lib/earnings";
 import { formatNaira } from "@/lib/format";
-import { EARNINGS_PER_VISIT_NGN } from "@/lib/mock-data";
+import { EARNINGS_PER_VISIT_NGN, TRANSPORT_ALLOWANCE_NGN, VISIT_FEE_NGN } from "@/lib/mock-data";
 
 const EXAMPLE_CLIENT_COUNTS = [4, 6];
 
@@ -12,7 +12,8 @@ export function EarningsExamples({ headingLevel: Heading = "h2" }: { headingLeve
         More clients × more visits = more earning
       </Heading>
       <p className="mt-1">
-        Every visit pays {formatNaira(EARNINGS_PER_VISIT_NGN)}. Most clients have one visit a week, about{" "}
+        Every visit pays {formatNaira(VISIT_FEE_NGN)} plus a {formatNaira(TRANSPORT_ALLOWANCE_NGN)} transport
+        allowance, {formatNaira(EARNINGS_PER_VISIT_NGN)} in all. Most clients have one visit a week, about{" "}
         {EXAMPLE_VISITS_PER_CLIENT} a month.
       </p>
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">

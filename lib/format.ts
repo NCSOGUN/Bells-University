@@ -102,7 +102,7 @@ export function planFrequency(plan: Plan): string {
   return plan.frequencyLabel ?? formatVisitsPerWeek(plan.visitsPerWeek);
 }
 
-/** "₦77,000" */
+/** "₦100,000" */
 export function formatNaira(amount: number): string {
   return nairaFmt.format(amount);
 }
