@@ -66,7 +66,6 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
   const [errors, setErrors] = useState<Errors>({});
   const [voiceNoteAsked, setVoiceNoteAsked] = useState(false);
   const [sharing, setSharing] = useState(Boolean(relative?.consent));
-  const [personalised, setPersonalised] = useState(relative?.consent?.personalisedCheck ?? false);
 
   const who = name.trim() ? firstName(name.trim()) : "Mama";
 
@@ -100,7 +99,7 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
             age: ageNumber,
             city,
             careNeeds: careNeeds.trim(),
-            consent: { personalisedCheck: personalised, agreedAt: new Date().toISOString() },
+            consent: { personalisedCheck: true, agreedAt: new Date().toISOString() },
           },
         }),
       );
@@ -214,8 +213,6 @@ function RelativeForm({ relative, onSaved }: { relative?: RelativeDraft; onSaved
           setSharing(v);
           if (v) setErrors((e) => ({ ...e, consent: undefined }));
         }}
-        personalised={personalised}
-        onPersonalised={setPersonalised}
         error={errors.consent}
       />
 
