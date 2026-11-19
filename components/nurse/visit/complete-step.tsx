@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { publishUpdate } from "@/lib/update-channel";
+import { buildVisitUpdate } from "@/lib/visit-update";
 import { Check, Loader2, MapPin, MapPinOff } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
 import { firstName, formatTime, nurseShortName } from "@/lib/format";
@@ -116,8 +118,23 @@ function Submitting({ visitId }: { visitId: string }) {
   );
 }
 
-function Summary({ visit, elder, nurse, workflow }: VisitContext) {
+function Summary({ state, visit, elder, nurse, workflow }: VisitContext) {
   const sentAt = workflow?.familyUpdateSentAt;
+
+  // Push the update to the family's phone once per visit. The key survives a
+  // refresh of this page, so the family isn't notified twice.
+  useEffect(() => {
+    if (!sentAt) return;
+    const key = `carecircle-published:${visit.id}:${visit.checkOutAt ?? ""}`;
+    try {
+      if (window.sessionStorage.getItem(key)) return;
+      window.sessionStorage.setItem(key, "1");
+    } catch {
+      // Storage blocked: publishing twice is harmless, the phone ignores repeats.
+    }
+    const update = buildVisitUpdate(state, visit.id);
+    if (update) void publishUpdate(update);
+  }, [sentAt, state, visit.id, visit.checkOutAt]);
   const who = firstName(elder.name);
   const bp = visit.vitals?.bloodPressure;
   const medication = visit.medicationAdherence && ADHERENCE_LABEL[visit.medicationAdherence].toLowerCase();

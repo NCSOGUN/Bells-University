@@ -40,6 +40,7 @@ function screens(state: DemoState): { family: Screen[]; nurse: Screen[] } {
       { code: "F10", label: "Flagged visit", href: routes.familyVisit(visitId) },
       { code: "F11", label: "WhatsApp updates", href: routes.familyWhatsApp },
       { code: "F12", label: "Privacy and consent", href: routes.familyPrivacy },
+      { code: "F13", label: "Family phone (second laptop)", href: routes.familyPhone },
     ],
     nurse: [
       { code: "N1", label: "Join as a nurse", href: routes.nurseLanding },
