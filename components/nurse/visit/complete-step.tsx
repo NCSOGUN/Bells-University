@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { sendVisitNotification } from "@/lib/push-client";
 import { publishUpdate } from "@/lib/update-channel";
 import { buildVisitUpdate } from "@/lib/visit-update";
-import { Check, Loader2, MapPin, MapPinOff } from "lucide-react";
+import { BellRing, Check, Loader2, MapPin, MapPinOff } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
 import { firstName, formatTime, nurseShortName } from "@/lib/format";
 import { routes } from "@/lib/routes";
@@ -118,11 +119,15 @@ function Submitting({ visitId }: { visitId: string }) {
   );
 }
 
+type PushOutcome = { kind: "sent"; at: string; phones: number } | { kind: "none"; why: string };
+
 function Summary({ state, visit, elder, nurse, workflow }: VisitContext) {
   const sentAt = workflow?.familyUpdateSentAt;
+  const [push, setPush] = useState<PushOutcome | null>(null);
 
-  // Push the update to the family's phone once per visit. The key survives a
-  // refresh of this page, so the family isn't notified twice.
+  // Push the update to the family's phone once per visit: to a real phone by
+  // Web Push, and to the laptop's phone window. The key survives a refresh of
+  // this page, so the family isn't notified twice.
   useEffect(() => {
     if (!sentAt) return;
     const key = `carecircle-published:${visit.id}:${visit.checkOutAt ?? ""}`;
@@ -133,7 +138,15 @@ function Summary({ state, visit, elder, nurse, workflow }: VisitContext) {
       // Storage blocked: publishing twice is harmless, the phone ignores repeats.
     }
     const update = buildVisitUpdate(state, visit.id);
-    if (update) publishUpdate(update);
+    if (!update) return;
+    publishUpdate(update);
+    void sendVisitNotification(update).then((r) =>
+      setPush(
+        r.sent > 0
+          ? { kind: "sent", at: new Date().toISOString(), phones: r.sent }
+          : { kind: "none", why: r.error ?? "No phone has turned on notifications yet." },
+      ),
+    );
   }, [sentAt, state, visit.id, visit.checkOutAt]);
   const who = firstName(elder.name);
   const bp = visit.vitals?.bloodPressure;
@@ -173,6 +186,14 @@ function Summary({ state, visit, elder, nurse, workflow }: VisitContext) {
           <p className="mt-1 text-small">
             Sent to {who}&apos;s family at {formatTime(sentAt)}. They can also see it on their dashboard.
           </p>
+          {push && (
+            <p role="status" className="mt-2 flex items-start gap-2 text-small text-navy">
+              <BellRing aria-hidden className="mt-0.5 size-4 shrink-0" />
+              {push.kind === "sent"
+                ? `Notification delivered to ${push.phones === 1 ? "the family's phone" : `${push.phones} family phones`} at ${formatTime(push.at)}.`
+                : `No phone notification sent: ${push.why}`}
+            </p>
+          )}
           <blockquote className="mt-4 rounded-xl rounded-tl-sm bg-teal-tint p-4 text-small text-navy">
             <CareStatusChip status={elder.careStatus} />
             <p className="mt-2">

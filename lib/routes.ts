@@ -10,6 +10,7 @@ export const routes = {
   familyWhatsApp: "/family/whatsapp",
   familyPrivacy: "/family/privacy",
   familyPhone: "/phone",
+  familyAlerts: "/family/alerts",
   familyElder: (elderId: string) => `/family/elder/${encodeURIComponent(elderId)}`,
   familyVisit: (visitId: string) => `/family/visits/${encodeURIComponent(visitId)}`,
   nurseLanding: "/nurse",

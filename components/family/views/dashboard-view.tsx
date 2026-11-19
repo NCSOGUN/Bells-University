@@ -114,6 +114,9 @@ export function DashboardView() {
             <TextLink href={routes.familyWhatsApp} className="mt-1">
               See the update as the family received it
             </TextLink>
+            <TextLink href={routes.familyAlerts} className="mt-1">
+              Get a notification on this phone too
+            </TextLink>
           </Card>
           <PlanSummaryCard
             plan={findPlan(state, elder.planId)}

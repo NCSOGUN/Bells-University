@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Wifi } from "lucide-react";
 import { useDemo } from "@/lib/demo-context";
-import { formatPhone } from "@/lib/onboarding";
 import { routes } from "@/lib/routes";
 import { subscribeUpdates } from "@/lib/update-channel";
 import { applyVisitUpdate, type VisitUpdate } from "@/lib/visit-update";
-import { Button } from "@/components/ui/button";
+import { SignInPrompt } from "./sign-in-prompt";
 
 const LAGOS = "Africa/Lagos";
 const clock = new Intl.DateTimeFormat("en-GB", { timeZone: LAGOS, hour: "2-digit", minute: "2-digit" });
@@ -28,7 +27,6 @@ export function PhoneView() {
   const [now, setNow] = useState(() => new Date());
   const [incoming, setIncoming] = useState<VisitUpdate | null>(null);
   const [screen, setScreen] = useState<Screen>("locked");
-  const [code, setCode] = useState("");
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 15_000);
@@ -46,10 +44,8 @@ export function PhoneView() {
     [update],
   );
 
-  const signIn = (e: FormEvent) => {
-    e.preventDefault();
-    if (!incoming || code.length !== 6) return;
-    router.push(routes.familyVisit(incoming.visit.id));
+  const signIn = () => {
+    if (incoming) router.push(routes.familyVisit(incoming.visit.id));
   };
 
   return (
@@ -95,34 +91,7 @@ export function PhoneView() {
           </div>
         ) : (
           <div className="flex h-full flex-col bg-surface px-6 pt-16">
-            <svg aria-hidden viewBox="0 0 32 32" className="size-12">
-              <circle cx="16" cy="16" r="12" fill="none" stroke="#0d7a73" strokeWidth="3.2" strokeLinecap="round" strokeDasharray="62 14" transform="rotate(-50 16 16)" />
-              <circle cx="16" cy="16" r="4.2" fill="#0a2e45" />
-            </svg>
-            <h1 className="mt-6 text-[26px] leading-tight">Sign in to see the details</h1>
-            <p className="mt-2 text-small">
-              For {state.familyAccount.name}&apos;s privacy, health details stay behind sign-in. We sent a 6-digit code to{" "}
-              <span className="font-semibold text-navy">{formatPhone(state.familyAccount.phone)}</span> on WhatsApp.
-            </p>
-            <form onSubmit={signIn} className="mt-6 space-y-4">
-              <label className="block font-semibold text-navy" htmlFor="phone-code">
-                Code
-              </label>
-              <input
-                id="phone-code"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                className="block min-h-14 w-full rounded-2xl bg-bg px-4 text-center text-[24px] tracking-[0.5em] text-navy shadow-card"
-                placeholder="••••••"
-              />
-              <Button type="submit" disabled={code.length !== 6} className="w-full">
-                Sign in
-              </Button>
-              <p className="text-center text-label text-ink">Demo: any 6 digits work.</p>
-            </form>
+            <SignInPrompt accountName={state.familyAccount.name} phone={state.familyAccount.phone} onSignedIn={signIn} />
             <button type="button" onClick={() => setScreen("locked")} className="mt-auto mb-8 min-h-11 text-small font-semibold text-teal-deep">
               Back to lock screen
             </button>

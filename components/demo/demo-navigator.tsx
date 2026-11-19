@@ -41,7 +41,8 @@ function screens(state: DemoState): { family: Screen[]; nurse: Screen[] } {
       { code: "F10", label: "Flagged visit", href: routes.familyVisit(visitId) },
       { code: "F11", label: "WhatsApp updates", href: routes.familyWhatsApp },
       { code: "F12", label: "Privacy and consent", href: routes.familyPrivacy },
-      { code: "F13", label: "Family phone (second laptop)", href: routes.familyPhone },
+      { code: "F13", label: "Family phone (laptop window)", href: routes.familyPhone },
+      { code: "F14", label: "Notifications on a real phone", href: routes.familyAlerts },
     ],
     nurse: [
       { code: "N1", label: "Join as a nurse", href: routes.nurseLanding },
@@ -255,8 +256,9 @@ function JosephFlow({
       </h2>
       <ol className="mt-2 space-y-2 text-small text-navy">
         <li>
-          <span className="font-semibold">1. Start clean.</span> Reset the demo and go to today&apos;s visits, then open
-          the family&apos;s phone in a window beside this one.
+          <span className="font-semibold">1. Start clean.</span> Reset the demo and go to today&apos;s visits. On your
+          own phone, open this site at {routes.familyAlerts} and turn on notifications, or open the family&apos;s phone
+          in a window beside this one.
           <div className="mt-1 flex flex-wrap gap-2">
             <button type="button" onClick={onReset} className={button}>
               Reset and start
